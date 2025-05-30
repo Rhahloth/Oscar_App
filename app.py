@@ -367,13 +367,19 @@ def register_owner():
         conn = get_db()
         cur = conn.cursor()
 
-        cur.execute("INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s)",
-                    (business_name, business_type, location))
-        business_id = cur.lastrowid
+        # Insert business and fetch its ID
+        cur.execute(
+            "INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s) RETURNING id",
+            (business_name, business_type, location)
+        )
+        business_id = cur.fetchone()[0]
 
+        # Hash password and insert user
         password_hash = generate_password_hash(password)
-        cur.execute("INSERT INTO users (username, password, role, business_id) VALUES (%s, %s, 'owner', %s)",
-                    (username, password_hash, business_id))
+        cur.execute(
+            "INSERT INTO users (username, password, role, business_id) VALUES (%s, %s, 'owner', %s)",
+            (username, password_hash, business_id)
+        )
 
         conn.commit()
         return redirect('/login')
