@@ -88,7 +88,7 @@ def get_user(username):
     cur = conn.cursor()
     cur.execute("SELECT * FROM users WHERE username = %s", (username,))
     return cur.fetchone()
-    
+
 def get_products():
     conn = get_db_connection()
     cur = conn.cursor()

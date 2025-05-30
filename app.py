@@ -5,6 +5,8 @@ from models import (
     add_salesperson_stock, approve_request, reject_request, get_pending_requests_for_user,
     initialize_salesperson_inventory, get_db
 )
+from models import initialize_database
+initialize_database()
 
 import json
 from datetime import datetime
