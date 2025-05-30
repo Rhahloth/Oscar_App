@@ -367,30 +367,39 @@ def register_owner():
         conn = get_db()
         cur = conn.cursor()
 
-        # Insert business and get ID
-        cur.execute(
-            "INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s) RETURNING id",
-            (business_name, business_type, location)
-        )
-        result = cur.fetchone()
-        if result is None:
+        try:
+            # Insert business and fetch ID
+            cur.execute(
+                "INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s) RETURNING id",
+                (business_name, business_type, location)
+            )
+            result = cur.fetchone()
+            print("DEBUG: Fetched business insert result =", result)  # This prints in Render logs
+
+            if result is None:
+                print("ERROR: No business ID returned from insert.")
+                conn.rollback()
+                return "Failed to create business (no ID returned).", 500
+
+            business_id = result[0]
+
+            # Insert user
+            password_hash = generate_password_hash(password)
+            cur.execute(
+                "INSERT INTO users (username, password, role, business_id) VALUES (%s, %s, 'owner', %s)",
+                (username, password_hash, business_id)
+            )
+
+            conn.commit()
+            return redirect('/login')
+
+        except Exception as e:
+            print("ERROR during registration:", e)  # Print full exception
             conn.rollback()
-            return "Failed to retrieve business ID", 500
-
-        business_id = result[0]
-
-
-        # Insert user
-        password_hash = generate_password_hash(password)
-        cur.execute(
-            "INSERT INTO users (username, password, role, business_id) VALUES (%s, %s, 'owner', %s)",
-            (username, password_hash, business_id)
-        )
-
-        conn.commit()
-        return redirect('/login')
+            return f"An error occurred: {e}", 500
 
     return render_template('register_owner.html')
+
 
 @app.route('/review_requests', methods=['GET', 'POST'])
 def review_requests():
