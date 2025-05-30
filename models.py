@@ -48,17 +48,19 @@ def initialize_database():
     ''')
 
     # Sales
+    cur.execute("DROP TABLE IF EXISTS sales CASCADE;")
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS sales (
+        CREATE TABLE sales (
             id SERIAL PRIMARY KEY,
             product_id INTEGER REFERENCES products(id),
             quantity INTEGER,
             total_price INTEGER,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            salesperson TEXT,
+            salesperson INTEGER REFERENCES users(id),
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
+
 
     # Salesperson Inventory
     cur.execute('''
