@@ -118,20 +118,20 @@ def products():
             for row in reader:
                 row = {k.strip().lower(): v.strip() for k, v in row.items()}
                 try:
-                    cur.execute("SELECT id, quantity_available FROM products WHERE name = ?", (row['product name'],))
+                    cur.execute("SELECT id, quantity_available FROM products WHERE name = %s", (row['product name'],))
                     existing = cur.fetchone()
 
                     if existing:
                         new_qty = existing['quantity_available'] + int(row['quantity available'])
                         cur.execute('''
                             UPDATE products
-                            SET quantity_available = ?,
-                                buying_price = ?,
-                                agent_price = ?,
-                                wholesale_price = ?,
-                                retail_price = ?,
-                                category = ?
-                            WHERE id = ?
+                            SET quantity_available = %s,
+                                buying_price = %s,
+                                agent_price = %s,
+                                wholesale_price = %s,
+                                retail_price = %s,
+                                category = %s
+                            WHERE id = %s
                         ''', (
                             new_qty,
                             float(row['buying price']),
@@ -146,7 +146,7 @@ def products():
                             INSERT INTO products (
                                 category, name, quantity_available,
                                 buying_price, agent_price, wholesale_price, retail_price
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                         ''', (
                             row['category'],
                             row['product name'],
@@ -170,20 +170,20 @@ def products():
             wholesale_price = float(request.form['wholesale_price'])
             retail_price = float(request.form['retail_price'])
 
-            cur.execute("SELECT id, quantity_available FROM products WHERE name = ?", (name,))
+            cur.execute("SELECT id, quantity_available FROM products WHERE name = %s", (name,))
             existing = cur.fetchone()
 
             if existing:
                 new_qty = existing['quantity_available'] + quantity_available
                 cur.execute('''
                     UPDATE products
-                    SET quantity_available = ?,
-                        buying_price = ?,
-                        agent_price = ?,
-                        wholesale_price = ?,
-                        retail_price = ?,
-                        category = ?
-                    WHERE id = ?
+                    SET quantity_available = %s,
+                        buying_price = %s,
+                        agent_price = %s,
+                        wholesale_price = %s,
+                        retail_price = %s,
+                        category = %s
+                    WHERE id = %s
                 ''', (
                     new_qty,
                     buying_price,
@@ -198,7 +198,7 @@ def products():
                     INSERT INTO products (
                         category, name, quantity_available,
                         buying_price, agent_price, wholesale_price, retail_price
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ''', (
                     category, name, quantity_available,
                     buying_price, agent_price, wholesale_price, retail_price
@@ -213,10 +213,10 @@ def products():
     params = []
 
     if selected_category:
-        query += " AND category = ?"
+        query += " AND category = %s"
         params.append(selected_category)
     if selected_product:
-        query += " AND name = ?"
+        query += " AND name = %s"
         params.append(selected_product)
 
     cur.execute(query, params)
@@ -250,15 +250,15 @@ def edit_product(id):
 
         cur.execute('''
             UPDATE products
-            SET category = ?, name = ?, buying_price = ?,
-                agent_price = ?, wholesale_price = ?, retail_price = ?
-            WHERE id = ?
+            SET category = %s, name = %s, buying_price = %s,
+                agent_price = %s, wholesale_price = %s, retail_price = %s
+            WHERE id = %s
         ''', (category, name, buying_price,
               agent_price, wholesale_price, retail_price, id))
         conn.commit()
         return redirect('/products')
 
-    cur.execute("SELECT * FROM products WHERE id = ?", (id,))
+    cur.execute("SELECT * FROM products WHERE id = %s", (id,))
     product = cur.fetchone()
     if not product:
         return "Product not found", 404
@@ -276,8 +276,8 @@ def restock_product(id):
     cur = conn.cursor()
     cur.execute('''
         UPDATE products
-        SET quantity_available = quantity_available + ?
-        WHERE id = ?
+        SET quantity_available = quantity_available + %s
+        WHERE id = %s
     ''', (restock_qty, id))
 
     conn.commit()
@@ -290,7 +290,7 @@ def delete_product(id):
 
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("DELETE FROM products WHERE id = ?", (id,))
+    cur.execute("DELETE FROM products WHERE id = %s", (id,))
     conn.commit()
     return redirect('/products')
 
@@ -308,7 +308,7 @@ def manage_users():
         role = 'salesperson'
         password_hash = generate_password_hash(password)
 
-        cur.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+        cur.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
                     (username, password_hash, role))
         conn.commit()
         new_user_id = cur.lastrowid
@@ -332,7 +332,7 @@ def delete_user():
 
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("DELETE FROM users WHERE id = ? AND role = 'salesperson'", (user_id,))
+    cur.execute("DELETE FROM users WHERE id = %s AND role = 'salesperson'", (user_id,))
     conn.commit()
     return redirect('/users')
 
@@ -347,7 +347,7 @@ def reset_password():
 
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("UPDATE users SET password = ? WHERE id = ? AND role = 'salesperson'", (password_hash, user_id))
+    cur.execute("UPDATE users SET password = %s WHERE id = %s AND role = 'salesperson'", (password_hash, user_id))
     conn.commit()
 
     return render_template('reset_success.html', password=new_password)
@@ -365,12 +365,12 @@ def register_owner():
         conn = get_db()
         cur = conn.cursor()
 
-        cur.execute("INSERT INTO businesses (name, type, location) VALUES (?, ?, ?)",
+        cur.execute("INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s)",
                     (business_name, business_type, location))
         business_id = cur.lastrowid
 
         password_hash = generate_password_hash(password)
-        cur.execute("INSERT INTO users (username, password, role, business_id) VALUES (?, ?, 'owner', ?)",
+        cur.execute("INSERT INTO users (username, password, role, business_id) VALUES (%s, %s, 'owner', %s)",
                     (username, password_hash, business_id))
 
         conn.commit()
@@ -483,19 +483,19 @@ def request_stock():
             SELECT ui.product_id, ui.quantity, p.name AS product_name
             FROM user_inventory ui
             JOIN products p ON ui.product_id = p.id
-            WHERE ui.user_id = ? AND p.category = ?
+            WHERE ui.user_id = %s AND p.category = %s
         ''', (current_user_id, selected_category))
     else:
         cur.execute('''
             SELECT ui.product_id, ui.quantity, p.name AS product_name
             FROM user_inventory ui
             JOIN products p ON ui.product_id = p.id
-            WHERE ui.user_id = ?
+            WHERE ui.user_id = %s
         ''', (current_user_id,))
     inventory = cur.fetchall()
 
     # Get list of other salespersons (to send request to)
-    cur.execute("SELECT id, username FROM users WHERE role = 'salesperson' AND id != ?", (current_user_id,))
+    cur.execute("SELECT id, username FROM users WHERE role = 'salesperson' AND id != %s", (current_user_id,))
     recipients = cur.fetchall()
 
     # Handle form submission
@@ -508,7 +508,7 @@ def request_stock():
         cur.execute('''
             INSERT INTO stock_requests (
                 product_id, requester_id, recipient_id, quantity, requester_name, status
-            ) VALUES (?, ?, ?, ?, ?, 'pending')
+            ) VALUES (%s, %s, %s, %s, %s, 'pending')
         ''', (product_id, current_user_id, recipient_id, quantity, requester_name))
 
 
@@ -547,16 +547,16 @@ def my_inventory():
                p.retail_price
         FROM user_inventory ui
         JOIN products p ON ui.product_id = p.id
-        WHERE ui.user_id = ?
+        WHERE ui.user_id = %s
     '''
     params = [user_id]
 
     if category:
-        query += ' AND p.category = ?'
+        query += ' AND p.category = %s'
         params.append(category)
 
     if search_term:
-        query += ' AND LOWER(p.name) LIKE ?'
+        query += ' AND LOWER(p.name) LIKE %s'
         params.append(f"%{search_term.lower()}%")
 
     cur.execute(query, params)
@@ -604,16 +604,16 @@ def report():
     params = []
 
     if start_date:
-        query += ' AND date(s.date) >= date(?)'
+        query += ' AND date(s.date) >= date(%s)'
         params.append(start_date)
     if end_date:
-        query += ' AND date(s.date) <= date(?)'
+        query += ' AND date(s.date) <= date(%s)'
         params.append(end_date)
     if salesperson:
-        query += ' AND u.username = ?'
+        query += ' AND u.username = %s'
         params.append(salesperson)
     if payment_method:
-        query += ' AND s.payment_method = ?'
+        query += ' AND s.payment_method = %s'
         params.append(payment_method)
 
     query += ' GROUP BY u.username, s.payment_method ORDER BY total_selling_price DESC'
@@ -630,13 +630,13 @@ def report():
     '''
     sum_params = []
     if start_date:
-        sum_query += ' AND date(date) >= date(?)'
+        sum_query += ' AND date(date) >= date(%s)'
         sum_params.append(start_date)
     if end_date:
-        sum_query += ' AND date(date) <= date(?)'
+        sum_query += ' AND date(date) <= date(%s)'
         sum_params.append(end_date)
     if payment_method:
-        sum_query += ' AND payment_method = ?'
+        sum_query += ' AND payment_method = %s'
         sum_params.append(payment_method)
 
     cur.execute(sum_query, sum_params)
@@ -654,13 +654,13 @@ def report():
     '''
     top_params = []
     if start_date:
-        top_query += ' AND date(s.date) >= date(?)'
+        top_query += ' AND date(s.date) >= date(%s)'
         top_params.append(start_date)
     if end_date:
-        top_query += ' AND date(s.date) <= date(?)'
+        top_query += ' AND date(s.date) <= date(%s)'
         top_params.append(end_date)
     if payment_method:
-        top_query += ' AND s.payment_method = ?'
+        top_query += ' AND s.payment_method = %s'
         top_params.append(payment_method)
 
     top_query += ' GROUP BY s.salesperson_id ORDER BY total DESC LIMIT 1'
@@ -685,10 +685,10 @@ def report():
     '''
     dist_params = []
     if start_date:
-        dist_query += ' AND date(d.timestamp) >= date(?)'
+        dist_query += ' AND date(d.timestamp) >= date(%s)'
         dist_params.append(start_date)
     if end_date:
-        dist_query += ' AND date(d.timestamp) <= date(?)'
+        dist_query += ' AND date(d.timestamp) <= date(%s)'
         dist_params.append(end_date)
 
     dist_query += ' ORDER BY d.timestamp DESC'
@@ -736,16 +736,16 @@ def export_report():
     params = []
 
     if start_date:
-        query += ' AND date(s.date) >= date(?)'
+        query += ' AND date(s.date) >= date(%s)'
         params.append(start_date)
     if end_date:
-        query += ' AND date(s.date) <= date(?)'
+        query += ' AND date(s.date) <= date(%s)'
         params.append(end_date)
     if salesperson:
-        query += ' AND u.username = ?'
+        query += ' AND u.username = %s'
         params.append(salesperson)
     if payment_method:
-        query += ' AND s.payment_method = ?'
+        query += ' AND s.payment_method = %s'
         params.append(payment_method)
 
     query += ' GROUP BY u.username, s.payment_method ORDER BY total_selling_price DESC'
