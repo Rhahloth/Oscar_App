@@ -368,22 +368,21 @@ def register_owner():
         cur = conn.cursor()
 
         try:
-            # Insert business and fetch ID
             cur.execute(
                 "INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s) RETURNING id",
                 (business_name, business_type, location)
             )
             result = cur.fetchone()
-            print("DEBUG: Fetched business insert result =", result)  # This prints in Render logs
+            print("DEBUG: Insert result =", result)
 
+            # ✅ Updated access
             if result is None:
-                print("ERROR: No business ID returned from insert.")
+                print("ERROR: Business ID not returned.")
                 conn.rollback()
-                return "Failed to create business (no ID returned).", 500
+                return "Failed to insert business.", 500
 
-            business_id = result[0]
+            business_id = result['id']
 
-            # Insert user
             password_hash = generate_password_hash(password)
             cur.execute(
                 "INSERT INTO users (username, password, role, business_id) VALUES (%s, %s, 'owner', %s)",
@@ -394,7 +393,7 @@ def register_owner():
             return redirect('/login')
 
         except Exception as e:
-            print("ERROR during registration:", e)  # Print full exception
+            print("ERROR:", e)
             conn.rollback()
             return f"An error occurred: {e}", 500
 
