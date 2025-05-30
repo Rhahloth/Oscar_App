@@ -12,6 +12,7 @@ import random
 import string
 import csv
 import io
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'
@@ -836,5 +837,7 @@ def logout():
 if __name__ == '__main__':
     with app.app_context():
         init_db()
-    app.run(debug=True)
+port = int(os.environ.get("PORT", 10000))
+app.run(host="0.0.0.0", port=port)
+
     
