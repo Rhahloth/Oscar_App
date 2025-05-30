@@ -88,6 +88,16 @@ def get_user(username):
     cur = conn.cursor()
     cur.execute("SELECT * FROM users WHERE username = %s", (username,))
     return cur.fetchone()
+    
+def get_products():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM products ORDER BY id DESC")
+    products = cur.fetchall()
+    cur.close()
+    conn.close()
+    return products
+
 
 def get_sales(conn, salesperson_id=None):
     cur = conn.cursor()
