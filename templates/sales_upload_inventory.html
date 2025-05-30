@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Update Stock - RoSolutions</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      .cart-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      .cart-table th,
+      .cart-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+      .cart-table th {
+        background-color: #f2f2f2;
+        text-align: left;
+      }
+      .search-result-item {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        background-color: #fff;
+      }
+      .search-result-item:hover {
+        background-color: #e6f0ff;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 🔷 Navbar -->
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RoSolutions Ltd.</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout"
+              ><button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button></a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔽 Main Container -->
+    <div class="container">
+      <h3>Update Stock</h3>
+
+      <!-- 🔍 Search Product -->
+      <label for="productSearch">Search Product:</label>
+      <input
+        type="text"
+        id="productSearch"
+        placeholder="Type product name..."
+        oninput="filterProducts()"
+        autocomplete="off"
+      />
+
+      <div
+        id="searchResults"
+        style="
+          border: 1px solid #ccc;
+          max-height: 150px;
+          overflow-y: auto;
+          display: none;
+        "
+      ></div>
+
+      <!-- 🛒 Cart Table -->
+      <form
+        method="POST"
+        action="/sales_upload_inventory"
+        onsubmit="return submitCart()"
+      >
+        <div
+          style="
+            min-height: 300px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+          "
+        >
+          <table class="cart-table" id="cartTable" style="width: 100%">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Remove</th>
+              </tr>
+            </thead>
+            <tbody id="cartBody"></tbody>
+          </table>
+        </div>
+
+        <input type="hidden" name="cart_data" id="cartData" />
+
+        <!-- Align button to the right -->
+        <div style="text-align: center; margin-top: 12px">
+          <button type="submit">Update All</button>
+        </div>
+      </form>
+
+      <h4>📁 Or Upload via CSV</h4>
+
+      <p>Please use the following CSV format:</p>
+      <pre
+        style="background-color: #f9f9f9; border: 1px solid #ccc; padding: 10px"
+      >
+      Product Name,Quantity
+      Maize Seed,10
+      Hand Hoe,5
+      </pre>
+
+      <p>
+        Make sure your columns are: <strong>Product Name</strong>,
+        <strong>Quantity</strong>
+      </p>
+
+      <form
+        method="POST"
+        action="/sales_upload_inventory"
+        enctype="multipart/form-data"
+      >
+        <input type="hidden" name="form_type" value="csv_upload" />
+        <input type="file" name="file" accept=".csv" required />
+
+        <div style="margin-top: 10px; text-align: left">
+          <button type="submit">Upload CSV</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 🔧 Cart Script -->
+    <script>
+      const allProducts = {{ product_names | tojson }};
+      const cart = [];
+
+      function filterProducts() {
+        const input = document.getElementById("productSearch").value.toLowerCase();
+        const results = document.getElementById("searchResults");
+        results.innerHTML = "";
+
+        if (input.length < 2) {
+          results.style.display = "none";
+          return;
+        }
+
+        const matches = allProducts.filter(p => p.toLowerCase().includes(input));
+        matches.forEach(product => {
+          const div = document.createElement("div");
+          div.textContent = product;
+          div.className = "search-result-item";
+          div.onclick = () => addToCart(product);
+          results.appendChild(div);
+        });
+
+        results.style.display = matches.length > 0 ? "block" : "none";
+      }
+
+      function addToCart(product) {
+        const existing = cart.find(item => item.product_name === product);
+        if (existing) return;
+
+        cart.push({ product_name: product, quantity: 1 });
+        renderCart();
+        document.getElementById("productSearch").value = "";
+        document.getElementById("searchResults").style.display = "none";
+      }
+
+      function updateQuantity(index, value) {
+        cart[index].quantity = parseInt(value) || 0;
+      }
+
+      function removeFromCart(index) {
+        cart.splice(index, 1);
+        renderCart();
+      }
+
+      function renderCart() {
+        const body = document.getElementById("cartBody");
+        body.innerHTML = "";
+        cart.forEach((item, index) => {
+          const row = document.createElement("tr");
+
+          const nameCell = document.createElement("td");
+          nameCell.textContent = item.product_name;
+          row.appendChild(nameCell);
+
+          const qtyCell = document.createElement("td");
+          const input = document.createElement("input");
+          input.type = "number";
+          input.min = "1";
+          input.value = item.quantity;
+          input.onchange = (e) => updateQuantity(index, e.target.value);
+          qtyCell.appendChild(input);
+          row.appendChild(qtyCell);
+
+          const removeCell = document.createElement("td");
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = "Remove";
+          btn.onclick = () => removeFromCart(index);
+          removeCell.appendChild(btn);
+          row.appendChild(removeCell);
+
+          body.appendChild(row);
+        });
+      }
+
+      function submitCart() {
+        if (cart.length === 0) {
+          alert("Please add at least one product.");
+          return false;
+        }
+        document.getElementById("cartData").value = JSON.stringify(cart);
+        return true;
+      }
+    </script>
+  </body>
+</html>

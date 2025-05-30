@@ -1,0 +1,379 @@
+html,
+body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f4f4f4;
+}
+
+/* LOGIN */
+
+.login-body {
+    background: linear-gradient(to bottom right, #b0b0b0, #e0e0e0);
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+.login-card {
+    background: #ffffffee;
+    padding: 30px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.login-card h4 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1500px;
+    margin: 140px auto 40px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h4,
+h5 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+form .form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #034078;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #034078;
+}
+
+/* FULL NAVBAR SECTION */
+.navbar-wrapper {
+    display: flex;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding-top: 20px;
+    /* Space above the navbar */
+    background: transparent;
+}
+
+.navbar-inner {
+    max-width: 1500px;
+    width: 100%;
+    margin: 0 auto;
+    background-color: #034078;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Inline company details next to logo */
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    max-width: 60%;
+}
+
+.company-details-inline {
+    font-size: 13px;
+    line-height: 1.4;
+    color: white;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    text-align: right;
+}
+
+.navbar-right span {
+    font-weight: bold;
+}
+
+.navbar a button {
+    background-color:rgb(251, 133, 15);
+    color: #034078;
+    font-weight: bold;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.navbar a button:hover {
+    background-color: #e5ffe5;
+}
+
+.logo {
+    height: 40px;
+    margin-right: 10px;
+    vertical-align: middle;
+    border-radius: 20%;
+}
+
+/* Table Styling */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.table th,
+.table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+        margin: 20px;
+    }
+
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .navbar-left,
+    .navbar-right {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Footer */
+.footer {
+    max-width: 1000px;
+    margin: 40px auto 20px auto;
+    padding: 20px;
+    border-top: 1px solid #ddd;
+    text-align: right;
+    font-size: 14px;
+    color: #555;
+}
+
+.footer a {
+    color: #034078;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Report Filters */
+.report-filters {
+    background: #f9f9f9;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.report-filters fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.report-filters legend {
+    font-weight: bold;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-item label {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.filter-item input,
+.filter-item select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    min-width: 160px;
+}
+
+.filter-item button {
+    background-color: #034078;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.filter-item button:hover {
+    background-color: #034078;
+}
+
+/* Dashboard Welcome */
+.dashboard-welcome {
+    background: #eefdf0;
+    border: 1px solid #bde5c8;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin: 20px 0;
+    font-size: 1.05em;
+    color: #155724;
+}
+
+.dashboard-welcome legend {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #107c41;
+    padding: 0 10px;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.action-buttons a button {
+    background-color: #034078;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    min-width: 180px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease;
+}
+
+.action-buttons a button:hover {
+    background-color: #034078;
+}
+
+/* RECORD SALE STYLES */
+.section-box {
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.filter-section input,
+.filter-section select {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.cart-table {
+    overflow-x: auto;
+}
+
+.cart-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+}
+
+.cart-actions button {
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.cart-actions button:first-child {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.cart-actions button:last-child {
+    background-color: #28a745;
+    color: #fff;
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Owner Dashboard - RoSolutions</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RoSolutions Ltd.</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout"
+              ><button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button></a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="dashboard-welcome">
+        <strong>Welcome, {{ session.username }}</strong><br />
+        You have full access to manage sales, products, and reports.
+      </div>
+
+      <div class="form-group action-buttons">
+        <a href="/products"><button>Manage Products</button></a>
+        <a href="/users"><button>Manage Salespersons</button></a>
+        <a href="/report"><button>View Sales Reports</button></a>
+      </div>
+
+      <h5>Recent Transactions</h5>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Sold By</th>
+            <th>Total (UGX)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sale in sales %}
+          <tr>
+            <td>{{ sale.date[:10] }}</td>
+            <td>{{ sale.product_name }}</td>
+            <td>{{ sale.quantity }}</td>
+            <td>{{ sale.salesperson }}</td>
+            <td>{{ sale.total_price }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

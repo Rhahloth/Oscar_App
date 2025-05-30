@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Request Stock - RoSolutions</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="navbar-wrapper">
+    <div class="navbar-inner">
+      <div class="navbar">
+        <div class="navbar-left">
+          <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+          <div class="company-details-inline">
+            <strong>RoSolutions Ltd.</strong><br />
+            <em>Your sales are guaranteed</em><br />
+            Tel: +256 778 412 136 <br>
+            Email: raysokello@gmail.com
+          </div>
+        </div>
+        <div>
+          {% if session.username %}
+          <div>BRANCH: {{ session.username }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+        </div>
+        <div
+          class="navbar-right"
+          style="display: flex; align-items: center; gap: 10px"
+        >
+          {% if session.username %}
+          <a href="/logout"
+            ><button
+              style="
+                background-color: #d9534f;
+                color: white;
+                margin-left: 12px;
+              "
+            >
+              Logout
+            </button></a
+          >
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h4 style="margin-bottom: 20px">Request Stock from Another Salesperson</h4>
+
+    <!-- Category Filter -->
+    <form method="GET" action="/request_stock">
+      <div class="form-group">
+        <label>Filter by Category</label>
+        <select name="category" onchange="this.form.submit()">
+          <option value="">-- All Categories --</option>
+          {% for category in categories %}
+            <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>
+              {{ category }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </form>
+
+    <!-- Main Request Form -->
+    <form method="POST" action="/request_stock">
+      <div class="form-group">
+        <label>Product</label>
+        {% if inventory %}
+          <select name="product_id" id="productSelect" required onchange="updateProductSummary()">
+            {% for item in inventory %}
+              <option value="{{ item.product_id }}" data-quantity="{{ item.quantity }}">
+                {{ item.product_name }}{% if item.quantity == 0 %} (Out of Stock){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <div id="productSummary" style="margin-top: 8px; font-weight: bold;"></div>
+        {% else %}
+          <p style="color: red; font-weight: bold;">
+            No products available in this category. Try a different one or contact your team.
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label>Recipient Salesperson</label>
+        <select name="recipient_id" required>
+          {% for r in recipients %}
+            <option value="{{ r.id }}">{{ r.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Quantity to Request</label>
+        <input type="number" name="quantity" min="1" required />
+      </div>
+
+      <div class="form-group">
+        <label>Your Full Name</label>
+        <input type="text" name="requester_name" required />
+      </div>
+
+      <button type="submit" id="submitBtn">Submit Request</button>
+    </form>
+  </div>
+
+  {% if session.username %}
+  <div class="footer">
+    Logged in as {{ session.username }} | <a href="/logout">Logout</a>
+  </div>
+  {% endif %}
+
+  <script>
+    function updateProductSummary() {
+      const select = document.getElementById("productSelect");
+      const selected = select.options[select.selectedIndex];
+      const quantity = parseInt(selected.getAttribute("data-quantity"));
+      const summaryDiv = document.getElementById("productSummary");
+      const submitBtn = document.getElementById("submitBtn");
+
+      if (quantity === 0) {
+        summaryDiv.textContent = "You currently have none in your inventory.";
+        summaryDiv.style.color = "orange";
+        submitBtn.disabled = false;  // ✅ allow the request
+      } else {
+        summaryDiv.textContent = "Available in your inventory: " + quantity;
+        summaryDiv.style.color = "black";
+        submitBtn.disabled = false;
+      }
+    }
+
+    window.onload = updateProductSummary;
+  </script>
+</body>
+</html>

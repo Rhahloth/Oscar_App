@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Salesperson Dashboard - AgriShop</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RoSolutions Ltd.</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout"
+              ><button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button></a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h4>Welcome, {{ session.username }}!</h4>
+      <div class="form-group action-buttons">
+        <a href="/record_sale"><button>POS</button></a>
+        <a href="/my_inventory"><button>Manage Stocks</button></a>
+        <a href="/request_stock"><button>Request Stock</button></a>
+        <a href="/review_requests"><button>Review Transfer Requests</button></a>
+      </div>
+
+      <h5>Your Recent Sales</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Total (UGX)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sale in sales %}
+          <tr>
+            <td>{{ sale.date[:10] }}</td>
+            <!-- ✅ This should show the time -->
+            <td>{{ sale.product_name }}</td>
+            <td>{{ sale.quantity }}</td>
+            <td>{{ sale.total_price }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

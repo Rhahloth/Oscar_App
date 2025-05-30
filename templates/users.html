@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>RoSolutions - Manage Salespersons</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RoSolutions Ltd.</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout"
+              ><button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button></a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h4>Add Salesperson</h4>
+      <form method="POST">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required />
+        </div>
+        <button type="submit">Add Salesperson</button>
+      </form>
+      <h5>Existing Salespersons</h5>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Reset Password</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.role }}</td>
+
+            <!-- Reset Password Column -->
+            <td>
+              <form
+                method="POST"
+                action="/reset_password"
+                onsubmit="return confirm('Reset password for {{ user.username }}?');"
+              >
+                <input type="hidden" name="user_id" value="{{ user.id }}" />
+                <button type="submit">Reset</button>
+              </form>
+            </td>
+
+            <!-- Remove User Column -->
+            <td>
+              <form
+                method="POST"
+                action="/delete_user"
+                onsubmit="return confirm('Remove {{ user.username }}?');"
+              >
+                <input type="hidden" name="user_id" value="{{ user.id }}" />
+                <button type="submit" class="btn-danger">Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

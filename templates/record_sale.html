@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Record Sale - RoSolutions</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RoSolutions Ltd.</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h4>POINT OF SALES</h4>
+      {% if not products %}
+      <p style="color: red; font-weight: bold">
+        You don't have any inventory assigned. Contact your manager.
+      </p>
+      {% endif %}
+
+      <form
+        id="saleForm"
+        method="POST"
+        action="/submit_sale"
+        onsubmit="submitSale(event)"
+      >
+        <div class="section-box filter-section">
+          <label for="productSearch">Search Product</label>
+          <input
+            id="productSearch"
+            list="productList"
+            placeholder="Type to search..."
+            oninput="handleProductInput()"
+            autocomplete="off"
+          />
+          <datalist id="productList"></datalist>
+        </div>
+
+        <div class="section-box">
+          <h5>Sale Items</h5>
+          <div
+            class="cart-table"
+            style="
+              max-height: 250px;
+              overflow-y: auto;
+              background: #f9f9f9;
+              padding: 10px;
+            "
+          >
+            <table class="table" id="cartTable">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                  <th>Subtotal</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <h5>Summary</h5>
+          <p>Total Quantity: <span id="total_qty">0</span></p>
+          <p>Total Amount: UGX <span id="total_amount">0</span></p>
+        </div>
+
+        <div class="section-box">
+          <input type="hidden" name="payment_method" id="payment_method" />
+          <input type="hidden" name="cart_data" id="cart_data" />
+          <div class="cart-actions" style="text-align: right">
+            <button type="button" onclick="finalizeSale('Credit')">
+              Credit
+            </button>
+            <button type="button" onclick="finalizeSale('Cash')">Cash</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      let cart = [];
+      const fullProductList = [
+        {% for p in products %}
+          {
+            name: "{{ p.product_name }}",
+            id: "{{ p.product_id }}",
+            retail: "{{ p.retail_price }}",
+            cost: "{{ p.agent_price }}"
+          },
+        {% endfor %}
+      ];
+
+      function handleProductInput() {
+        const input = document.getElementById("productSearch");
+        const list = document.getElementById("productList");
+        const query = input.value.toLowerCase();
+        list.innerHTML = "";
+
+        if (query.length >= 2) {
+          const matches = fullProductList.filter(p => p.name.toLowerCase().includes(query));
+          matches.forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p.name;
+            opt.setAttribute("data-id", p.id);
+            opt.setAttribute("data-retail", p.retail);
+            opt.setAttribute("data-cost", p.cost);
+            list.appendChild(opt);
+          });
+        }
+      }
+
+      document.getElementById("productSearch").addEventListener("change", function () {
+        const name = this.value;
+        const option = [...document.getElementById("productList").options].find(opt => opt.value === name);
+        if (!option) return;
+
+        const productId = option.dataset.id;
+        const productName = option.value;
+        const price = parseFloat(option.dataset.retail);
+        const cost = parseFloat(option.dataset.cost);
+        cart.push({ productId, productName, quantity: 1, price, cost, subtotal: price });
+        renderCart();
+        this.value = "";
+      });
+
+      function renderCart() {
+        const tbody = document.querySelector("#cartTable tbody");
+        tbody.innerHTML = "";
+        let totalQty = 0;
+        let totalAmount = 0;
+
+        cart.forEach((item, i) => {
+          totalQty += item.quantity;
+          totalAmount += item.subtotal;
+
+          tbody.innerHTML += `
+            <tr>
+              <td>${item.productName}</td>
+              <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" style="width: 60px;" /></td>
+              <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" /></td>
+              <td>UGX ${item.subtotal.toFixed(2)}</td>
+              <td><button type="button" onclick="removeItem(${i})">X</button></td>
+            </tr>`;
+        });
+
+        document.getElementById("total_qty").innerText = totalQty;
+        document.getElementById("total_amount").innerText = totalAmount.toFixed(2);
+      }
+
+      function updateQty(index, value) {
+        cart[index].quantity = parseInt(value) || 1;
+        cart[index].subtotal = cart[index].quantity * cart[index].price;
+        renderCart();
+      }
+
+      function updatePrice(index, value) {
+        const newPrice = parseFloat(value) || 0;
+        if (newPrice < parseFloat(cart[index].cost)) {
+          alert("Check the price and try again");
+          renderCart();
+          return;
+        }
+        cart[index].price = newPrice;
+        cart[index].subtotal = cart[index].quantity * cart[index].price;
+        renderCart();
+      }
+
+      function removeItem(i) {
+        cart.splice(i, 1);
+        renderCart();
+      }
+
+      function submitSale(e) {
+        e.preventDefault();
+      }
+
+      function finalizeSale(method) {
+        if (!cart.length) return alert("Add at least one item.");
+        document.getElementById("cart_data").value = JSON.stringify(cart);
+        document.getElementById("payment_method").value = method;
+        document.getElementById("saleForm").submit();
+      }
+    </script>
+  </body>
+</html>

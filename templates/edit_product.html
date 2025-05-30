@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Edit Product - RoSolutions</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RoSolutions Ltd.</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 | Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div class="navbar-right">
+            <span>RoSolutions - Manage Products</span>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h4 style="margin-bottom: 20px">Update Product Details</h4>
+      <form method="POST" action="/edit_product/{{ product.id }}">
+        <!-- Product row: category, name, unit -->
+        <div class="form-group" style="display: flex; gap: 10px">
+          <div style="flex: 1">
+            <label>Category</label>
+            <input
+              type="text"
+              name="category"
+              value="{{ product.category }}"
+              required
+            />
+          </div>
+          <div style="flex: 1">
+            <label>Product Name</label>
+            <input
+              type="text"
+              name="name"
+              value="{{ product.name }}"
+              required
+            />
+          </div>
+        </div>
+
+        <!-- Prices row -->
+        <h5 style="margin-top: 20px">Add Price</h5>
+        <div class="form-group" style="display: flex; gap: 10px">
+          <div style="flex: 1">
+            <label>Buying Price</label>
+            <input
+              type="number"
+              step="1"
+              name="buying_price"
+              value="{{ product.buying_price }}"
+              required
+            />
+          </div>
+          <div style="flex: 1">
+            <label>Agent Price</label>
+            <input
+              type="number"
+              step="1"
+              name="agent_price"
+              value="{{ product.agent_price }}"
+              required
+            />
+          </div>
+          <div style="flex: 1">
+            <label>Wholesale Price</label>
+            <input
+              type="number"
+              step="1"
+              name="wholesale_price"
+              value="{{ product.wholesale_price }}"
+              required
+            />
+          </div>
+          <div style="flex: 1">
+            <label>Retail Price</label>
+            <input
+              type="number"
+              step="1"
+              name="retail_price"
+              value="{{ product.retail_price }}"
+              required
+            />
+          </div>
+        </div>
+
+        <button type="submit">Update Product</button>
+      </form>
+
+      <h4 style="margin-top: 30px">Restock Product</h4>
+      <form method="POST" action="/restock_product/{{ product.id }}">
+        <div class="form-group">
+          <label>Add Quantity</label>
+          <input type="number" name="restock_qty" min="1" required />
+        </div>
+        <button type="submit">Restock</button>
+      </form>
+
+      <h4 style="margin-top: 30px">Danger Zone</h4>
+      <form
+        method="POST"
+        action="/delete_product/{{ product.id }}"
+        onsubmit="return confirm('Are you sure you want to delete this product?');"
+      >
+        <button type="submit" class="btn-danger">Delete Product</button>
+      </form>
+    </div>
+    {% if session.username %}
+    <div class="footer">
+      Logged in as {{ session.username }} | <a href="/logout">Logout</a>
+    </div>
+    {% endif %}
+  </body>
+</html>

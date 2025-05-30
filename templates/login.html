@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login - AgriShop</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body class="login-body">
+    <div class="login-card">
+      <h4>Login to RoSolutions</h4>
+      <form method="POST" action="/login">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" required />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required />
+        </div>
+        <button type="submit">Login</button>
+      </form>
+
+      {% if error %}
+      <p style="color: red; margin-top: 10px">{{ error }}</p>
+      {% endif %}
+
+      <p style="margin-top: 20px">
+        New business? <a href="/register_owner">Register here</a>
+      </p>
+    </div>
+  </body>
+</html>
