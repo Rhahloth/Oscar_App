@@ -2,10 +2,9 @@ from flask import Flask, render_template, request, redirect, session, url_for, s
 from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     init_db, get_user, get_sales, get_products, add_sale, get_user_inventory,
-    add_salesperson_stock, approve_request, reject_request,
+    add_salesperson_stock, approve_request, reject_request, get_pending_requests_for_user,
     initialize_salesperson_inventory, get_db
 )
-
 
 import json
 from datetime import datetime
@@ -13,7 +12,6 @@ import random
 import string
 import csv
 import io
-import os
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'
@@ -838,7 +836,4 @@ def logout():
 if __name__ == '__main__':
     with app.app_context():
         init_db()
-port = int(os.environ.get("PORT", 10000))
-app.run(host="0.0.0.0", port=port)
-
-    
+    app.run(debug=True)
