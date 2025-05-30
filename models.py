@@ -1,87 +1,90 @@
 
 import psycopg2
-import psycopg2.extras
-from flask import g
+from psycopg2.extras import RealDictCursor
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db():
-    if 'db' not in g:
-        g.db = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.DictCursor)
-    return g.db
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
-def init_db():
+def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    # Ensure tables exist (minimal setup)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            role TEXT NOT NULL,
-            business_id INTEGER
-        );
-
-        CREATE TABLE IF NOT EXISTS products (
-            id SERIAL PRIMARY KEY,
-            category TEXT,
-            name TEXT NOT NULL,
-            quantity_available INTEGER,
-            buying_price FLOAT,
-            agent_price FLOAT,
-            wholesale_price FLOAT,
-            retail_price FLOAT
-        );
-
-        CREATE TABLE IF NOT EXISTS sales (
-            id SERIAL PRIMARY KEY,
-            product_id INTEGER REFERENCES products(id),
-            quantity INTEGER NOT NULL,
-            salesperson_id INTEGER REFERENCES users(id),
-            price FLOAT,
-            payment_method TEXT,
-            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS user_inventory (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id),
-            product_id INTEGER REFERENCES products(id),
-            quantity INTEGER
-        );
-
-        CREATE TABLE IF NOT EXISTS stock_requests (
-            id SERIAL PRIMARY KEY,
-            product_id INTEGER REFERENCES products(id),
-            requester_id INTEGER REFERENCES users(id),
-            recipient_id INTEGER REFERENCES users(id),
-            quantity INTEGER,
-            requester_name TEXT,
-            status TEXT DEFAULT 'pending',
-            rejection_reason TEXT
-        );
-
+    # Businesses
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS businesses (
             id SERIAL PRIMARY KEY,
             name TEXT,
             type TEXT,
             location TEXT
         );
+    ''')
 
-        CREATE TABLE IF NOT EXISTS distribution_log (
+    # Users
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL,
+            business_id INTEGER REFERENCES businesses(id)
+        );
+    ''')
+
+    # Products
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            price INTEGER NOT NULL,
+            stock INTEGER,
+            business_id INTEGER REFERENCES businesses(id)
+        );
+    ''')
+
+    # Sales
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS sales (
             id SERIAL PRIMARY KEY,
             product_id INTEGER REFERENCES products(id),
-            salesperson_id INTEGER,
-            receiver_id INTEGER,
             quantity INTEGER,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            status TEXT
+            total_price INTEGER,
+            date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            salesperson TEXT,
+            business_id INTEGER REFERENCES businesses(id)
         );
-    """)
+    ''')
+
+    # Salesperson Inventory
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS salesperson_inventory (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            product_id INTEGER REFERENCES products(id),
+            quantity INTEGER
+        );
+    ''')
+
+    # Stock Requests
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS stock_requests (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id),
+            product_id INTEGER REFERENCES products(id),
+            quantity INTEGER,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+
     conn.commit()
+    cur.close()
+    conn.close()
 
 def get_user(username):
     conn = get_db()
