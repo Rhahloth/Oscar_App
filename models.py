@@ -106,7 +106,7 @@ def get_sales(conn, salesperson_id=None):
     cur = conn.cursor()
     if salesperson_id:
         cur.execute("""
-            SELECT s.*, p.name AS product_name, u.username AS salesperson, (s.quantity * s.price) AS total_price
+            SELECT s.*, p.name AS product_name, u.username AS salesperson_name, (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
             JOIN users u ON s.salesperson = u.id
@@ -116,7 +116,7 @@ def get_sales(conn, salesperson_id=None):
         """, (salesperson_id,))
     else:
         cur.execute("""
-            SELECT s.*, p.name AS product_name, u.username AS salesperson, (s.quantity * s.price) AS total_price
+            SELECT s.*, p.name AS product_name, u.username AS salesperson_name, (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
             JOIN users u ON s.salesperson = u.id
