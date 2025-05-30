@@ -372,7 +372,13 @@ def register_owner():
             "INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s) RETURNING id",
             (business_name, business_type, location)
         )
-        business_id = cur.fetchone()[0]
+        result = cur.fetchone()
+        if result is None:
+            conn.rollback()
+            return "Failed to retrieve business ID", 500
+
+        business_id = result[0]
+
 
         # Insert user
         password_hash = generate_password_hash(password)
@@ -385,7 +391,6 @@ def register_owner():
         return redirect('/login')
 
     return render_template('register_owner.html')
-
 
 @app.route('/review_requests', methods=['GET', 'POST'])
 def review_requests():
