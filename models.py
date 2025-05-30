@@ -109,8 +109,8 @@ def get_sales(conn, salesperson_id=None):
             SELECT s.*, p.name AS product_name, u.username AS salesperson, (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
-            JOIN users u ON s.salesperson_id = u.id
-            WHERE s.salesperson_id = %s
+            JOIN users u ON s.salesperson = u.id
+            WHERE s.salesperson = %s
             ORDER BY s.date DESC
             LIMIT 10
         """, (salesperson_id,))
@@ -119,7 +119,7 @@ def get_sales(conn, salesperson_id=None):
             SELECT s.*, p.name AS product_name, u.username AS salesperson, (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
-            JOIN users u ON s.salesperson_id = u.id
+            JOIN users u ON s.salesperson = u.id
             ORDER BY s.date DESC
             LIMIT 10
         """)
