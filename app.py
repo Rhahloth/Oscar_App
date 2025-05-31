@@ -105,6 +105,15 @@ def products():
     conn = get_db()
     cur = conn.cursor()
 
+    # Get the business ID for this owner
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    business = cur.fetchone()
+    if not business:
+        conn.close()
+        return "Business not found", 400
+
+    business_id = business['business_id']
+
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
@@ -120,43 +129,45 @@ def products():
             for row in reader:
                 row = {k.strip().lower(): v.strip() for k, v in row.items()}
                 try:
-                    cur.execute("SELECT id, quantity_available FROM products WHERE name = %s", (row['product name'],))
+                    cur.execute("""
+                        SELECT id, quantity_available FROM products 
+                        WHERE name = %s AND category = %s AND business_id = %s
+                    """, (row['product name'], row['category'], business_id))
                     existing = cur.fetchone()
 
                     if existing:
                         new_qty = existing['quantity_available'] + int(row['quantity available'])
-                        cur.execute('''
+                        cur.execute("""
                             UPDATE products
                             SET quantity_available = %s,
                                 buying_price = %s,
                                 agent_price = %s,
                                 wholesale_price = %s,
-                                retail_price = %s,
-                                category = %s
+                                retail_price = %s
                             WHERE id = %s
-                        ''', (
+                        """, (
                             new_qty,
                             float(row['buying price']),
                             float(row['agent price']),
                             float(row['wholesale price']),
                             float(row['retail price']),
-                            row['category'],
                             existing['id']
                         ))
                     else:
-                        cur.execute('''
+                        cur.execute("""
                             INSERT INTO products (
                                 category, name, quantity_available,
-                                buying_price, agent_price, wholesale_price, retail_price
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        ''', (
+                                buying_price, agent_price, wholesale_price, retail_price, business_id
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
                             row['category'],
                             row['product name'],
                             int(row['quantity available']),
                             float(row['buying price']),
                             float(row['agent price']),
                             float(row['wholesale price']),
-                            float(row['retail price'])
+                            float(row['retail price']),
+                            business_id
                         ))
                 except Exception as e:
                     conn.rollback()
@@ -172,38 +183,39 @@ def products():
             wholesale_price = float(request.form['wholesale_price'])
             retail_price = float(request.form['retail_price'])
 
-            cur.execute("SELECT id, quantity_available FROM products WHERE name = %s", (name,))
+            cur.execute("""
+                SELECT id, quantity_available FROM products 
+                WHERE name = %s AND category = %s AND business_id = %s
+            """, (name, category, business_id))
             existing = cur.fetchone()
 
             if existing:
                 new_qty = existing['quantity_available'] + quantity_available
-                cur.execute('''
+                cur.execute("""
                     UPDATE products
                     SET quantity_available = %s,
                         buying_price = %s,
                         agent_price = %s,
                         wholesale_price = %s,
-                        retail_price = %s,
-                        category = %s
+                        retail_price = %s
                     WHERE id = %s
-                ''', (
+                """, (
                     new_qty,
                     buying_price,
                     agent_price,
                     wholesale_price,
                     retail_price,
-                    category,
                     existing['id']
                 ))
             else:
-                cur.execute('''
+                cur.execute("""
                     INSERT INTO products (
                         category, name, quantity_available,
-                        buying_price, agent_price, wholesale_price, retail_price
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ''', (
+                        buying_price, agent_price, wholesale_price, retail_price, business_id
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
                     category, name, quantity_available,
-                    buying_price, agent_price, wholesale_price, retail_price
+                    buying_price, agent_price, wholesale_price, retail_price, business_id
                 ))
             conn.commit()
 
@@ -211,8 +223,8 @@ def products():
     selected_category = request.args.get('category', '')
     selected_product = request.args.get('product', '')
 
-    query = "SELECT * FROM products WHERE 1=1"
-    params = []
+    query = "SELECT * FROM products WHERE business_id = %s"
+    params = [business_id]
 
     if selected_category:
         query += " AND category = %s"
@@ -225,7 +237,7 @@ def products():
     products = cur.fetchall()
 
     # For dropdown options
-    cur.execute("SELECT DISTINCT category FROM products")
+    cur.execute("SELECT DISTINCT category FROM products WHERE business_id = %s", (business_id,))
     categories = [row['category'] for row in cur.fetchall()]
 
     conn.close()

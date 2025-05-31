@@ -10,9 +10,13 @@
         margin-top: 20px;
       }
       .pagination-controls button {
-        margin: 0 5px;
+        margin: 0 3px;
         padding: 5px 10px;
         cursor: pointer;
+      }
+      .pagination-controls button.disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
       }
     </style>
   </head>
@@ -73,7 +77,10 @@
             <input type="text" name="name" required />
           </div>
         </div>
-        <div class="form-group" style="display: flex; gap: 10px">
+        <div
+          class="form-group"
+          style="display: flex; gap: 10px; flex-wrap: wrap"
+        >
           <div style="flex: 1">
             <label>Quantity Available</label>
             <input type="number" name="quantity_available" required />
@@ -99,21 +106,19 @@
       </form>
 
       <h3 style="color: brown">Upload Product File</h3>
-      <div class="form-group action-buttons" style="margin-bottom: 30px">
-        <form method="POST" action="/products" enctype="multipart/form-data">
-          <input type="hidden" name="form_type" value="csv_upload" />
-          <label>Select a CSV file with the following headers:</label>
-          <p>
-            <code>
-              category, Product Name, Quantity Available, Buying Price, Agent
-              Price, Wholesale Price, Retail Price
-            </code>
-          </p>
-          <input type="file" name="file" accept=".csv" required />
-          <br /><br />
-          <button type="submit">Upload</button>
-        </form>
-      </div>
+      <form method="POST" action="/products" enctype="multipart/form-data">
+        <input type="hidden" name="form_type" value="csv_upload" />
+        <label>Select a CSV file with these headers:</label>
+        <p>
+          <code>
+            category, product name, quantity available, buying price, agent
+            price, wholesale price, retail price
+          </code>
+        </p>
+        <input type="file" name="file" accept=".csv" required />
+        <br /><br />
+        <button type="submit">Upload</button>
+      </form>
 
       <div
         style="
@@ -133,19 +138,18 @@
           class="filter-row"
           style="display: flex; gap: 10px; align-items: flex-end"
         >
-          <div class="filter-item">
+          <div>
             <label>Category</label>
-            <select id="categoryFilter" onchange="filterTable()">
+            <select id="categoryFilter">
               <option value="">-- All Categories --</option>
               {% for cat in categories %}
               <option value="{{ cat }}">{{ cat }}</option>
               {% endfor %}
             </select>
           </div>
-
-          <div class="filter-item">
+          <div>
             <label>Product</label>
-            <select id="productFilter" onchange="filterTable()">
+            <select id="productFilter">
               <option value="">-- All Products --</option>
               {% for product in products %}
               <option value="{{ product.name }}">{{ product.name }}</option>
@@ -187,6 +191,7 @@
           {% endfor %}
         </tbody>
       </table>
+
       <div class="pagination-controls" id="pagination-controls"></div>
     </div>
 
@@ -196,12 +201,13 @@
       let filteredRows = [];
 
       function paginateTable() {
-        const table = document.getElementById("productTable");
-        const allRows = Array.from(table.querySelectorAll("tbody tr"));
+        const allRows = Array.from(
+          document.querySelectorAll("#productTable tbody tr")
+        );
         const rows = filteredRows.length ? filteredRows : allRows;
         const totalPages = Math.ceil(rows.length / rowsPerPage);
 
-        allRows.forEach((row) => (row.style.display = "none")); // Hide all
+        allRows.forEach((row) => (row.style.display = "none"));
 
         const start = (currentPage - 1) * rowsPerPage;
         const end = start + rowsPerPage;
@@ -210,74 +216,72 @@
         const controls = document.getElementById("pagination-controls");
         controls.innerHTML = "";
 
+        // Previous
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "Previous";
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.className = currentPage === 1 ? "disabled" : "";
+        prevBtn.onclick = () => {
+          currentPage--;
+          paginateTable();
+        };
+        controls.appendChild(prevBtn);
+
+        // Page numbers
         for (let i = 1; i <= totalPages; i++) {
-          const btn = document.createElement("button");
-          btn.innerText = i;
-          if (i === currentPage) btn.disabled = true;
-          btn.onclick = () => {
+          const pageBtn = document.createElement("button");
+          pageBtn.textContent = i;
+          if (i === currentPage) {
+            pageBtn.disabled = true;
+            pageBtn.className = "disabled";
+          }
+          pageBtn.onclick = () => {
             currentPage = i;
             paginateTable();
           };
-          controls.appendChild(btn);
+          controls.appendChild(pageBtn);
         }
+
+        // Next
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "Next";
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.className = currentPage === totalPages ? "disabled" : "";
+        nextBtn.onclick = () => {
+          currentPage++;
+          paginateTable();
+        };
+        controls.appendChild(nextBtn);
       }
 
       function filterTable() {
         const selectedCat = document.getElementById("categoryFilter").value;
-        const selectedProduct = document.getElementById("productFilter").value;
-
-        const table = document.getElementById("productTable");
-        const allRows = Array.from(table.querySelectorAll("tbody tr"));
+        const selectedProd = document.getElementById("productFilter").value;
+        const allRows = Array.from(
+          document.querySelectorAll("#productTable tbody tr")
+        );
 
         filteredRows = allRows.filter((row) => {
-          const cat = row.children[0].innerText.trim();
-          const prod = row.children[1].innerText.trim();
-
-          const catMatch = !selectedCat || cat === selectedCat;
-          const prodMatch = !selectedProduct || prod === selectedProduct;
-          return catMatch && prodMatch;
+          const cat = row.children[0].textContent.trim();
+          const prod = row.children[1].textContent.trim();
+          const matchCat = !selectedCat || cat === selectedCat;
+          const matchProd = !selectedProd || prod === selectedProd;
+          return matchCat && matchProd;
         });
 
         currentPage = 1;
         paginateTable();
       }
 
-      function filterProductsByCategory() {
-        const selectedCat = document.getElementById("categoryFilter").value;
-        const productFilter = document.getElementById("productFilter");
-        const options = productFilter.querySelectorAll("option");
-
-        options.forEach((opt) => {
-          if (!opt.value) return;
-          const prodCat = opt.getAttribute("data-category");
-          opt.style.display =
-            !selectedCat || prodCat === selectedCat ? "" : "none";
-        });
-
-        document.getElementById("productFilter").value = ""; // Reset product filter
-        filterTable();
-      }
-
       window.onload = () => {
-        const productFilter = document.getElementById("productFilter");
-        const allOptions = productFilter.querySelectorAll("option");
-        allOptions.forEach((opt) => {
-          const prodName = opt.innerText;
-          const matchingRow = Array.from(
-            document.querySelectorAll("#productTable tbody tr")
-          ).find((row) => row.children[1].innerText.trim() === prodName);
-          if (matchingRow) {
-            opt.setAttribute(
-              "data-category",
-              matchingRow.children[0].innerText.trim()
-            );
-          }
-        });
+        filterTable();
 
-        filterTable(); // Initial load
         document
           .getElementById("categoryFilter")
-          .addEventListener("change", filterProductsByCategory);
+          .addEventListener("change", () => {
+            document.getElementById("productFilter").value = "";
+            filterTable();
+          });
         document
           .getElementById("productFilter")
           .addEventListener("change", filterTable);
