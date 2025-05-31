@@ -15,6 +15,10 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
+    cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+
+
     # Businesses
     cur.execute('''
         CREATE TABLE IF NOT EXISTS businesses (
@@ -77,10 +81,7 @@ def initialize_database():
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
-    
-    # Drop incorrect table if it exists
-    cur.execute('DROP TABLE IF EXISTS salesperson_inventory CASCADE;')
-    
+
     # User Inventory
     cur.execute('''
         CREATE TABLE IF NOT EXISTS user_inventory (
@@ -95,10 +96,13 @@ def initialize_database():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS stock_requests (
             id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id),
             product_id INTEGER REFERENCES products(id),
+            requester_id INTEGER REFERENCES users(id),
+            recipient_id INTEGER REFERENCES users(id),
             quantity INTEGER,
+            requester_name TEXT,
             status TEXT DEFAULT 'pending',
+            rejection_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
