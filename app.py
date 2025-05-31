@@ -851,7 +851,8 @@ def sales_upload_inventory():
                 try:
                     product_name = row['Product Name'].strip()
                     quantity = int(row['Quantity'])
-                    inventory_rows.append((product_name, quantity))
+                    category = row['Category'].strip()
+                    inventory_rows.append((product_name, quantity, category))
                 except Exception as e:
                     return f"Error in row: {row} — {str(e)}", 400
 
@@ -870,7 +871,7 @@ def sales_upload_inventory():
         try:
             items = json.loads(cart_data)
             inventory_rows = [
-                (item['product_name'], int(item['quantity']))
+                (item['product_name'], int(item['quantity']), item['category'])
                 for item in items
             ]
             add_salesperson_stock_bulk(session['user_id'], inventory_rows)
