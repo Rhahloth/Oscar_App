@@ -15,6 +15,7 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
 
     # Businesses
     cur.execute('''
@@ -39,8 +40,6 @@ def initialize_database():
 
     # Products
     cur.execute('''
-        DROP TABLE IF EXISTS products;
-
         CREATE TABLE products (
             id SERIAL PRIMARY KEY,
             category TEXT,
