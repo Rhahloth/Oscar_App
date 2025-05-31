@@ -70,7 +70,10 @@
             <td>{{ r.requester_username }}</td>
             <td>{{ r.quantity }}</td>
             <td>{{ r.requester_name }}</td>
-            <td>{{ r.created_at[:16].replace('T', ' ') }}</td>
+            <td>
+              {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else ''
+              }}
+            </td>
             <td>
               <form
                 method="POST"

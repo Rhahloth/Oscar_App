@@ -2,11 +2,63 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Password Reset</title>
+    <title>Manage Products - AgriShop</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      .pagination-controls {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .pagination-controls button {
+        margin: 0 5px;
+        padding: 5px 10px;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    <div class="container">
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RoSolutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RoSolutions Ltd.</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container" style="text-align: center">
       <h4>Password Reset Successful</h4>
       <p><strong>New temporary password:</strong></p>
       <div
