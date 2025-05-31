@@ -36,7 +36,7 @@ body {
 }
 
 .container {
-    max-width: 1500px;
+    max-width: 80%;
     margin: 140px auto 40px auto;
     padding: 20px;
     background: #fff;
@@ -99,7 +99,7 @@ button:hover {
 }
 
 .navbar-inner {
-    max-width: 1500px;
+    max-width: 80%;
     width: 100%;
     margin: 0 auto;
     background-color: #034078;
@@ -202,7 +202,7 @@ button:hover {
     }
 }
 
-/* Footer */
+/* Footer
 .footer {
     max-width: 1000px;
     margin: 40px auto 20px auto;
@@ -221,7 +221,7 @@ button:hover {
 
 .footer a:hover {
     text-decoration: underline;
-}
+} */
 
 /* Report Filters */
 .report-filters {
