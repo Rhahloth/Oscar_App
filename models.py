@@ -38,7 +38,7 @@ def initialize_database():
 
     # Products
     cur.execute('''
-        CREATE TABLE products (
+        CREATE TABLE IF NOT EXISTS products (
             id SERIAL PRIMARY KEY,
             category TEXT,
             name TEXT NOT NULL,
