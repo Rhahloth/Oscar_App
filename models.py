@@ -303,12 +303,15 @@ def get_pending_requests_for_user(user_id):
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""
-        SELECT sr.*, p.name AS product_name, u.username AS requester_username,
-               COALESCE(ui.quantity, 0) AS reviewer_stock
+        SELECT sr.*, 
+               p.name AS product_name, 
+               u.username AS requester_username,
+               inv.quantity AS reviewer_stock
         FROM stock_requests sr
         JOIN products p ON sr.product_id = p.id
         JOIN users u ON sr.requester_id = u.id
-        LEFT JOIN user_inventory ui ON ui.user_id = sr.recipient_id AND ui.product_id = sr.product_id
+        LEFT JOIN user_inventory inv 
+            ON inv.user_id = sr.recipient_id AND inv.product_id = sr.product_id
         WHERE sr.recipient_id = %s AND sr.status = 'pending'
         ORDER BY sr.id DESC
     """, (user_id,))
