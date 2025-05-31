@@ -174,18 +174,9 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     conn = get_db()
     cur = conn.cursor()
 
-    # Optional: Still record the available quantity if needed for reporting
+    # Step 1: Deduct from salesperson's inventory
     cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (salesperson_id, product_id))
     result = cur.fetchone()
-    current_qty = result["quantity"] if result else 0
-
-    # Insert the sale
-    cur.execute("""
-        INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (product_id, quantity, salesperson_id, price, payment_method))
-
-    # Deduct from inventory, even if it goes negative
     if result:
         cur.execute("""
             UPDATE user_inventory SET quantity = quantity - %s
@@ -197,7 +188,36 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
             VALUES (%s, %s, %s)
         """, (salesperson_id, product_id, -quantity))
 
+    # Step 2: Record the sale
+    cur.execute("""
+        INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (product_id, quantity, salesperson_id, price, payment_method))
+
+    # Step 3: Deduct from owner's inventory too (if exists)
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (salesperson_id,))
+    biz = cur.fetchone()
+    if biz and biz['business_id']:
+        cur.execute("SELECT id FROM users WHERE role = 'owner' AND business_id = %s", (biz['business_id'],))
+        owner = cur.fetchone()
+        if owner:
+            owner_id = owner['id']
+            cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (owner_id, product_id))
+            owner_stock = cur.fetchone()
+            if owner_stock:
+                cur.execute("""
+                    UPDATE user_inventory SET quantity = quantity - %s
+                    WHERE user_id = %s AND product_id = %s
+                """, (quantity, owner_id, product_id))
+            else:
+                cur.execute("""
+                    INSERT INTO user_inventory (user_id, product_id, quantity)
+                    VALUES (%s, %s, %s)
+                """, (owner_id, product_id, -quantity))
+
     conn.commit()
+    cur.close()
+
 
 def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
