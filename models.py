@@ -79,15 +79,18 @@ def initialize_database():
         );
     ''')
 
-    # User Inventory
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS user_inventory (
+        DROP TABLE IF EXISTS user_inventory;
+
+        CREATE TABLE user_inventory (
             id SERIAL PRIMARY KEY,
             user_id INTEGER REFERENCES users(id),
             product_id INTEGER REFERENCES products(id),
-            quantity INTEGER
+            quantity INTEGER DEFAULT 0,
+            UNIQUE(user_id, product_id)
         );
     ''')
+
 
     # Stock Requests
     cur.execute('''
