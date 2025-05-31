@@ -230,8 +230,9 @@ def approve_request(request_id, user_id):
     conn = get_db()
     cur = conn.cursor()
 
+    # Fetch request and requester
     cur.execute("""
-        SELECT product_id, quantity FROM stock_requests
+        SELECT product_id, quantity, requester_id FROM stock_requests
         WHERE id = %s AND recipient_id = %s AND status = 'pending'
     """, (request_id, user_id))
     req = cur.fetchone()
@@ -240,20 +241,30 @@ def approve_request(request_id, user_id):
 
     product_id = req["product_id"]
     qty = req["quantity"]
+    requester_id = req["requester_id"]
 
-    # Check if user has enough stock
+    # Check if recipient has enough stock
     cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (user_id, product_id))
     inv = cur.fetchone()
     if not inv or inv["quantity"] < qty:
         return "insufficient_stock"
 
-    # Update inventories
-    cur.execute("UPDATE user_inventory SET quantity = quantity - %s WHERE user_id = %s AND product_id = %s",
-                (qty, user_id, product_id))
+    # Update inventory and log distribution
+    cur.execute("""
+        UPDATE user_inventory
+        SET quantity = quantity - %s
+        WHERE user_id = %s AND product_id = %s AND quantity >= %s
+    """, (qty, user_id, product_id, qty))
+    if cur.rowcount == 0:
+        conn.rollback()
+        return "insufficient_stock"
+
     cur.execute("""
         INSERT INTO distribution_log (product_id, salesperson_id, receiver_id, quantity, status)
         VALUES (%s, %s, %s, %s, 'approved')
-    """, (product_id, user_id, user_id, qty))  # Adjust receiver_id if needed
+    """, (product_id, user_id, requester_id, qty))
+
+    # Mark request as approved
     cur.execute("UPDATE stock_requests SET status = 'approved' WHERE id = %s", (request_id,))
     conn.commit()
     return "approved"
@@ -261,8 +272,22 @@ def approve_request(request_id, user_id):
 def reject_request(request_id, user_id, reason):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("UPDATE stock_requests SET status = 'rejected', rejection_reason = %s WHERE id = %s AND recipient_id = %s",
-                (reason, request_id, user_id))
+
+    # Log the rejection in distribution_log
+    cur.execute("""
+        INSERT INTO distribution_log (product_id, salesperson_id, receiver_id, quantity, status)
+        SELECT product_id, recipient_id, requester_id, quantity, 'rejected'
+        FROM stock_requests
+        WHERE id = %s AND recipient_id = %s
+    """, (request_id, user_id))
+
+    # Update the request status to rejected
+    cur.execute("""
+        UPDATE stock_requests
+        SET status = 'rejected', rejection_reason = %s
+        WHERE id = %s AND recipient_id = %s
+    """, (reason, request_id, user_id))
+
     conn.commit()
 
 def get_pending_requests_for_user(user_id):
