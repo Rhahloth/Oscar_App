@@ -37,19 +37,23 @@ def initialize_database():
     ''')
 
     # Products
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS products (
+        CREATE TABLE products (
             id SERIAL PRIMARY KEY,
+            category TEXT,
             name TEXT NOT NULL,
-            price INTEGER NOT NULL,
-            stock INTEGER,
+            quantity_available INTEGER,
+            buying_price FLOAT,
+            agent_price FLOAT,
+            wholesale_price FLOAT,
+            retail_price FLOAT,
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
 
+
     # Sales
-        # ❗️TEMP: Drop broken table first (only for dev!)
-    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
             id SERIAL PRIMARY KEY,
