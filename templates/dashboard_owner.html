@@ -73,7 +73,7 @@
         <tbody>
           {% for sale in sales %}
           <tr>
-            <td>{{ sale.date[:10] }}</td>
+            <td>{{ sale.date.strftime('%Y-%m-%d %H:%M') }}</td>
             <td>{{ sale.product_name }}</td>
             <td>{{ sale.quantity }}</td>
             <td>{{ sale.salesperson }}</td>
