@@ -64,7 +64,6 @@ def initialize_database():
         );
     ''')
 
-
     # Sales
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
@@ -78,10 +77,13 @@ def initialize_database():
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
-
-    # Salesperson Inventory
+    
+    # Drop incorrect table if it exists
+    cur.execute('DROP TABLE IF EXISTS salesperson_inventory CASCADE;')
+    
+    # User Inventory
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS salesperson_inventory (
+        CREATE TABLE IF NOT EXISTS user_inventory (
             id SERIAL PRIMARY KEY,
             user_id INTEGER REFERENCES users(id),
             product_id INTEGER REFERENCES products(id),
