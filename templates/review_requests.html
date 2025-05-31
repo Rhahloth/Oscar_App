@@ -81,7 +81,7 @@
                 style="display: flex; gap: 5px; flex-direction: column"
               >
                 <input type="hidden" name="request_id" value="{{ r.id }}" />
-                {% if r.reviewer_stock > 0 %}
+                {% if r.reviewer_stock is defined and r.reviewer_stock > 0 %}
                 <button type="submit" name="action" value="approve">
                   Approve
                 </button>
