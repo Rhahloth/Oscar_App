@@ -37,7 +37,6 @@ def initialize_database():
     ''')
 
     # Products
-    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     cur.execute('''
         CREATE TABLE products (
             id SERIAL PRIMARY KEY,
@@ -108,32 +107,36 @@ def get_products():
     conn.close()
     return products
 
-
 def get_sales(conn, salesperson_id=None):
     cur = conn.cursor()
     if salesperson_id:
         cur.execute("""
-            SELECT s.*, p.name AS product_name, p.price AS unit_price, u.username AS salesperson_name,
-                   (s.quantity * p.price) AS total_price
+            SELECT s.*, 
+                   p.name AS product_name, 
+                   p.retail_price AS unit_price, 
+                   u.username AS salesperson_name,
+                   (s.quantity * p.retail_price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
-            JOIN users u ON s.salesperson = u.id
-            WHERE s.salesperson = %s
+            JOIN users u ON s.salesperson_id = u.id
+            WHERE s.salesperson_id = %s
             ORDER BY s.date DESC
             LIMIT 10
         """, (salesperson_id,))
     else:
         cur.execute("""
-            SELECT s.*, p.name AS product_name, p.price AS unit_price, u.username AS salesperson_name,
-                   (s.quantity * p.price) AS total_price
+            SELECT s.*, 
+                   p.name AS product_name, 
+                   p.retail_price AS unit_price, 
+                   u.username AS salesperson_name,
+                   (s.quantity * p.retail_price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
-            JOIN users u ON s.salesperson = u.id
+            JOIN users u ON s.salesperson_id = u.id
             ORDER BY s.date DESC
             LIMIT 10
         """)
     return cur.fetchall()
-
 
 def get_user_inventory(user_id):
     conn = get_db()
