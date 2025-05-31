@@ -48,19 +48,14 @@ def initialize_database():
     ''')
 
     # Sales
-    # ❗️TEMP: Drop broken table first (only for dev!)
-    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
-
-    # Recreate with correct columns
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
             id SERIAL PRIMARY KEY,
             product_id INTEGER REFERENCES products(id),
             quantity INTEGER,
-            price FLOAT,
-            payment_method TEXT,
+            total_price INTEGER,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            salesperson_id INTEGER REFERENCES users(id),
+            salesperson INTEGER REFERENCES users(id),
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
