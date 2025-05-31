@@ -81,14 +81,23 @@
                 style="display: flex; gap: 5px; flex-direction: column"
               >
                 <input type="hidden" name="request_id" value="{{ r.id }}" />
-                {% if r.reviewer_stock is not none and r.reviewer_stock|int > 0
-                %}
+
+                {% if r.reviewer_stock is not none %} {% if r.reviewer_stock >=
+                r.quantity %}
                 <button type="submit" name="action" value="approve">
                   Approve
                 </button>
-                {% else %}
+                {% elif r.reviewer_stock == 0 %}
                 <span style="color: red; font-size: 12px"
                   >You have 0 stock</span
+                >
+                {% else %}
+                <span style="color: orange; font-size: 12px"
+                  >Insufficient stock</span
+                >
+                {% endif %} {% else %}
+                <span style="color: grey; font-size: 12px"
+                  >Stock unavailable</span
                 >
                 {% endif %}
 
