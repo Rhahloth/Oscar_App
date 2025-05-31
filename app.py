@@ -666,7 +666,7 @@ def report():
     if sum_result and sum_result['total_transactions'] is not None:
         summary = sum_result
 
-    # Top Salesperson
+    # ✅ Fixed: Top Salesperson
     top_query = '''
         SELECT u.username AS top_salesperson,
                SUM(s.quantity * s.price) AS total
@@ -685,13 +685,13 @@ def report():
         top_query += ' AND s.payment_method = %s'
         top_params.append(payment_method)
 
-    top_query += ' GROUP BY s.salesperson_id ORDER BY total DESC LIMIT 1'
+    top_query += ' GROUP BY s.salesperson_id, u.username ORDER BY total DESC LIMIT 1'
     cur.execute(top_query, top_params)
     top_result = cur.fetchone()
     if top_result:
         top_salesperson = top_result
 
-    # Updated Distribution Log
+    # Distribution Log
     dist_query = '''
         SELECT d.timestamp,
                p.name as product_name,
@@ -727,7 +727,7 @@ def report():
                            summary=summary,
                            top_salesperson=top_salesperson,
                            distribution_log=distribution_log)
-""
+
 @app.route('/export_report', methods=['POST'])
 def export_report():
     if 'user_id' not in session or session['role'] != 'owner':
