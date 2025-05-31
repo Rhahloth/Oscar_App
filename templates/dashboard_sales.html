@@ -70,8 +70,7 @@
         <tbody>
           {% for sale in sales %}
           <tr>
-            <td>{{ sale.date[:10] }}</td>
-            <!-- ✅ This should show the time -->
+            <td>{{ sale.date.strftime('%Y-%m-%d') if sale.date else '' }}</td>
             <td>{{ sale.product_name }}</td>
             <td>{{ sale.quantity }}</td>
             <td>{{ sale.total_price }}</td>
