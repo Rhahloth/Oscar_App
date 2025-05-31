@@ -316,39 +316,57 @@ def manage_users():
     conn = get_db()
     cur = conn.cursor()
 
+    # Get the owner's business_id
+    owner_id = session['user_id']
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (owner_id,))
+    owner = cur.fetchone()
+
+    if not owner or not owner['business_id']:
+        return "❌ Owner does not have a business assigned", 400
+
+    business_id = owner['business_id']
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         role = 'salesperson'
         password_hash = generate_password_hash(password)
 
-        cur.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)",
-                    (username, password_hash, role))
+        # Assign the new salesperson to the same business
+        cur.execute("""
+            INSERT INTO users (username, password, role, business_id)
+            VALUES (%s, %s, %s, %s)
+        """, (username, password_hash, role, business_id))
         conn.commit()
         new_user_id = cur.lastrowid
         initialize_salesperson_inventory(new_user_id)
 
-
-    cur.execute("SELECT id, username, role FROM users WHERE role = 'salesperson'")
+    # Only list salespeople from this owner's business
+    cur.execute("""
+        SELECT id, username, role FROM users
+        WHERE role = 'salesperson' AND business_id = %s
+    """, (business_id,))
     users = cur.fetchall()
+
     return render_template('users.html', users=users)
 
 @app.route('/delete_user', methods=['POST'])
 def delete_user():
-    if 'user_id' not in session or session['role'] != 'owner':
-        return redirect('/login')
-
-    user_id = int(request.form['user_id'])
-
-    # Prevent deleting the currently logged-in user or the owner
-    if user_id == session['user_id']:
-        return "You cannot delete yourself.", 403
-
+    user_id = request.form.get('user_id')
     conn = get_db()
     cur = conn.cursor()
+
+    # Check if user has sales
+    cur.execute("SELECT COUNT(*) FROM sales WHERE salesperson_id = %s", (user_id,))
+    if cur.fetchone()[0] > 0:
+        flash("❌ Cannot delete user: They have recorded sales.", "error")
+        return redirect('/manage_users')
+
+    # Safe to delete
     cur.execute("DELETE FROM users WHERE id = %s AND role = 'salesperson'", (user_id,))
     conn.commit()
-    return redirect('/users')
+    flash("✅ User deleted successfully.", "success")
+    return redirect('/manage_users')
 
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
