@@ -48,7 +48,6 @@ def initialize_database():
     ''')
 
     # Sales
-    cur.execute("DROP TABLE IF EXISTS sales CASCADE;")
     cur.execute('''
         CREATE TABLE sales (
             id SERIAL PRIMARY KEY,
