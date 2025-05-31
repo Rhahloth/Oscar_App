@@ -49,7 +49,7 @@ def initialize_database():
 
     # Sales
     cur.execute('''
-        CREATE TABLE sales (
+        CREATE TABLE IF NOT EXISTS sales (
             id SERIAL PRIMARY KEY,
             product_id INTEGER REFERENCES products(id),
             quantity INTEGER,
