@@ -230,7 +230,7 @@ def approve_request(request_id, user_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # Fetch request and requester
+    # Fetch stock request
     cur.execute("""
         SELECT product_id, quantity, requester_id FROM stock_requests
         WHERE id = %s AND recipient_id = %s AND status = 'pending'
@@ -243,29 +243,38 @@ def approve_request(request_id, user_id):
     qty = req["quantity"]
     requester_id = req["requester_id"]
 
-    # Check if recipient has enough stock
+    # Check inventory
     cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (user_id, product_id))
     inv = cur.fetchone()
     if not inv or inv["quantity"] < qty:
         return "insufficient_stock"
 
-    # Update inventory and log distribution
+    # Deduct from approver
     cur.execute("""
-        UPDATE user_inventory
-        SET quantity = quantity - %s
-        WHERE user_id = %s AND product_id = %s AND quantity >= %s
-    """, (qty, user_id, product_id, qty))
-    if cur.rowcount == 0:
-        conn.rollback()
-        return "insufficient_stock"
+        UPDATE user_inventory SET quantity = quantity - %s
+        WHERE user_id = %s AND product_id = %s
+    """, (qty, user_id, product_id))
 
+    # Add to requester
+    cur.execute("""
+        INSERT INTO user_inventory (user_id, product_id, quantity)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (user_id, product_id) DO UPDATE
+        SET quantity = user_inventory.quantity + EXCLUDED.quantity
+    """, (requester_id, product_id, qty))
+
+    # Update request status
+    cur.execute("""
+        UPDATE stock_requests SET status = 'approved'
+        WHERE id = %s
+    """, (request_id,))
+
+    # Log it
     cur.execute("""
         INSERT INTO distribution_log (product_id, salesperson_id, receiver_id, quantity, status)
         VALUES (%s, %s, %s, %s, 'approved')
     """, (product_id, user_id, requester_id, qty))
 
-    # Mark request as approved
-    cur.execute("UPDATE stock_requests SET status = 'approved' WHERE id = %s", (request_id,))
     conn.commit()
     return "approved"
 
@@ -294,17 +303,11 @@ def get_pending_requests_for_user(user_id):
     conn = get_db()
     cur = conn.cursor()
     cur.execute("""
-        SELECT sr.*, 
-               p.name AS product_name, 
-               u.username AS requester_username,
-               COALESCE(ui.quantity, 0) AS reviewer_stock
+        SELECT sr.*, p.name AS product_name, u.username AS requester_username
         FROM stock_requests sr
         JOIN products p ON sr.product_id = p.id
         JOIN users u ON sr.requester_id = u.id
-        LEFT JOIN user_inventory ui 
-            ON ui.user_id = sr.recipient_id AND ui.product_id = sr.product_id
         WHERE sr.recipient_id = %s AND sr.status = 'pending'
         ORDER BY sr.id DESC
     """, (user_id,))
     return cur.fetchall()
-
