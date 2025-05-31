@@ -95,7 +95,7 @@ def submit_sale():
         except ValueError as e:
             return str(e), 400
 
-    return redirect('/submit_sale')
+    return redirect('/dashboard')
 
 @app.route('/products', methods=['GET', 'POST'])
 def products():

@@ -15,7 +15,7 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    #cur.execute('DROP TABLE IF EXISTS products CASCADE;')
 
     # Businesses
     cur.execute('''
@@ -172,21 +172,28 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     conn = get_db()
     cur = conn.cursor()
 
-    # Check if user has enough inventory
+    # Optional: Still record the available quantity if needed for reporting
     cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (salesperson_id, product_id))
     result = cur.fetchone()
-    if not result or result["quantity"] < quantity:
-        raise ValueError("Insufficient inventory")
+    current_qty = result["quantity"] if result else 0
 
+    # Insert the sale
     cur.execute("""
         INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method)
         VALUES (%s, %s, %s, %s, %s)
     """, (product_id, quantity, salesperson_id, price, payment_method))
 
-    cur.execute("""
-        UPDATE user_inventory SET quantity = quantity - %s
-        WHERE user_id = %s AND product_id = %s
-    """, (quantity, salesperson_id, product_id))
+    # Deduct from inventory, even if it goes negative
+    if result:
+        cur.execute("""
+            UPDATE user_inventory SET quantity = quantity - %s
+            WHERE user_id = %s AND product_id = %s
+        """, (quantity, salesperson_id, product_id))
+    else:
+        cur.execute("""
+            INSERT INTO user_inventory (user_id, product_id, quantity)
+            VALUES (%s, %s, %s)
+        """, (salesperson_id, product_id, -quantity))
 
     conn.commit()
 
