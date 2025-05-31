@@ -26,22 +26,13 @@
         <div>
           <a href="/dashboard"><button>Back to Main Dashboard</button></a>
         </div>
-        <div
-          class="navbar-right"
-          style="display: flex; align-items: center; gap: 10px"
-        >
+        <div class="navbar-right" style="display: flex; align-items: center; gap: 10px">
           {% if session.username %}
-          <a href="/logout"
-            ><button
-              style="
-                background-color: #d9534f;
-                color: white;
-                margin-left: 12px;
-              "
-            >
+          <a href="/logout">
+            <button style="background-color: #d9534f; color: white; margin-left: 12px;">
               Logout
-            </button></a
-          >
+            </button>
+          </a>
           {% endif %}
         </div>
       </div>
@@ -50,13 +41,13 @@
 
   <div class="container">
     <h4>My Current Inventory</h4>
-    <div class = "form-group action-buttons" style="text-align: left;">    
+    <div class="form-group action-buttons" style="text-align: left;">    
       <div style="margin-bottom: 20px;">
         <a href="/sales_upload_inventory">
           <button style="background-color: #034078; color: white; padding: 8px 16px; border: none; border-radius: 4px;">
             + Add Stocks
           </button>
-       </a>
+        </a>
       </div>
     </div>
     <form method="GET" action="/my_inventory" class="report-filters">
@@ -111,33 +102,45 @@
       </tbody>
     </table>
     
-    <div class="pagination-controls" id="pagination-controls" style="text-align: center; margin-top: 20px;"></div>    
+    <div class="pagination-controls" id="pagination-controls" style="text-align: center; margin-top: 20px;"></div>
     {% else %}
     <p>You currently have no stock assigned.</p>
     {% endif %}
   </div>
+
   <script>
     const rowsPerPage = 10;
     let currentPage = 1;
-  
+
     function paginateTable() {
       const table = document.getElementById("inventoryTable");
       const rows = Array.from(table.querySelectorAll("tbody tr"));
       const totalPages = Math.ceil(rows.length / rowsPerPage);
-  
-      rows.forEach((row) => (row.style.display = "none"));
-  
+
+      rows.forEach(row => row.style.display = "none");
       const start = (currentPage - 1) * rowsPerPage;
       const end = start + rowsPerPage;
-      rows.slice(start, end).forEach((row) => (row.style.display = ""));
-  
+      rows.slice(start, end).forEach(row => row.style.display = "");
+
       const controls = document.getElementById("pagination-controls");
       controls.innerHTML = "";
-  
+
+      // Previous button
+      const prevBtn = document.createElement("button");
+      prevBtn.textContent = "Previous";
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          paginateTable();
+        }
+      };
+      controls.appendChild(prevBtn);
+
+      // Page numbers
       for (let i = 1; i <= totalPages; i++) {
         const btn = document.createElement("button");
         btn.innerText = i;
-        btn.style.margin = "0 5px";
         btn.disabled = i === currentPage;
         btn.onclick = () => {
           currentPage = i;
@@ -145,8 +148,20 @@
         };
         controls.appendChild(btn);
       }
+
+      // Next button
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next";
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          paginateTable();
+        }
+      };
+      controls.appendChild(nextBtn);
     }
-  
+
     window.onload = () => {
       paginateTable();
     };
