@@ -796,8 +796,6 @@ def export_report():
 
     return Response(si.getvalue(), mimetype="text/csv", headers=headers)
 
-from models import add_salesperson_stock
-
 @app.route('/sales_upload_inventory', methods=['GET', 'POST'])
 def sales_upload_inventory():
     if 'user_id' not in session or session['role'] != 'salesperson':
