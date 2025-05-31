@@ -95,7 +95,7 @@ def submit_sale():
         except ValueError as e:
             return str(e), 400
 
-    return redirect('/dashboard')
+    return redirect('/submit_sale')
 
 @app.route('/products', methods=['GET', 'POST'])
 def products():
@@ -422,7 +422,7 @@ def review_requests():
             reason = request.form.get('rejection_reason', '')
             reject_request(request_id, user_id, reason)
 
-        return redirect('/dashboard')
+        return redirect('/review_requests')
 
     # Fetch only pending requests sent to this salesperson
     requests = get_pending_requests_for_user(user_id)

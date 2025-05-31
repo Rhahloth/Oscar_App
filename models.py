@@ -80,9 +80,7 @@ def initialize_database():
     ''')
 
     cur.execute('''
-        DROP TABLE IF EXISTS user_inventory;
-
-        CREATE TABLE user_inventory (
+        CREATE TABLE IF NOT EXISTS user_inventory (
             id SERIAL PRIMARY KEY,
             user_id INTEGER REFERENCES users(id),
             product_id INTEGER REFERENCES products(id),
