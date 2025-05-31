@@ -50,21 +50,22 @@ def initialize_database():
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
+    # Drop the old sales table if necessary (for dev/test environments)
+    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
 
-
-    # Sales
+    # Recreate it correctly
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
             id SERIAL PRIMARY KEY,
             product_id INTEGER REFERENCES products(id),
             quantity INTEGER,
-            total_price INTEGER,
+            price FLOAT,
+            payment_method TEXT,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            salesperson INTEGER REFERENCES users(id),
+            salesperson_id INTEGER REFERENCES users(id),
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
-
 
     # Salesperson Inventory
     cur.execute('''
