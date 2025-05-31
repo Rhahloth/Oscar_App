@@ -53,7 +53,7 @@ def dashboard():
         return render_template('dashboard_owner.html', sales=sales)
     else:
         inventory = get_user_inventory(session['user_id'])
-        sales = get_sales(conn, salesperson = session['user_id'])
+        sales = get_sales(conn, salesperson_id=session['user_id'])
         return render_template('dashboard_sales.html', inventory=inventory, sales=sales, username=session['username'])
 
 @app.route('/record_sale', methods=['GET'])
@@ -619,7 +619,7 @@ def report():
                SUM(s.quantity * s.price) AS total_selling_price,
                SUM((s.quantity * s.price) - (s.quantity * p.buying_price)) AS profit
         FROM sales s
-        JOIN users u ON s.salesperson = u.id
+        JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
         WHERE 1=1
     '''
@@ -671,7 +671,7 @@ def report():
         SELECT u.username AS top_salesperson,
                SUM(s.quantity * s.price) AS total
         FROM sales s
-        JOIN users u ON u.id = s.salesperson
+        JOIN users u ON u.id = s.salesperson_id
         WHERE 1=1
     '''
     top_params = []
@@ -685,7 +685,7 @@ def report():
         top_query += ' AND s.payment_method = %s'
         top_params.append(payment_method)
 
-    top_query += ' GROUP BY s.salesperson ORDER BY total DESC LIMIT 1'
+    top_query += ' GROUP BY s.salesperson_id ORDER BY total DESC LIMIT 1'
     cur.execute(top_query, top_params)
     top_result = cur.fetchone()
     if top_result:
@@ -701,7 +701,7 @@ def report():
                d.status
         FROM distribution_log d
         JOIN products p ON p.id = d.product_id
-        JOIN users u_from ON u_from.id = d.salesperson
+        JOIN users u_from ON u_from.id = d.salesperson_id
         JOIN users u_to ON u_to.id = d.receiver_id
         WHERE 1=1
     '''
@@ -751,7 +751,7 @@ def export_report():
             SUM(s.quantity * s.price) AS total_selling_price,
             SUM((s.quantity * s.price) - (s.quantity * p.buying_price)) AS profit
         FROM sales s
-        JOIN users u ON s.salesperson = u.id
+        JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
         WHERE 1=1
     '''
