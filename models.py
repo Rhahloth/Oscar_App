@@ -213,7 +213,7 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
     cur.execute("SELECT id FROM users WHERE role = 'owner' AND business_id = %s", (business_id,))
     owner = cur.fetchone()
     if not owner:
-        print("❌ No owner for this business.")
+        print(f"❌ No owner found for business_id {business_id}. Please register an owner first.")
         return
     owner_id = owner['id']
 
