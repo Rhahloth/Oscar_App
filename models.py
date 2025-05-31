@@ -15,7 +15,8 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
 
     # Businesses
     cur.execute('''
@@ -201,32 +202,28 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
     cur = conn.cursor()
 
-    # Step 1: Get salesperson's business ID
+    # Step 1: Get business and owner
     cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
     business = cur.fetchone()
     if not business:
-        print("❌ Invalid user_id provided.")
+        print("❌ Invalid user.")
         return
-
     business_id = business['business_id']
 
-    # Step 2: Get the business owner ID
     cur.execute("SELECT id FROM users WHERE role = 'owner' AND business_id = %s", (business_id,))
     owner = cur.fetchone()
     if not owner:
-        print("❌ No owner found for this business.")
+        print("❌ No owner for this business.")
         return
-
     owner_id = owner['id']
 
-    # Step 3: Build product mapping (name+category → id)
+    # Step 2: Build product lookup for this business
     cur.execute("SELECT id, name, category FROM products WHERE business_id = %s", (business_id,))
     product_map = {
         (row["name"].strip().lower(), row["category"].strip().lower()): row["id"]
         for row in cur.fetchall()
     }
 
-    # Step 4: Process each row
     for product_name, quantity, category in inventory_rows:
         key = (product_name.strip().lower(), category.strip().lower())
         product_id = product_map.get(key)
@@ -235,7 +232,11 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
             print(f"⚠️ Skipping: Product not found → {product_name} / {category}")
             continue
 
-        # Update salesperson inventory
+        # ✅ Update product quantity_available for business
+        cur.execute("UPDATE products SET quantity_available = quantity_available + %s WHERE id = %s",
+                    (quantity, product_id))
+
+        # ✅ Update salesperson inventory
         cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s",
                     (user_id, product_id))
         if cur.fetchone():
@@ -245,7 +246,7 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
             cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, %s)",
                         (user_id, product_id, quantity))
 
-        # Update owner inventory
+        # ✅ Also update owner inventory
         cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s",
                     (owner_id, product_id))
         if cur.fetchone():
@@ -255,7 +256,6 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
             cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, %s)",
                         (owner_id, product_id, quantity))
 
-    # Final commit
     conn.commit()
     cur.close()
     conn.close()
