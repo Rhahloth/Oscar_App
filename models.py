@@ -239,50 +239,58 @@ def approve_request(request_id, user_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # Fetch stock request
+    # Get request details
     cur.execute("""
-        SELECT product_id, quantity, requester_id FROM stock_requests
-        WHERE id = %s AND recipient_id = %s AND status = 'pending'
+        SELECT sr.product_id, sr.quantity, sr.requester_id
+        FROM stock_requests sr
+        WHERE sr.id = %s AND sr.recipient_id = %s AND sr.status = 'pending'
     """, (request_id, user_id))
-    req = cur.fetchone()
-    if not req:
+    request = cur.fetchone()
+
+    if not request:
         return "not_found"
 
-    product_id = req["product_id"]
-    qty = req["quantity"]
-    requester_id = req["requester_id"]
+    product_id = request['product_id']
+    quantity = request['quantity']
+    requester_id = request['requester_id']
 
-    # Check inventory
-    cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (user_id, product_id))
-    inv = cur.fetchone()
-    if not inv or inv["quantity"] < qty:
-        return "insufficient_stock"
-
-    # Deduct from approver
+    # ✅ Check recipient's stock
     cur.execute("""
-        UPDATE user_inventory SET quantity = quantity - %s
+        SELECT quantity FROM user_inventory
         WHERE user_id = %s AND product_id = %s
-    """, (qty, user_id, product_id))
+    """, (user_id, product_id))
+    inventory = cur.fetchone()
 
-    # Add to requester
-    cur.execute("""
-        INSERT INTO user_inventory (user_id, product_id, quantity)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (user_id, product_id) DO UPDATE
-        SET quantity = user_inventory.quantity + EXCLUDED.quantity
-    """, (requester_id, product_id, qty))
+    if not inventory or inventory['quantity'] < quantity:
+        return "insufficient_stock"  # This will trigger the popup in your app.py
 
-    # Update request status
+    # ✅ Proceed with transfer
     cur.execute("""
-        UPDATE stock_requests SET status = 'approved'
+        UPDATE stock_requests
+        SET status = 'approved'
         WHERE id = %s
     """, (request_id,))
 
-    # Log it
+    # Deduct from recipient
+    cur.execute("""
+        UPDATE user_inventory
+        SET quantity = quantity - %s
+        WHERE user_id = %s AND product_id = %s
+    """, (quantity, user_id, product_id))
+
+    # Add to requester (insert if doesn't exist)
+    cur.execute("""
+        INSERT INTO user_inventory (user_id, product_id, quantity)
+        VALUES (%s, %s, %s)
+        ON CONFLICT (user_id, product_id)
+        DO UPDATE SET quantity = user_inventory.quantity + %s
+    """, (requester_id, product_id, quantity, quantity))
+
+    # Optional: log the distribution
     cur.execute("""
         INSERT INTO distribution_log (product_id, salesperson_id, receiver_id, quantity, status)
         VALUES (%s, %s, %s, %s, 'approved')
-    """, (product_id, user_id, requester_id, qty))
+    """, (product_id, user_id, requester_id, quantity))
 
     conn.commit()
     return "approved"
