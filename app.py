@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, session, url_for, s
 from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     get_user, get_sales, get_products, add_sale, get_user_inventory,
-    add_salesperson_stock, approve_request, reject_request, get_pending_requests_for_user,
+    add_salesperson_stock_bulk, approve_request, reject_request, get_pending_requests_for_user,
     initialize_salesperson_inventory, get_db
 )
 from models import initialize_database
@@ -809,7 +809,7 @@ def sales_upload_inventory():
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
-        # Handle CSV Upload
+        # === Handle CSV Upload ===
         if form_type == 'csv_upload':
             file = request.files.get('file')
             if not file or not file.filename.endswith('.csv'):
@@ -817,33 +817,41 @@ def sales_upload_inventory():
 
             import csv
             reader = csv.DictReader(file.read().decode('utf-8').splitlines())
+            inventory_rows = []
+
             for row in reader:
                 try:
                     product_name = row['Product Name'].strip()
                     quantity = int(row['Quantity'])
-                    add_salesperson_stock(session['user_id'], product_name, quantity)
+                    inventory_rows.append((product_name, quantity))
                 except Exception as e:
                     return f"Error in row: {row} — {str(e)}", 400
 
+            try:
+                add_salesperson_stock_bulk(session['user_id'], inventory_rows)
+            except Exception as e:
+                return f"Upload failed: {str(e)}", 500
+
             return redirect('/dashboard')
 
-        # Handle Cart Upload
+        # === Handle Cart Upload ===
         cart_data = request.form.get('cart_data')
         if not cart_data:
             return "Error: No stock data submitted.", 400
 
         try:
             items = json.loads(cart_data)
-            for item in items:
-                product_name = item['product_name']
-                quantity = int(item['quantity'])
-                add_salesperson_stock(session['user_id'], product_name, quantity)
+            inventory_rows = [
+                (item['product_name'], int(item['quantity']))
+                for item in items
+            ]
+            add_salesperson_stock_bulk(session['user_id'], inventory_rows)
         except Exception as e:
             return f"Error processing cart: {str(e)}", 400
 
         return redirect('/dashboard')
 
-    # Render form on GET
+    # === Render form on GET ===
     cur.execute("SELECT name FROM products ORDER BY name")
     products = cur.fetchall()
     product_names = [row['name'] for row in products]

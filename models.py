@@ -15,9 +15,6 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
-
 
     # Businesses
     cur.execute('''
@@ -191,24 +188,31 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
 
     conn.commit()
 
-def add_salesperson_stock(user_id, product_name, quantity):
+def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT id FROM products WHERE name = %s", (product_name,))
-    product = cur.fetchone()
-    if not product:
-        raise ValueError("Product not found")
 
-    product_id = product["id"]
+    # Step 1: Fetch all product names → IDs
+    cur.execute("SELECT id, name FROM products")
+    product_map = {row["name"]: row["id"] for row in cur.fetchall()}
 
-    cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (user_id, product_id))
-    existing = cur.fetchone()
-    if existing:
-        cur.execute("UPDATE user_inventory SET quantity = quantity + %s WHERE user_id = %s AND product_id = %s",
-                    (quantity, user_id, product_id))
-    else:
-        cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, %s)",
-                    (user_id, product_id, quantity))
+    for product_name, quantity in inventory_rows:
+        product_id = product_map.get(product_name)
+        if not product_id:
+            print(f"⚠️ Skipping: Product not found → {product_name}")
+            continue
+
+        # Step 2: Check and update/insert into user_inventory
+        cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s",
+                    (user_id, product_id))
+        existing = cur.fetchone()
+
+        if existing:
+            cur.execute("UPDATE user_inventory SET quantity = quantity + %s WHERE user_id = %s AND product_id = %s",
+                        (quantity, user_id, product_id))
+        else:
+            cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, %s)",
+                        (user_id, product_id, quantity))
 
     conn.commit()
 
