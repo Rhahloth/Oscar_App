@@ -201,23 +201,36 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
     cur = conn.cursor()
 
-    # Step 1: Get salesperson's business ID and owner ID
+    # Step 1: Get salesperson's business ID
     cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
     business = cur.fetchone()
+    if not business:
+        print("❌ Invalid user_id provided.")
+        return
+
     business_id = business['business_id']
 
-    # Get the owner ID
+    # Step 2: Get the business owner ID
     cur.execute("SELECT id FROM users WHERE role = 'owner' AND business_id = %s", (business_id,))
     owner = cur.fetchone()
+    if not owner:
+        print("❌ No owner found for this business.")
+        return
+
     owner_id = owner['id']
 
-    # Step 2: Fetch all product name+category → IDs
-    cur.execute("SELECT id, name, category FROM products")
-    product_map = {(row["name"].lower(), row["category"].lower()): row["id"] for row in cur.fetchall()}
+    # Step 3: Build product mapping (name+category → id)
+    cur.execute("SELECT id, name, category FROM products WHERE business_id = %s", (business_id,))
+    product_map = {
+        (row["name"].strip().lower(), row["category"].strip().lower()): row["id"]
+        for row in cur.fetchall()
+    }
 
+    # Step 4: Process each row
     for product_name, quantity, category in inventory_rows:
-        key = (product_name.lower(), category.lower())
+        key = (product_name.strip().lower(), category.strip().lower())
         product_id = product_map.get(key)
+
         if not product_id:
             print(f"⚠️ Skipping: Product not found → {product_name} / {category}")
             continue
@@ -242,8 +255,10 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
             cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, %s)",
                         (owner_id, product_id, quantity))
 
+    # Final commit
     conn.commit()
-
+    cur.close()
+    conn.close()
 
 def initialize_salesperson_inventory(user_id):
     conn = get_db()
