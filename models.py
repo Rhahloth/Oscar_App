@@ -15,12 +15,12 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+   # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
 
     # Businesses
     cur.execute('''
@@ -31,7 +31,7 @@ def initialize_database():
             location TEXT
         );
     ''')
-
+    
     # Users
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -201,22 +201,10 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
         VALUES (%s, %s, %s, %s, %s, NOW())
     """, (product_id, quantity, salesperson_id, price, payment_method))
 
-    # ✅ Step 4: Update warehouse to reflect total remaining in user_inventory
-    cur.execute("""
-        SELECT COALESCE(SUM(quantity), 0) AS total_remaining
-        FROM user_inventory
-        WHERE product_id = %s
-    """, (product_id,))
-    total_remaining = cur.fetchone()['total_remaining']
-
-    cur.execute("""
-        UPDATE products
-        SET quantity_available = %s
-        WHERE id = %s
-    """, (total_remaining, product_id))
-
+    # ✅ No update to warehouse stock in products table
     conn.commit()
-
+    cur.close()
+    conn.close()
 
 def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()

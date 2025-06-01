@@ -216,7 +216,6 @@
         const controls = document.getElementById("pagination-controls");
         controls.innerHTML = "";
 
-        // Previous
         const prevBtn = document.createElement("button");
         prevBtn.textContent = "Previous";
         prevBtn.disabled = currentPage === 1;
@@ -227,7 +226,6 @@
         };
         controls.appendChild(prevBtn);
 
-        // Page numbers
         for (let i = 1; i <= totalPages; i++) {
           const pageBtn = document.createElement("button");
           pageBtn.textContent = i;
@@ -242,7 +240,6 @@
           controls.appendChild(pageBtn);
         }
 
-        // Next
         const nextBtn = document.createElement("button");
         nextBtn.textContent = "Next";
         nextBtn.disabled = currentPage === totalPages;
@@ -275,7 +272,6 @@
 
       window.onload = () => {
         filterTable();
-
         document
           .getElementById("categoryFilter")
           .addEventListener("change", () => {

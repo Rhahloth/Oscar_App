@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Owner Dashboard - Ro Solutions</title>
+    <title>Owner Inventory - Ro Solutions</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
@@ -20,17 +20,19 @@
           </div>
           <div>
             {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
+            <div>OWNER: {{ session.username }}</div>
             {% endif %}
           </div>
-
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
           <div
             class="navbar-right"
             style="display: flex; align-items: center; gap: 10px"
           >
             {% if session.username %}
-            <a href="/logout"
-              ><button
+            <a href="/logout">
+              <button
                 style="
                   background-color: #d9534f;
                   color: white;
@@ -38,8 +40,8 @@
                 "
               >
                 Logout
-              </button></a
-            >
+              </button>
+            </a>
             {% endif %}
           </div>
         </div>
@@ -47,44 +49,40 @@
     </div>
 
     <div class="container">
-      <div class="dashboard-welcome">
-        <strong>Welcome, {{ session.username }}</strong><br />
-        You have full access to manage sales, products, and reports.
-      </div>
+      <h4>📦 Branch-wise Inventory Summary</h4>
 
-      <div class="form-group action-buttons">
-        <div class="form-group action-buttons">
-          <a href="/products"><button>Manage Products</button></a>
-          <a href="/users"><button>Manage Salespersons</button></a>
-          <a href="/report"><button>View Sales Reports</button></a>
-          <a href="/owner_inventory"><button>View Inventory</button></a>
-        </div>
-      </div>
-
-      <h5>Recent Transactions</h5>
-
-      <table class="table">
+      {% if table %}
+      <table class="table" id="ownerInventoryTable">
         <thead>
           <tr>
-            <th>Time</th>
-            <th>Product</th>
-            <th>Quantity</th>
-            <th>Sold By</th>
-            <th>Total (UGX)</th>
+            <th>Category - Product</th>
+            {% for branch in branches %}
+            <th>{{ branch }}</th>
+            {% endfor %}
+            <th>Total</th>
           </tr>
         </thead>
         <tbody>
-          {% for sale in sales %}
+          {% for product, branches_data in table.items() %}
           <tr>
-            <td>{{ sale.date.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td>{{ sale.product_name }}</td>
-            <td>{{ sale.quantity }}</td>
-            <td>{{ sale.salesperson_name }}</td>
-            <td>{{ "{:,.0f}".format(sale.total_price or 0) }}</td>
+            <td>{{ product }}</td>
+            {% set total = 0 %} {% for branch in branches %} {% set qty =
+            branches_data.get(branch, 0) %}
+            <td>{{ qty }}</td>
+            {% set total = total + qty %} {% endfor %}
+            <td><strong>{{ total }}</strong></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      {% else %}
+      <p>No inventory data available.</p>
+      {% endif %}
     </div>
+
+    <script>
+      // Optional: Add pagination if table grows large
+      // (re-use paginateTable() from your original if needed)
+    </script>
   </body>
 </html>

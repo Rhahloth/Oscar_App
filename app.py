@@ -152,7 +152,7 @@ def products():
     conn = get_db()
     cur = conn.cursor()
 
-    # Get the business ID for this owner
+    # Get business ID for this owner
     cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
     business = cur.fetchone()
     if not business:
@@ -198,14 +198,12 @@ def products():
                             float(row['retail price']),
                             existing['id']
                         ))
-                        product_id = existing['id']
                     else:
                         cur.execute("""
                             INSERT INTO products (
-                                category, name, quantity_available,
+                                category, name,
                                 buying_price, agent_price, wholesale_price, retail_price, business_id
-                            ) VALUES (%s, %s, 0, %s, %s, %s, %s, %s)
-                            RETURNING id
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                         """, (
                             row['category'],
                             row['product name'],
@@ -215,31 +213,16 @@ def products():
                             float(row['retail price']),
                             business_id
                         ))
-                        product_id = cur.fetchone()['id']
-
-                    # 🔁 Recalculate quantity from user inventories
-                    cur.execute("""
-                        SELECT SUM(quantity) AS total_left
-                        FROM user_inventory
-                        WHERE product_id = %s
-                    """, (product_id,))
-                    total_remaining = cur.fetchone()['total_left'] or 0
-
-                    cur.execute("""
-                        UPDATE products
-                        SET quantity_available = %s
-                        WHERE id = %s
-                    """, (total_remaining, product_id))
 
                 except Exception as e:
                     conn.rollback()
                     return f"Error in row: {row} — {str(e)}", 400
+
             conn.commit()
 
         elif form_type == 'manual_entry':
             category = request.form['category']
             name = request.form['name']
-            quantity_available = int(request.form['quantity_available'])
             buying_price = float(request.form['buying_price'])
             agent_price = float(request.form['agent_price'])
             wholesale_price = float(request.form['wholesale_price'])
@@ -266,33 +249,16 @@ def products():
                     retail_price,
                     existing['id']
                 ))
-                product_id = existing['id']
             else:
                 cur.execute("""
                     INSERT INTO products (
-                        category, name, quantity_available,
+                        category, name,
                         buying_price, agent_price, wholesale_price, retail_price, business_id
-                    ) VALUES (%s, %s, 0, %s, %s, %s, %s, %s)
-                    RETURNING id
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """, (
                     category, name,
                     buying_price, agent_price, wholesale_price, retail_price, business_id
                 ))
-                product_id = cur.fetchone()['id']
-
-            # 🔁 Recalculate quantity from user inventories
-            cur.execute("""
-                SELECT SUM(quantity) AS total_left
-                FROM user_inventory
-                WHERE product_id = %s
-            """, (product_id,))
-            total_remaining = cur.fetchone()['total_left'] or 0
-
-            cur.execute("""
-                UPDATE products
-                SET quantity_available = %s
-                WHERE id = %s
-            """, (total_remaining, product_id))
 
             conn.commit()
 
@@ -322,6 +288,43 @@ def products():
                            categories=categories,
                            selected_category=selected_category,
                            selected_product=selected_product)
+
+@app.route('/owner_inventory')
+def owner_inventory():
+    if 'user_id' not in session or session['role'] != 'owner':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Pull inventory per product per branch
+    cur.execute("""
+        SELECT 
+            p.name AS product_name,
+            p.category,
+            u.username AS branch,
+            ui.quantity
+        FROM user_inventory ui
+        JOIN users u ON ui.user_id = u.id
+        JOIN products p ON ui.product_id = p.id
+        WHERE u.role = 'salesperson'
+        ORDER BY p.category, p.name, u.username
+    """)
+    rows = cur.fetchall()
+    conn.close()
+
+    # Group and pivot in Python
+    from collections import defaultdict
+    table = defaultdict(lambda: defaultdict(int))  # table[product][branch] = quantity
+
+    for row in rows:
+        key = f"{row['category']} - {row['product_name']}"
+        table[key][row['branch']] += row['quantity']
+
+    # Build header set
+    all_branches = sorted({r['branch'] for r in rows})
+
+    return render_template("owner_inventory.html", table=table, branches=all_branches)
 
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
