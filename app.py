@@ -329,7 +329,6 @@ def owner_inventory():
 
     return render_template("owner_inventory.html", table=table, branches=all_branches)
 
-
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
     if 'user_id' not in session or session['role'] != 'owner':
