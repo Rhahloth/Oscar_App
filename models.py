@@ -16,11 +16,11 @@ def initialize_database():
     cur = conn.cursor()
 
    # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
 
     # Businesses
     cur.execute('''
@@ -31,7 +31,7 @@ def initialize_database():
             location TEXT
         );
     ''')
-    
+
     # Users
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -209,7 +209,6 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
 def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
     cur = conn.cursor()
-    updated_product_ids = set()
 
     for product_name, quantity, category in inventory_rows:
         # Find product ID by name and category
@@ -223,7 +222,6 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
             raise ValueError(f"❌ Product not found: {product_name} - {category}")
 
         product_id = product['id']
-        updated_product_ids.add(product_id)
 
         # Check if inventory already exists for this user/product
         cur.execute("""
@@ -247,23 +245,7 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
                 VALUES (%s, %s, %s)
             """, (user_id, product_id, quantity))
 
-    # ✅ After adding to user inventory, update warehouse stock
-    for pid in updated_product_ids:
-        cur.execute("""
-            SELECT COALESCE(SUM(quantity), 0) AS total_remaining
-            FROM user_inventory
-            WHERE product_id = %s
-        """, (pid,))
-        total_remaining = cur.fetchone()['total_remaining']
-
-        cur.execute("""
-            UPDATE products
-            SET quantity_available = %s
-            WHERE id = %s
-        """, (total_remaining, pid))
-
     conn.commit()
-
 
 def initialize_salesperson_inventory(user_id):
     conn = get_db()

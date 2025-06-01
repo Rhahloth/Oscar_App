@@ -924,6 +924,7 @@ def sales_upload_inventory():
             return "Error: No stock data submitted.", 400
 
         try:
+            import json
             items = json.loads(cart_data)
             inventory_rows = [
                 (item['product_name'], int(item['quantity']), item['category'])
