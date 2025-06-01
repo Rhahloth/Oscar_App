@@ -221,6 +221,7 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
 def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
     cur = conn.cursor()
+    updated_product_ids = set()
 
     for product_name, quantity, category in inventory_rows:
         # Find product ID by name and category
@@ -234,6 +235,7 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
             raise ValueError(f"❌ Product not found: {product_name} - {category}")
 
         product_id = product['id']
+        updated_product_ids.add(product_id)
 
         # Check if inventory already exists for this user/product
         cur.execute("""
@@ -257,13 +259,8 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
                 VALUES (%s, %s, %s)
             """, (user_id, product_id, quantity))
 
-    # ✅ After all inventory is uploaded, recalculate total stock for each unique product
-    unique_product_ids = list(set(
-        [cur.execute("SELECT id FROM products WHERE name = %s AND category = %s", (name, cat)).fetchone()['id']
-         for name, _, cat in inventory_rows]
-    ))
-
-    for pid in unique_product_ids:
+    # ✅ After adding to user inventory, update warehouse stock
+    for pid in updated_product_ids:
         cur.execute("""
             SELECT COALESCE(SUM(quantity), 0) AS total_remaining
             FROM user_inventory
@@ -278,6 +275,7 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
         """, (total_remaining, pid))
 
     conn.commit()
+
 
 def initialize_salesperson_inventory(user_id):
     conn = get_db()

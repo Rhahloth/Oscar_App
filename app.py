@@ -177,45 +177,60 @@ def products():
                 row = {k.strip().lower(): v.strip() for k, v in row.items()}
                 try:
                     cur.execute("""
-                        SELECT id, quantity_available FROM products 
+                        SELECT id FROM products 
                         WHERE name = %s AND category = %s AND business_id = %s
                     """, (row['product name'], row['category'], business_id))
                     existing = cur.fetchone()
 
                     if existing:
-                        new_qty = existing['quantity_available'] + int(row['quantity available'])
+                        # update price fields only
                         cur.execute("""
                             UPDATE products
-                            SET quantity_available = %s,
-                                buying_price = %s,
+                            SET buying_price = %s,
                                 agent_price = %s,
                                 wholesale_price = %s,
                                 retail_price = %s
                             WHERE id = %s
                         """, (
-                            new_qty,
                             float(row['buying price']),
                             float(row['agent price']),
                             float(row['wholesale price']),
                             float(row['retail price']),
                             existing['id']
                         ))
+                        product_id = existing['id']
                     else:
                         cur.execute("""
                             INSERT INTO products (
                                 category, name, quantity_available,
                                 buying_price, agent_price, wholesale_price, retail_price, business_id
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            ) VALUES (%s, %s, 0, %s, %s, %s, %s, %s)
+                            RETURNING id
                         """, (
                             row['category'],
                             row['product name'],
-                            int(row['quantity available']),
                             float(row['buying price']),
                             float(row['agent price']),
                             float(row['wholesale price']),
                             float(row['retail price']),
                             business_id
                         ))
+                        product_id = cur.fetchone()['id']
+
+                    # 🔁 Recalculate quantity from user inventories
+                    cur.execute("""
+                        SELECT SUM(quantity) AS total_left
+                        FROM user_inventory
+                        WHERE product_id = %s
+                    """, (product_id,))
+                    total_remaining = cur.fetchone()['total_left'] or 0
+
+                    cur.execute("""
+                        UPDATE products
+                        SET quantity_available = %s
+                        WHERE id = %s
+                    """, (total_remaining, product_id))
+
                 except Exception as e:
                     conn.rollback()
                     return f"Error in row: {row} — {str(e)}", 400
@@ -231,39 +246,54 @@ def products():
             retail_price = float(request.form['retail_price'])
 
             cur.execute("""
-                SELECT id, quantity_available FROM products 
+                SELECT id FROM products 
                 WHERE name = %s AND category = %s AND business_id = %s
             """, (name, category, business_id))
             existing = cur.fetchone()
 
             if existing:
-                new_qty = existing['quantity_available'] + quantity_available
                 cur.execute("""
                     UPDATE products
-                    SET quantity_available = %s,
-                        buying_price = %s,
+                    SET buying_price = %s,
                         agent_price = %s,
                         wholesale_price = %s,
                         retail_price = %s
                     WHERE id = %s
                 """, (
-                    new_qty,
                     buying_price,
                     agent_price,
                     wholesale_price,
                     retail_price,
                     existing['id']
                 ))
+                product_id = existing['id']
             else:
                 cur.execute("""
                     INSERT INTO products (
                         category, name, quantity_available,
                         buying_price, agent_price, wholesale_price, retail_price, business_id
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ) VALUES (%s, %s, 0, %s, %s, %s, %s, %s)
+                    RETURNING id
                 """, (
-                    category, name, quantity_available,
+                    category, name,
                     buying_price, agent_price, wholesale_price, retail_price, business_id
                 ))
+                product_id = cur.fetchone()['id']
+
+            # 🔁 Recalculate quantity from user inventories
+            cur.execute("""
+                SELECT SUM(quantity) AS total_left
+                FROM user_inventory
+                WHERE product_id = %s
+            """, (product_id,))
+            total_remaining = cur.fetchone()['total_left'] or 0
+
+            cur.execute("""
+                UPDATE products
+                SET quantity_available = %s
+                WHERE id = %s
+            """, (total_remaining, product_id))
+
             conn.commit()
 
     # --- Filtering Logic ---
