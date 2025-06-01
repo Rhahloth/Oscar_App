@@ -178,10 +178,10 @@
             <td>{{ product.category }}</td>
             <td>{{ product.name }}</td>
             <td>{{ product.quantity_available }}</td>
-            <td>{{ product.buying_price }}</td>
-            <td>{{ product.agent_price }}</td>
-            <td>{{ product.wholesale_price }}</td>
-            <td>{{ product.retail_price }}</td>
+            <td>{{ "{:,.0f}".format(product.buying_price or 0) }}</td>
+            <td>{{ "{:,.0f}".format(product.agent_price or 0) }}</td>
+            <td>{{ "{:,.0f}".format(product.wholesale_price or 0) }}</td>
+            <td>{{ "{:,.0f}".format(product.retail_price or 0) }}</td>
             <td>
               <a href="/edit_product/{{ product.id }}" class="btn btn-small"
                 >Manage</a

@@ -51,27 +51,27 @@
 
   <div class="container">
     <!-- Summary Cards -->
-    <div class="summary-container" style="display: flex; flex-wrap: wrap; gap: 1rem; margin: 20px 0;">
-      <div class="summary-card" style="flex: 1; min-width: 200px; padding: 20px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 10px;">
-        <h4 style="margin: 0 0 10px;">Total Transactions</h4>
-        <p style="font-size: 1.5rem; font-weight: bold;">{{ summary.total_transactions or 0 }}</p>
+    <div class="summary-container">
+      <div class="summary-card">
+        <h4>Total Transactions</h4>
+        <p>{{ summary.total_transactions or 0 }}</p>
       </div>
-
-      <div class="summary-card" style="flex: 1; min-width: 200px; padding: 20px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 10px;">
-        <h4 style="margin: 0 0 10px;">Total Quantity Sold</h4>
-        <p style="font-size: 1.5rem; font-weight: bold;">{{ summary.total_quantity or 0 }}</p>
+    
+      <div class="summary-card">
+        <h4>Total Quantity Sold</h4>
+        <p>{{ summary.total_quantity or 0 }}</p>
       </div>
-
-      <div class="summary-card" style="flex: 1; min-width: 200px; padding: 20px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 10px;">
-        <h4 style="margin: 0 0 10px;">Total Revenue (UGX)</h4>
-        <p style="font-size: 1.5rem; font-weight: bold;">UGX {{ summary.total_revenue or 0 }}</p>
+    
+      <div class="summary-card">
+        <h4>Total Revenue (UGX)</h4>
+        <p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p>
       </div>
-
-      <div class="summary-card" style="flex: 1; min-width: 200px; padding: 20px; background: #f9f9f9; border: 1px solid #ccc; border-radius: 10px;">
-        <h4 style="margin: 0 0 10px;">Top Salesperson</h4>
-        <p style="font-size: 1.2rem; font-weight: bold;">{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p>
+    
+      <div class="summary-card">
+        <h4>Top Salesperson</h4>
+        <p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p>
       </div>
-    </div>
+    </div>    
     <form method="POST" class="report-filters">
       <fieldset>
         <legend>Filter Sales Report</legend>

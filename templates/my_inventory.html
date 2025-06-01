@@ -94,9 +94,9 @@
           <td>{{ item.category }}</td>
           <td>{{ item.product_name }}</td>
           <td>{{ item.quantity }}</td>
-          <td>{{ item.agent_price }}</td>
-          <td>{{ item.wholesale_price }}</td>
-          <td>{{ item.retail_price }}</td>
+          <td>{{ "{:,.0f}".format(item.agent_price or 0) }}</td>
+          <td>{{ "{:,.0f}".format(item.wholesale_price or 0) }}</td>
+          <td>{{ "{:,.0f}".format(item.retail_price or 0) }}</td>          
         </tr>
         {% endfor %}
       </tbody>

@@ -377,3 +377,32 @@ button:hover {
     background-color: #28a745;
     color: #fff;
 }
+
+/* REPORT CARDS CONTAINERS */
+.summary-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 20px 0;
+}
+
+.summary-card {
+    flex: 1;
+    min-width: 200px;
+    padding: 20px;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+.summary-card h4 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.summary-card p {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #222;
+}
