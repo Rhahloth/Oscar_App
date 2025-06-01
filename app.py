@@ -296,7 +296,6 @@ def owner_inventory():
     conn = get_db()
     cur = conn.cursor()
 
-    # Fetch per-user inventory rows joined with product and user info
     cur.execute("""
         SELECT 
             p.name AS product_name,
@@ -313,21 +312,17 @@ def owner_inventory():
     conn.close()
 
     from collections import defaultdict
-
     table = defaultdict(lambda: defaultdict(int))
     all_branches = set()
 
     for row in rows:
         key = f"{row['category']} - {row['product_name']}"
         branch = row['branch']
-        quantity = row['quantity']
-        table[key][branch] += quantity
-        table[key]['total'] += quantity   # ✅ This line fixes the Total
+        qty = row['quantity']
+        table[key][branch] += qty
         all_branches.add(branch)
 
-    all_branches = sorted(all_branches)
-
-    return render_template("owner_inventory.html", table=table, branches=all_branches)
+    return render_template("owner_inventory.html", table=table, branches=sorted(all_branches))
 
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
