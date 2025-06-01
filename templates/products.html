@@ -82,10 +82,6 @@
           style="display: flex; gap: 10px; flex-wrap: wrap"
         >
           <div style="flex: 1">
-            <label>Quantity Available</label>
-            <input type="number" name="quantity_available" required />
-          </div>
-          <div style="flex: 1">
             <label>Buying Price</label>
             <input type="number" step="0.01" name="buying_price" required />
           </div>
@@ -111,8 +107,8 @@
         <label>Select a CSV file with these headers:</label>
         <p>
           <code>
-            category, product name, quantity available, buying price, agent
-            price, wholesale price, retail price
+            category, product name, buying price, agent price, wholesale price,
+            retail price
           </code>
         </p>
         <input type="file" name="file" accept=".csv" required />
@@ -164,7 +160,6 @@
           <tr>
             <th>Category</th>
             <th>Name</th>
-            <th>Qty</th>
             <th>Buying Price</th>
             <th>Agent Price</th>
             <th>Wholesale Price</th>
@@ -177,15 +172,14 @@
           <tr>
             <td>{{ product.category }}</td>
             <td>{{ product.name }}</td>
-            <td>{{ product.quantity_available }}</td>
             <td>{{ "{:,.0f}".format(product.buying_price or 0) }}</td>
             <td>{{ "{:,.0f}".format(product.agent_price or 0) }}</td>
             <td>{{ "{:,.0f}".format(product.wholesale_price or 0) }}</td>
             <td>{{ "{:,.0f}".format(product.retail_price or 0) }}</td>
             <td>
-              <a href="/edit_product/{{ product.id }}" class="btn btn-small"
-                >Manage</a
-              >
+              <a href="/edit_product/{{ product.id }}" class="btn btn-small">
+                Manage
+              </a>
             </td>
           </tr>
           {% endfor %}

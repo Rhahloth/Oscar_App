@@ -152,19 +152,63 @@ def products():
     conn = get_db()
     cur = conn.cursor()
 
-    # Get business ID for this owner
+    # Get business ID for current owner
     cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
     business = cur.fetchone()
     if not business:
         conn.close()
         return "Business not found", 400
-
     business_id = business['business_id']
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
-        if form_type == 'csv_upload':
+        if form_type == 'manual_entry':
+            category = request.form['category']
+            name = request.form['name']
+            buying_price = float(request.form['buying_price'])
+            agent_price = float(request.form['agent_price'])
+            wholesale_price = float(request.form['wholesale_price'])
+            retail_price = float(request.form['retail_price'])
+
+            # Check if product already exists
+            cur.execute("""
+                SELECT id FROM products
+                WHERE name = %s AND category = %s AND business_id = %s
+            """, (name, category, business_id))
+            existing = cur.fetchone()
+
+            if existing:
+                # Just update the prices — no quantity update
+                cur.execute("""
+                    UPDATE products
+                    SET buying_price = %s,
+                        agent_price = %s,
+                        wholesale_price = %s,
+                        retail_price = %s
+                    WHERE id = %s
+                """, (
+                    buying_price,
+                    agent_price,
+                    wholesale_price,
+                    retail_price,
+                    existing['id']
+                ))
+            else:
+                # Insert new product without quantity
+                cur.execute("""
+                    INSERT INTO products (
+                        category, name, buying_price, agent_price,
+                        wholesale_price, retail_price, business_id
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    category, name, buying_price, agent_price,
+                    wholesale_price, retail_price, business_id
+                ))
+
+            conn.commit()
+
+        elif form_type == 'csv_upload':
             file = request.files.get('file')
             if not file or not file.filename.endswith('.csv'):
                 return "Please upload a valid CSV file", 400
@@ -183,7 +227,6 @@ def products():
                     existing = cur.fetchone()
 
                     if existing:
-                        # update price fields only
                         cur.execute("""
                             UPDATE products
                             SET buying_price = %s,
@@ -201,8 +244,8 @@ def products():
                     else:
                         cur.execute("""
                             INSERT INTO products (
-                                category, name,
-                                buying_price, agent_price, wholesale_price, retail_price, business_id
+                                category, name, buying_price, agent_price,
+                                wholesale_price, retail_price, business_id
                             ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                         """, (
                             row['category'],
@@ -213,56 +256,12 @@ def products():
                             float(row['retail price']),
                             business_id
                         ))
-
                 except Exception as e:
                     conn.rollback()
                     return f"Error in row: {row} — {str(e)}", 400
-
             conn.commit()
 
-        elif form_type == 'manual_entry':
-            category = request.form['category']
-            name = request.form['name']
-            buying_price = float(request.form['buying_price'])
-            agent_price = float(request.form['agent_price'])
-            wholesale_price = float(request.form['wholesale_price'])
-            retail_price = float(request.form['retail_price'])
-
-            cur.execute("""
-                SELECT id FROM products 
-                WHERE name = %s AND category = %s AND business_id = %s
-            """, (name, category, business_id))
-            existing = cur.fetchone()
-
-            if existing:
-                cur.execute("""
-                    UPDATE products
-                    SET buying_price = %s,
-                        agent_price = %s,
-                        wholesale_price = %s,
-                        retail_price = %s
-                    WHERE id = %s
-                """, (
-                    buying_price,
-                    agent_price,
-                    wholesale_price,
-                    retail_price,
-                    existing['id']
-                ))
-            else:
-                cur.execute("""
-                    INSERT INTO products (
-                        category, name,
-                        buying_price, agent_price, wholesale_price, retail_price, business_id
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    category, name,
-                    buying_price, agent_price, wholesale_price, retail_price, business_id
-                ))
-
-            conn.commit()
-
-    # --- Filtering Logic ---
+    # Filter logic
     selected_category = request.args.get('category', '')
     selected_product = request.args.get('product', '')
 
@@ -279,12 +278,12 @@ def products():
     cur.execute(query, params)
     products = cur.fetchall()
 
-    # For dropdown options
     cur.execute("SELECT DISTINCT category FROM products WHERE business_id = %s", (business_id,))
     categories = [row['category'] for row in cur.fetchall()]
 
     conn.close()
-    return render_template('products.html', products=products,
+    return render_template('products.html',
+                           products=products,
                            categories=categories,
                            selected_category=selected_category,
                            selected_product=selected_product)
