@@ -15,12 +15,12 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute('DROP TABLE IF EXISTS users CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
 
     # Businesses
     cur.execute('''

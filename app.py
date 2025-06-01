@@ -48,12 +48,52 @@ def dashboard():
         return redirect('/login')
 
     conn = get_db()
-    if session['role'] == 'owner':
-        sales = get_sales(conn)
+    cur = conn.cursor()
+
+    user_id = session['user_id']
+    role = session['role']
+
+    if role == 'owner':
+        # Get business_id for owner
+        cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+        business = cur.fetchone()
+        if not business:
+            return "Business not found", 400
+        business_id = business['business_id']
+
+        # Fetch only sales for this business
+        cur.execute('''
+            SELECT s.*, p.name AS product_name, u.username AS salesperson_name
+            FROM sales s
+            JOIN products p ON s.product_id = p.id
+            JOIN users u ON s.salesperson_id = u.id
+            WHERE p.business_id = %s
+            ORDER BY s.date DESC
+        ''', (business_id,))
+        sales = cur.fetchall()
+
         return render_template('dashboard_owner.html', sales=sales)
-    else:
-        inventory = get_user_inventory(session['user_id'])
-        sales = get_sales(conn, salesperson_id=session['user_id'])
+
+    else:  # salesperson
+        # Get sales only for this salesperson
+        cur.execute('''
+            SELECT s.*, p.name AS product_name
+            FROM sales s
+            JOIN products p ON s.product_id = p.id
+            WHERE s.salesperson_id = %s
+            ORDER BY s.date DESC
+        ''', (user_id,))
+        sales = cur.fetchall()
+
+        # Fetch user inventory
+        cur.execute('''
+            SELECT ui.*, p.name AS product_name, p.category
+            FROM user_inventory ui
+            JOIN products p ON ui.product_id = p.id
+            WHERE ui.user_id = %s
+        ''', (user_id,))
+        inventory = cur.fetchall()
+
         return render_template('dashboard_sales.html', inventory=inventory, sales=sales, username=session['username'])
 
 @app.route('/record_sale', methods=['GET'])
