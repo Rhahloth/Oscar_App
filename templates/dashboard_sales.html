@@ -70,10 +70,12 @@
         <tbody>
           {% for sale in sales %}
           <tr>
-            <td>{{ sale.date.strftime('%Y-%m-%d') if sale.date else '' }}</td>
+            <td>
+              {{ sale.date.strftime('%Y-%m-%d %H:%M') if sale.date else '' }}
+            </td>
             <td>{{ sale.product_name }}</td>
             <td>{{ sale.quantity }}</td>
-            <td>{{ sale.total_price }}</td>
+            <td>{{ "{:,.0f}".format(sale.total_price or 0) }}</td>
           </tr>
           {% endfor %}
         </tbody>
