@@ -470,46 +470,35 @@ def export_products():
 
     conn = get_db()
     cur = conn.cursor()
+
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    business = cur.fetchone()
+    if not business:
+        return "Business not found", 400
+    business_id = business['business_id']
+
     cur.execute('''
         SELECT category, name, quantity_available,
                buying_price, agent_price, wholesale_price, retail_price
         FROM products
-    ''')
+        WHERE business_id = %s
+    ''', (business_id,))
     products = cur.fetchall()
 
-    def generate():
-        data = csv.writer([])
-        output = []
-        writer = csv.writer(output)
-        writer.writerow([
-            "Category", "Product Name", "Quantity Available",
-            "Buying Price", "Agent Price", "Wholesale Price", "Retail Price"
-        ])
-        for p in products:
-            writer.writerow([
-                p["category"], p["name"], p["quantity_available"],
-                p["buying_price"], p["agent_price"], p["wholesale_price"], p["retail_price"]
-            ])
-        return "\n".join(output)
-
-    headers = {
-        "Content-Disposition": "attachment; filename=products.csv",
-        "Content-Type": "text/csv"
-    }
-
-    # Alternative using StringIO if needed
-    import io
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow([
-        "Category", "Product Name", "Quantity Available",
-        "Buying Price", "Agent Price", "Wholesale Price", "Retail Price"
-    ])
+    cw.writerow(["Category", "Product Name", "Quantity Available",
+                 "Buying Price", "Agent Price", "Wholesale Price", "Retail Price"])
     for p in products:
         cw.writerow([
             p["category"], p["name"], p["quantity_available"],
             p["buying_price"], p["agent_price"], p["wholesale_price"], p["retail_price"]
         ])
+
+    headers = {
+        "Content-Disposition": "attachment; filename=products.csv",
+        "Content-Type": "text/csv"
+    }
 
     return Response(si.getvalue(), mimetype="text/csv", headers=headers)
 
@@ -629,6 +618,13 @@ def report():
     conn = get_db()
     cur = conn.cursor()
 
+    # Get business_id for this owner
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    business = cur.fetchone()
+    if not business:
+        return "Business not found", 400
+    business_id = business['business_id']
+
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
     salesperson = request.form.get('salesperson')
@@ -636,10 +632,8 @@ def report():
 
     summary = {'total_transactions': 0, 'total_quantity': 0, 'total_revenue': 0}
     top_salesperson = {'top_salesperson': 'N/A', 'total': 0}
-    report_data = []
-    distribution_log = []
 
-    # Report Data: Sales grouped by salesperson and payment method
+    # Report Data
     query = '''
         SELECT u.username AS salesperson,
                s.payment_method,
@@ -651,9 +645,9 @@ def report():
         FROM sales s
         JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
-        WHERE 1=1
+        WHERE p.business_id = %s
     '''
-    params = []
+    params = [business_id]
 
     if start_date:
         query += ' AND date(s.date) >= date(%s)'
@@ -670,25 +664,26 @@ def report():
 
     query += ' GROUP BY u.username, s.payment_method ORDER BY total_selling_price DESC'
     cur.execute(query, params)
-    report_data = [dict(row) for row in (cur.fetchall() or [])]
+    report_data = cur.fetchall()
 
     # Summary
     sum_query = '''
         SELECT COUNT(*) AS total_transactions,
                SUM(quantity) AS total_quantity,
                SUM(quantity * price) AS total_revenue
-        FROM sales
-        WHERE 1=1
+        FROM sales s
+        JOIN products p ON s.product_id = p.id
+        WHERE p.business_id = %s
     '''
-    sum_params = []
+    sum_params = [business_id]
     if start_date:
-        sum_query += ' AND date(date) >= date(%s)'
+        sum_query += ' AND date(s.date) >= date(%s)'
         sum_params.append(start_date)
     if end_date:
-        sum_query += ' AND date(date) <= date(%s)'
+        sum_query += ' AND date(s.date) <= date(%s)'
         sum_params.append(end_date)
     if payment_method:
-        sum_query += ' AND payment_method = %s'
+        sum_query += ' AND s.payment_method = %s'
         sum_params.append(payment_method)
 
     cur.execute(sum_query, sum_params)
@@ -696,15 +691,16 @@ def report():
     if sum_result and sum_result['total_transactions'] is not None:
         summary = sum_result
 
-    # ✅ Fixed: Top Salesperson
+    # Top Salesperson
     top_query = '''
         SELECT u.username AS top_salesperson,
                SUM(s.quantity * s.price) AS total
         FROM sales s
         JOIN users u ON u.id = s.salesperson_id
-        WHERE 1=1
+        JOIN products p ON s.product_id = p.id
+        WHERE p.business_id = %s
     '''
-    top_params = []
+    top_params = [business_id]
     if start_date:
         top_query += ' AND date(s.date) >= date(%s)'
         top_params.append(start_date)
@@ -721,34 +717,8 @@ def report():
     if top_result:
         top_salesperson = top_result
 
-    # Distribution Log
-    dist_query = '''
-        SELECT d.timestamp,
-               p.name as product_name,
-               u_from.username as from_salesperson,
-               u_to.username as to_salesperson,
-               d.quantity,
-               d.status
-        FROM distribution_log d
-        JOIN products p ON p.id = d.product_id
-        JOIN users u_from ON u_from.id = d.salesperson_id
-        JOIN users u_to ON u_to.id = d.receiver_id
-        WHERE 1=1
-    '''
-    dist_params = []
-    if start_date:
-        dist_query += ' AND date(d.timestamp) >= date(%s)'
-        dist_params.append(start_date)
-    if end_date:
-        dist_query += ' AND date(d.timestamp) <= date(%s)'
-        dist_params.append(end_date)
-
-    dist_query += ' ORDER BY d.timestamp DESC'
-    cur.execute(dist_query, dist_params)
-    distribution_log = [dict(row) for row in (cur.fetchall() or [])]
-
-    # Salespeople dropdown
-    cur.execute("SELECT username FROM users ORDER BY username")
+    # Distribution Log — not filtered by business (optional)
+    cur.execute("SELECT username FROM users WHERE business_id = %s", (business_id,))
     salespeople = [r['username'] for r in cur.fetchall()]
 
     return render_template('report.html',
@@ -756,7 +726,7 @@ def report():
                            salespeople=salespeople,
                            summary=summary,
                            top_salesperson=top_salesperson,
-                           distribution_log=distribution_log)
+                           distribution_log=[])
 
 @app.route('/export_report', methods=['POST'])
 def export_report():
@@ -765,6 +735,12 @@ def export_report():
 
     conn = get_db()
     cur = conn.cursor()
+
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    business = cur.fetchone()
+    if not business:
+        return "Business not found", 400
+    business_id = business['business_id']
 
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
@@ -783,9 +759,9 @@ def export_report():
         FROM sales s
         JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
-        WHERE 1=1
+        WHERE p.business_id = %s
     '''
-    params = []
+    params = [business_id]
 
     if start_date:
         query += ' AND date(s.date) >= date(%s)'
@@ -801,13 +777,13 @@ def export_report():
         params.append(payment_method)
 
     query += ' GROUP BY u.username, s.payment_method ORDER BY total_selling_price DESC'
-
     cur.execute(query, params)
     report_data = cur.fetchall()
 
     si = io.StringIO()
     cw = csv.writer(si)
-    cw.writerow(["Salesperson", "Payment Type", "Sales Count", "Total Quantity", "Buying Price", "Selling Price", "Profit"])
+    cw.writerow(["Salesperson", "Payment Type", "Sales Count", "Total Quantity",
+                 "Buying Price", "Selling Price", "Profit"])
     for row in report_data:
         cw.writerow([
             row['salesperson'],
