@@ -312,17 +312,22 @@ def owner_inventory():
     conn.close()
 
     from collections import defaultdict
-    table = defaultdict(lambda: defaultdict(int))
+    table = defaultdict(lambda: defaultdict(int))  # table[product][branch] = qty
+    totals = defaultdict(int)
     all_branches = set()
 
     for row in rows:
         key = f"{row['category']} - {row['product_name']}"
-        branch = row['branch']
-        qty = row['quantity']
-        table[key][branch] += qty
-        all_branches.add(branch)
+        table[key][row['branch']] += row['quantity']
+        totals[key] += row['quantity']  # ✅ total per product
+        all_branches.add(row['branch'])
 
-    return render_template("owner_inventory.html", table=table, branches=sorted(all_branches))
+    return render_template(
+        "owner_inventory.html",
+        table=table,
+        branches=sorted(all_branches),
+        totals=totals  # ✅ Fix: include totals here
+    )
 
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
