@@ -757,40 +757,16 @@ def report():
     if top_result:
         top_salesperson = top_result
 
-    # Distribution Log — filtered by business_id
-    dist_query = '''
-        SELECT d.timestamp,
-            p.name as product_name,
-            u_from.username as from_salesperson,
-            u_to.username as to_salesperson,
-            d.quantity,
-            d.status
-        FROM distribution_log d
-        JOIN products p ON d.product_id = p.id
-        JOIN users u_from ON u_from.id = d.salesperson_id
-        JOIN users u_to ON u_to.id = d.receiver_id
-        WHERE p.business_id = %s
-    '''
-    dist_params = [business_id]
-
-    if start_date:
-        dist_query += ' AND date(d.timestamp) >= date(%s)'
-        dist_params.append(start_date)
-    if end_date:
-        dist_query += ' AND date(d.timestamp) <= date(%s)'
-        dist_params.append(end_date)
-
-    dist_query += ' ORDER BY d.timestamp DESC'
-    cur.execute(dist_query, dist_params)
-    distribution_log = [dict(row) for row in cur.fetchall()]
-
+    # Distribution Log — not filtered by business (optional)
+    cur.execute("SELECT username FROM users WHERE business_id = %s", (business_id,))
+    salespeople = [r['username'] for r in cur.fetchall()]
 
     return render_template('report.html',
-                       report=report_data,
-                       salespeople=salespeople,
-                       summary=summary,
-                       top_salesperson=top_salesperson,
-                       distribution_log=distribution_log)
+                           report=report_data,
+                           salespeople=salespeople,
+                           summary=summary,
+                           top_salesperson=top_salesperson,
+                           distribution_log=[])
 
 @app.route('/export_report', methods=['POST'])
 def export_report():
