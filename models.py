@@ -177,7 +177,7 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     conn = get_db()
     cur = conn.cursor()
 
-    # ✅ Step 1: Check salesperson's inventory
+    # Step 1: Check salesperson inventory
     cur.execute("""
         SELECT quantity FROM user_inventory
         WHERE user_id = %s AND product_id = %s
@@ -185,23 +185,23 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     inv = cur.fetchone()
 
     if not inv or inv['quantity'] < quantity:
-        raise ValueError("❌ Not enough stock in salesperson's inventory.")
+        raise ValueError("❌ Not enough stock in your inventory.")
 
-    # ✅ Step 2: Subtract quantity from salesperson inventory
-    new_inv_qty = inv['quantity'] - quantity
+    # Step 2: Subtract quantity from salesperson's inventory
+    new_quantity = inv['quantity'] - quantity
     cur.execute("""
         UPDATE user_inventory
         SET quantity = %s
         WHERE user_id = %s AND product_id = %s
-    """, (new_inv_qty, salesperson_id, product_id))
+    """, (new_quantity, salesperson_id, product_id))
 
-    # ✅ Step 3: Record the sale
+    # Step 3: Record the sale
     cur.execute("""
         INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method, date)
         VALUES (%s, %s, %s, %s, %s, NOW())
     """, (product_id, quantity, salesperson_id, price, payment_method))
 
-    # ✅ Step 4: Sum remaining quantity across all salespeople
+    # ✅ Step 4: Update warehouse to reflect total remaining in user_inventory
     cur.execute("""
         SELECT COALESCE(SUM(quantity), 0) AS total_remaining
         FROM user_inventory
@@ -209,14 +209,12 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     """, (product_id,))
     total_remaining = cur.fetchone()['total_remaining']
 
-    # ✅ Step 5: Update warehouse stock
     cur.execute("""
         UPDATE products
         SET quantity_available = %s
         WHERE id = %s
     """, (total_remaining, product_id))
 
-    # ✅ Step 6: Commit changes
     conn.commit()
 
 
