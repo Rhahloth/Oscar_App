@@ -177,7 +177,7 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     conn = get_db()
     cur = conn.cursor()
 
-    # Check current inventory of this salesperson for this product
+    # ✅ Step 1: Check salesperson's inventory
     cur.execute("""
         SELECT quantity FROM user_inventory
         WHERE user_id = %s AND product_id = %s
@@ -185,9 +185,9 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     inv = cur.fetchone()
 
     if not inv or inv['quantity'] < quantity:
-        raise ValueError("Not enough stock in salesperson's inventory.")
+        raise ValueError("❌ Not enough stock in salesperson's inventory.")
 
-    # Subtract from salesperson's inventory
+    # ✅ Step 2: Subtract quantity from salesperson inventory
     new_inv_qty = inv['quantity'] - quantity
     cur.execute("""
         UPDATE user_inventory
@@ -195,28 +195,30 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
         WHERE user_id = %s AND product_id = %s
     """, (new_inv_qty, salesperson_id, product_id))
 
-    # Insert sale record
+    # ✅ Step 3: Record the sale
     cur.execute("""
         INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method, date)
         VALUES (%s, %s, %s, %s, %s, NOW())
     """, (product_id, quantity, salesperson_id, price, payment_method))
 
-    # 🔁 Recalculate total inventory across all salespersons for this product
+    # ✅ Step 4: Sum remaining quantity across all salespeople
     cur.execute("""
-        SELECT SUM(quantity) AS total_remaining
+        SELECT COALESCE(SUM(quantity), 0) AS total_remaining
         FROM user_inventory
         WHERE product_id = %s
     """, (product_id,))
-    total_remaining = cur.fetchone()['total_remaining'] or 0
+    total_remaining = cur.fetchone()['total_remaining']
 
-    # ✅ Update warehouse stock in the products table
+    # ✅ Step 5: Update warehouse stock
     cur.execute("""
         UPDATE products
         SET quantity_available = %s
         WHERE id = %s
     """, (total_remaining, product_id))
 
+    # ✅ Step 6: Commit changes
     conn.commit()
+
 
 def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()

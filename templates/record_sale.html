@@ -72,6 +72,10 @@
             autocomplete="off"
           />
           <datalist id="productList"></datalist>
+          <div
+            id="stockStatus"
+            style="margin-top: 10px; font-weight: bold"
+          ></div>
         </div>
 
         <div class="section-box">
@@ -118,13 +122,15 @@
 
     <script>
       let cart = [];
+
       const fullProductList = [
         {% for p in products %}
           {
             name: "{{ p.product_name }}",
             id: "{{ p.product_id }}",
             retail: "{{ p.retail_price }}",
-            cost: "{{ p.agent_price }}"
+            cost: "{{ p.agent_price }}",
+            quantity: {{ p.quantity }}
           },
         {% endfor %}
       ];
@@ -132,8 +138,10 @@
       function handleProductInput() {
         const input = document.getElementById("productSearch");
         const list = document.getElementById("productList");
+        const status = document.getElementById("stockStatus");
         const query = input.value.toLowerCase();
         list.innerHTML = "";
+        status.innerHTML = "";
 
         if (query.length >= 2) {
           const matches = fullProductList.filter(p => p.name.toLowerCase().includes(query));
@@ -143,8 +151,20 @@
             opt.setAttribute("data-id", p.id);
             opt.setAttribute("data-retail", p.retail);
             opt.setAttribute("data-cost", p.cost);
+            opt.setAttribute("data-qty", p.quantity);
             list.appendChild(opt);
           });
+
+          if (matches.length === 1) {
+            const product = matches[0];
+            if (product.quantity == 0) {
+              status.innerHTML = `<span style="color: red;">❌ Out of Stock</span>`;
+            } else if (product.quantity < 5) {
+              status.innerHTML = `<span style="color: orange;">⚠️ Low Stock (${product.quantity})</span>`;
+            } else {
+              status.innerHTML = `<span style="color: green;">✅ In Stock (${product.quantity})</span>`;
+            }
+          }
         }
       }
 
@@ -157,9 +177,18 @@
         const productName = option.value;
         const price = parseFloat(option.dataset.retail);
         const cost = parseFloat(option.dataset.cost);
+        const quantity = parseInt(option.dataset.qty);
+
+        if (quantity === 0) {
+          alert("❌ This product is out of stock.");
+          this.value = "";
+          return;
+        }
+
         cart.push({ productId, productName, quantity: 1, price, cost, subtotal: price });
         renderCart();
         this.value = "";
+        document.getElementById("stockStatus").innerHTML = "";
       });
 
       function renderCart() {
@@ -195,7 +224,7 @@
       function updatePrice(index, value) {
         const newPrice = parseFloat(value) || 0;
         if (newPrice < parseFloat(cart[index].cost)) {
-          alert("Check the price and try again");
+          alert("⚠️ Check the price and try again");
           renderCart();
           return;
         }
