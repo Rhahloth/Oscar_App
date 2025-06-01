@@ -296,6 +296,14 @@ def owner_inventory():
     conn = get_db()
     cur = conn.cursor()
 
+    # Get the owner's business_id
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    business = cur.fetchone()
+    if not business:
+        return "Business not found", 400
+    business_id = business['business_id']
+
+    # Restrict data to only products under this business
     cur.execute("""
         SELECT 
             p.name AS product_name,
@@ -306,8 +314,9 @@ def owner_inventory():
         JOIN users u ON ui.user_id = u.id
         JOIN products p ON ui.product_id = p.id
         WHERE u.role = 'salesperson'
+          AND p.business_id = %s
         ORDER BY p.category, p.name, u.username
-    """)
+    """, (business_id,))
     rows = cur.fetchall()
     conn.close()
 
@@ -319,14 +328,14 @@ def owner_inventory():
     for row in rows:
         key = f"{row['category']} - {row['product_name']}"
         table[key][row['branch']] += row['quantity']
-        totals[key] += row['quantity']  # ✅ total per product
+        totals[key] += row['quantity']
         all_branches.add(row['branch'])
 
     return render_template(
         "owner_inventory.html",
         table=table,
         branches=sorted(all_branches),
-        totals=totals  # ✅ Fix: include totals here
+        totals=totals
     )
 
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
