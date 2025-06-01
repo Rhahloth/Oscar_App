@@ -177,59 +177,46 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     conn = get_db()
     cur = conn.cursor()
 
-    # Step 1: Deduct from salesperson's inventory
-    cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (salesperson_id, product_id))
-    result = cur.fetchone()
-    if result:
-        cur.execute("""
-            UPDATE user_inventory SET quantity = quantity - %s
-            WHERE user_id = %s AND product_id = %s
-        """, (quantity, salesperson_id, product_id))
-    else:
-        cur.execute("""
-            INSERT INTO user_inventory (user_id, product_id, quantity)
-            VALUES (%s, %s, %s)
-        """, (salesperson_id, product_id, -quantity))
-
-    # Step 2: Log the sale
+    # Check current inventory of this salesperson for this product
     cur.execute("""
-        INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method)
-        VALUES (%s, %s, %s, %s, %s)
+        SELECT quantity FROM user_inventory
+        WHERE user_id = %s AND product_id = %s
+    """, (salesperson_id, product_id))
+    inv = cur.fetchone()
+
+    if not inv or inv['quantity'] < quantity:
+        raise ValueError("Not enough stock in salesperson's inventory.")
+
+    # Subtract from salesperson's inventory
+    new_inv_qty = inv['quantity'] - quantity
+    cur.execute("""
+        UPDATE user_inventory
+        SET quantity = %s
+        WHERE user_id = %s AND product_id = %s
+    """, (new_inv_qty, salesperson_id, product_id))
+
+    # Insert sale record
+    cur.execute("""
+        INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method, date)
+        VALUES (%s, %s, %s, %s, %s, NOW())
     """, (product_id, quantity, salesperson_id, price, payment_method))
 
-    # Step 3: Deduct from owner's inventory
-    cur.execute("SELECT business_id FROM users WHERE id = %s", (salesperson_id,))
-    biz = cur.fetchone()
-    if biz and biz['business_id']:
-        business_id = biz['business_id']
+    # 🔁 Recalculate total inventory across all salespersons for this product
+    cur.execute("""
+        SELECT SUM(quantity) AS total_remaining
+        FROM user_inventory
+        WHERE product_id = %s
+    """, (product_id,))
+    total_remaining = cur.fetchone()['total_remaining'] or 0
 
-        cur.execute("SELECT id FROM users WHERE role = 'owner' AND business_id = %s", (business_id,))
-        owner = cur.fetchone()
-        if owner:
-            owner_id = owner['id']
-
-            # Check if owner already has the product in inventory
-            cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s", (owner_id, product_id))
-            owner_stock = cur.fetchone()
-
-            if owner_stock:
-                cur.execute("""
-                    UPDATE user_inventory SET quantity = quantity - %s
-                    WHERE user_id = %s AND product_id = %s
-                """, (quantity, owner_id, product_id))
-            else:
-                # Insert negative balance if not found
-                cur.execute("""
-                    INSERT INTO user_inventory (user_id, product_id, quantity)
-                    VALUES (%s, %s, %s)
-                """, (owner_id, product_id, -quantity))
-        else:
-            print(f"❌ No owner found for business_id {business_id}")
-    else:
-        print("❌ Salesperson has no business_id")
+    # ✅ Update warehouse stock in the products table
+    cur.execute("""
+        UPDATE products
+        SET quantity_available = %s
+        WHERE id = %s
+    """, (total_remaining, product_id))
 
     conn.commit()
-    cur.close()
 
 def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
