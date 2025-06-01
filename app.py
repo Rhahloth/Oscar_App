@@ -61,9 +61,12 @@ def dashboard():
             return "Business not found", 400
         business_id = business['business_id']
 
-        # Fetch only sales for this business
+        # Fetch only sales for this business, include total
         cur.execute('''
-            SELECT s.*, p.name AS product_name, u.username AS salesperson_name
+            SELECT s.*, 
+                   p.name AS product_name, 
+                   u.username AS salesperson_name,
+                   (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
             JOIN users u ON s.salesperson_id = u.id
@@ -75,9 +78,11 @@ def dashboard():
         return render_template('dashboard_owner.html', sales=sales)
 
     else:  # salesperson
-        # Get sales only for this salesperson
+        # Get sales only for this salesperson, include total_price
         cur.execute('''
-            SELECT s.*, p.name AS product_name
+            SELECT s.*, 
+                   p.name AS product_name,
+                   (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
             WHERE s.salesperson_id = %s
@@ -87,7 +92,9 @@ def dashboard():
 
         # Fetch user inventory
         cur.execute('''
-            SELECT ui.*, p.name AS product_name, p.category
+            SELECT ui.*, 
+                   p.name AS product_name, 
+                   p.category
             FROM user_inventory ui
             JOIN products p ON ui.product_id = p.id
             WHERE ui.user_id = %s
