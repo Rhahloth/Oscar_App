@@ -222,63 +222,62 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
     cur = conn.cursor()
 
-    # Step 1: Get business and owner
-    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
-    business = cur.fetchone()
-    if not business:
-        print("❌ Invalid user.")
-        return
-    business_id = business['business_id']
-
-    cur.execute("SELECT id FROM users WHERE role = 'owner' AND business_id = %s", (business_id,))
-    owner = cur.fetchone()
-    if not owner:
-        print(f"❌ No owner found for business_id {business_id}. Please register an owner first.")
-        return
-    owner_id = owner['id']
-
-    # Step 2: Build product lookup for this business
-    cur.execute("SELECT id, name, category FROM products WHERE business_id = %s", (business_id,))
-    product_map = {
-        (row["name"].strip().lower(), row["category"].strip().lower()): row["id"]
-        for row in cur.fetchall()
-    }
-
     for product_name, quantity, category in inventory_rows:
-        key = (product_name.strip().lower(), category.strip().lower())
-        product_id = product_map.get(key)
+        # Find product ID by name and category
+        cur.execute("""
+            SELECT id FROM products
+            WHERE name = %s AND category = %s
+        """, (product_name, category))
+        product = cur.fetchone()
 
-        if not product_id:
-            print(f"⚠️ Skipping: Product not found → {product_name} / {category}")
-            continue
+        if not product:
+            raise ValueError(f"❌ Product not found: {product_name} - {category}")
 
-        # ✅ Update product quantity_available for business
-        cur.execute("UPDATE products SET quantity_available = quantity_available + %s WHERE id = %s",
-                    (quantity, product_id))
+        product_id = product['id']
 
-        # ✅ Update salesperson inventory
-        cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s",
-                    (user_id, product_id))
-        if cur.fetchone():
-            cur.execute("UPDATE user_inventory SET quantity = quantity + %s WHERE user_id = %s AND product_id = %s",
-                        (quantity, user_id, product_id))
+        # Check if inventory already exists for this user/product
+        cur.execute("""
+            SELECT quantity FROM user_inventory
+            WHERE user_id = %s AND product_id = %s
+        """, (user_id, product_id))
+        existing = cur.fetchone()
+
+        if existing:
+            # Update quantity
+            new_qty = existing['quantity'] + quantity
+            cur.execute("""
+                UPDATE user_inventory
+                SET quantity = %s
+                WHERE user_id = %s AND product_id = %s
+            """, (new_qty, user_id, product_id))
         else:
-            cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, %s)",
-                        (user_id, product_id, quantity))
+            # Insert new inventory row
+            cur.execute("""
+                INSERT INTO user_inventory (user_id, product_id, quantity)
+                VALUES (%s, %s, %s)
+            """, (user_id, product_id, quantity))
 
-        # ✅ Also update owner inventory
-        cur.execute("SELECT quantity FROM user_inventory WHERE user_id = %s AND product_id = %s",
-                    (owner_id, product_id))
-        if cur.fetchone():
-            cur.execute("UPDATE user_inventory SET quantity = quantity + %s WHERE user_id = %s AND product_id = %s",
-                        (quantity, owner_id, product_id))
-        else:
-            cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, %s)",
-                        (owner_id, product_id, quantity))
+    # ✅ After all inventory is uploaded, recalculate total stock for each unique product
+    unique_product_ids = list(set(
+        [cur.execute("SELECT id FROM products WHERE name = %s AND category = %s", (name, cat)).fetchone()['id']
+         for name, _, cat in inventory_rows]
+    ))
+
+    for pid in unique_product_ids:
+        cur.execute("""
+            SELECT COALESCE(SUM(quantity), 0) AS total_remaining
+            FROM user_inventory
+            WHERE product_id = %s
+        """, (pid,))
+        total_remaining = cur.fetchone()['total_remaining']
+
+        cur.execute("""
+            UPDATE products
+            SET quantity_available = %s
+            WHERE id = %s
+        """, (total_remaining, pid))
 
     conn.commit()
-    cur.close()
-    conn.close()
 
 def initialize_salesperson_inventory(user_id):
     conn = get_db()
