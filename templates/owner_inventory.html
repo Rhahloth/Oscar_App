@@ -81,11 +81,10 @@
           {% for product, branches_data in table.items() %}
           <tr>
             <td>{{ product }}</td>
-            {% set total = 0 %} {% for branch in branches %} {% set qty =
-            branches_data.get(branch, 0) %}
-            <td>{{ qty }}</td>
-            {% set total = total + qty %} {% endfor %}
-            <td><strong>{{ total }}</strong></td>
+            {% for branch in branches %}
+            <td>{{ branches_data.get(branch, 0) }}</td>
+            {% endfor %}
+            <td><strong>{{ totals[product] }}</strong></td>
           </tr>
           {% endfor %}
         </tbody>
