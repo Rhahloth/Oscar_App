@@ -56,8 +56,8 @@
             style="display: flex; align-items: center; gap: 10px"
           >
             {% if session.username %}
-            <a href="/logout"
-              ><button
+            <a href="/logout">
+              <button
                 style="
                   background-color: #d9534f;
                   color: white;
@@ -65,8 +65,8 @@
                 "
               >
                 Logout
-              </button></a
-            >
+              </button>
+            </a>
             {% endif %}
           </div>
         </div>
@@ -117,6 +117,7 @@
             <thead>
               <tr>
                 <th>Product</th>
+                <th>Category</th>
                 <th>Quantity</th>
                 <th>Remove</th>
               </tr>
@@ -139,14 +140,15 @@
       <pre
         style="background-color: #f9f9f9; border: 1px solid #ccc; padding: 10px"
       >
-      Product Name,Quantity
-      Maize Seed,10
-      Hand Hoe,5
-      </pre>
+Product Name,Quantity,Category
+Maize Seed,10,Seeds
+Hand Hoe,5,Tools
+    </pre
+      >
 
       <p>
         Make sure your columns are: <strong>Product Name</strong>,
-        <strong>Quantity</strong>
+        <strong>Quantity</strong>, <strong>Category</strong>
       </p>
 
       <form
@@ -156,7 +158,6 @@
       >
         <input type="hidden" name="form_type" value="csv_upload" />
         <input type="file" name="file" accept=".csv" required />
-
         <div style="margin-top: 10px; text-align: left">
           <button type="submit">Upload CSV</button>
         </div>
@@ -166,6 +167,7 @@
     <!-- 🔧 Cart Script -->
     <script>
       const allProducts = {{ product_names | tojson }};
+      const productCategories = {{ product_categories | tojson }};
       const cart = [];
 
       function filterProducts() {
@@ -194,7 +196,13 @@
         const existing = cart.find(item => item.product_name === product);
         if (existing) return;
 
-        cart.push({ product_name: product, quantity: 1 });
+        const category = productCategories[product];
+        if (!category) {
+          alert(`Category not found for "${product}".`);
+          return;
+        }
+
+        cart.push({ product_name: product, quantity: 1, category: category });
         renderCart();
         document.getElementById("productSearch").value = "";
         document.getElementById("searchResults").style.display = "none";
@@ -218,6 +226,10 @@
           const nameCell = document.createElement("td");
           nameCell.textContent = item.product_name;
           row.appendChild(nameCell);
+
+          const categoryCell = document.createElement("td");
+          categoryCell.textContent = item.category;
+          row.appendChild(categoryCell);
 
           const qtyCell = document.createElement("td");
           const input = document.createElement("input");

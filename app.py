@@ -931,7 +931,7 @@ def sales_upload_inventory():
 
             return redirect('/dashboard')
 
-        # === Handle Cart Upload ===
+        # === Handle Manual Cart Upload ===
         cart_data = request.form.get('cart_data')
         if not cart_data:
             return "Error: No stock data submitted.", 400
@@ -940,7 +940,7 @@ def sales_upload_inventory():
             import json
             items = json.loads(cart_data)
             inventory_rows = [
-                (item['product_name'], int(item['quantity']), item['category'])
+                (item['product_name'], int(item['quantity']), item['category'].strip())
                 for item in items
             ]
             add_salesperson_stock_bulk(session['user_id'], inventory_rows)
@@ -950,11 +950,16 @@ def sales_upload_inventory():
         return redirect('/dashboard')
 
     # === Render form on GET ===
-    cur.execute("SELECT name FROM products ORDER BY name")
+    cur.execute("SELECT name, category FROM products ORDER BY name")
     products = cur.fetchall()
     product_names = [row['name'] for row in products]
+    product_categories = {row['name']: row['category'] for row in products}
 
-    return render_template('sales_upload_inventory.html', product_names=product_names)
+    return render_template(
+        'sales_upload_inventory.html',
+        product_names=product_names,
+        product_categories=product_categories
+    )
 
 @app.route('/logout')
 def logout():

@@ -211,19 +211,22 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
     cur = conn.cursor()
 
     for product_name, quantity, category in inventory_rows:
-        # Find product ID by name and category
+        product_name = product_name.strip()
+        category = category.strip()
+
+        # Case-insensitive match
         cur.execute("""
             SELECT id FROM products
-            WHERE name = %s AND category = %s
+            WHERE LOWER(name) = LOWER(%s) AND LOWER(category) = LOWER(%s)
         """, (product_name, category))
         product = cur.fetchone()
 
         if not product:
-            raise ValueError(f"❌ Product not found: {product_name} - {category}")
+            raise ValueError(f"❌ Product not found: '{product_name}' in category '{category}'. Please check spelling or upload via CSV for auto-match.")
 
         product_id = product['id']
 
-        # Check if inventory already exists for this user/product
+        # Check for existing inventory
         cur.execute("""
             SELECT quantity FROM user_inventory
             WHERE user_id = %s AND product_id = %s
@@ -231,7 +234,6 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
         existing = cur.fetchone()
 
         if existing:
-            # Update quantity
             new_qty = existing['quantity'] + quantity
             cur.execute("""
                 UPDATE user_inventory
@@ -239,7 +241,6 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
                 WHERE user_id = %s AND product_id = %s
             """, (new_qty, user_id, product_id))
         else:
-            # Insert new inventory row
             cur.execute("""
                 INSERT INTO user_inventory (user_id, product_id, quantity)
                 VALUES (%s, %s, %s)
