@@ -50,28 +50,36 @@
   </div>
 
   <div class="container">
-    <!-- Summary Cards -->
+    <!-- 🔍 Filter Label Badge (Optional) -->
+    {% if request.form.salesperson %}
+      <div style="margin: 10px 0; font-weight: bold;">
+        📍 <span style="color: #034078;">Showing sales report for branch: {{ request.form.salesperson }}</span>
+      </div>
+    {% endif %}
+
+    <!-- 📊 Summary Cards -->
     <div class="summary-container">
       <div class="summary-card">
-        <h4>Total Transactions</h4>
+        <h4>Total Transactions{% if request.form.salesperson %} – {{ request.form.salesperson }}{% endif %}</h4>
         <p>{{ summary.total_transactions or 0 }}</p>
       </div>
-    
+
       <div class="summary-card">
-        <h4>Total Quantity Sold</h4>
+        <h4>Total Quantity Sold{% if request.form.salesperson %} – {{ request.form.salesperson }}{% endif %}</h4>
         <p>{{ summary.total_quantity or 0 }}</p>
       </div>
-    
+
       <div class="summary-card">
-        <h4>Total Revenue (UGX)</h4>
+        <h4>Total Revenue (UGX){% if request.form.salesperson %} – {{ request.form.salesperson }}{% endif %}</h4>
         <p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p>
       </div>
-    
+
       <div class="summary-card">
-        <h4>Top Salesperson</h4>
+        <h4>Top Salesperson{% if request.form.salesperson %} – {{ request.form.salesperson }}{% endif %}</h4>
         <p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p>
       </div>
-    </div>    
+    </div>
+    
     <form method="POST" class="report-filters">
       <fieldset>
         <legend>Filter Sales Report</legend>

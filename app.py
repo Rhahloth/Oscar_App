@@ -717,6 +717,7 @@ def report():
         return "Business not found", 400
     business_id = business['business_id']
 
+    # Read form filters
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
     salesperson = request.form.get('salesperson')
@@ -725,7 +726,9 @@ def report():
     summary = {'total_transactions': 0, 'total_quantity': 0, 'total_revenue': 0}
     top_salesperson = {'top_salesperson': 'N/A', 'total': 0}
 
-    # Report Data
+    # ================================
+    # 1. Sales Performance Report
+    # ================================
     query = '''
         SELECT u.username AS salesperson,
                s.payment_method,
@@ -758,16 +761,20 @@ def report():
     cur.execute(query, params)
     report_data = cur.fetchall()
 
-    # Summary
+    # ================================
+    # 2. Summary Cards
+    # ================================
     sum_query = '''
         SELECT COUNT(*) AS total_transactions,
-               SUM(quantity) AS total_quantity,
-               SUM(quantity * price) AS total_revenue
+               SUM(s.quantity) AS total_quantity,
+               SUM(s.quantity * s.price) AS total_revenue
         FROM sales s
+        JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
         WHERE p.business_id = %s
     '''
     sum_params = [business_id]
+
     if start_date:
         sum_query += ' AND date(s.date) >= date(%s)'
         sum_params.append(start_date)
@@ -777,13 +784,18 @@ def report():
     if payment_method:
         sum_query += ' AND s.payment_method = %s'
         sum_params.append(payment_method)
+    if salesperson:
+        sum_query += ' AND u.username = %s'
+        sum_params.append(salesperson)
 
     cur.execute(sum_query, sum_params)
     sum_result = cur.fetchone()
     if sum_result and sum_result['total_transactions'] is not None:
         summary = sum_result
 
-    # Top Salesperson
+    # ================================
+    # 3. Top Salesperson
+    # ================================
     top_query = '''
         SELECT u.username AS top_salesperson,
                SUM(s.quantity * s.price) AS total
@@ -793,6 +805,7 @@ def report():
         WHERE p.business_id = %s
     '''
     top_params = [business_id]
+
     if start_date:
         top_query += ' AND date(s.date) >= date(%s)'
         top_params.append(start_date)
@@ -802,6 +815,9 @@ def report():
     if payment_method:
         top_query += ' AND s.payment_method = %s'
         top_params.append(payment_method)
+    if salesperson:
+        top_query += ' AND u.username = %s'
+        top_params.append(salesperson)
 
     top_query += ' GROUP BY s.salesperson_id, u.username ORDER BY total DESC LIMIT 1'
     cur.execute(top_query, top_params)
@@ -809,16 +825,25 @@ def report():
     if top_result:
         top_salesperson = top_result
 
-    # Distribution Log — not filtered by business (optional)
+    # ================================
+    # 4. Salespeople Dropdown
+    # ================================
     cur.execute("SELECT username FROM users WHERE business_id = %s", (business_id,))
     salespeople = [r['username'] for r in cur.fetchall()]
 
-    return render_template('report.html',
-                           report=report_data,
-                           salespeople=salespeople,
-                           summary=summary,
-                           top_salesperson=top_salesperson,
-                           distribution_log=[])
+    # ================================
+    # 5. (Optional) Distribution Log Placeholder
+    # ================================
+    distribution_log = []  # Populate this in future if needed
+
+    return render_template(
+        'report.html',
+        report=report_data,
+        salespeople=salespeople,
+        summary=summary,
+        top_salesperson=top_salesperson,
+        distribution_log=distribution_log
+    )
 
 @app.route('/export_report', methods=['POST'])
 def export_report():
