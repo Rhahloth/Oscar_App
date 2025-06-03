@@ -62,35 +62,40 @@ def dashboard():
         business_id = business['business_id']
 
         # Fetch only sales for this business, include total and batch number
-        cur.execute('''
-            SELECT s.*, 
-                   p.name AS product_name, 
-                   u.username AS salesperson_name,
-                   s.batch_no AS batch_number,
-                   (s.quantity * s.price) AS total_price
-
+        cur.execute("""
+            SELECT 
+                s.batch_no AS batch_number,
+                MIN(s.date) AS date,
+                u.username AS salesperson_name,
+                s.payment_method,
+                SUM(s.quantity) AS total_quantity,
+                SUM(s.quantity * s.price) AS total_price
             FROM sales s
-            JOIN products p ON s.product_id = p.id
             JOIN users u ON s.salesperson_id = u.id
+            JOIN products p ON s.product_id = p.id
             WHERE p.business_id = %s
-            ORDER BY s.date DESC
-        ''', (business_id,))
+            GROUP BY s.batch_no, u.username, s.payment_method
+            ORDER BY MIN(s.date) DESC
+        """, (business_id,))
         sales = cur.fetchall()
 
         return render_template('dashboard_owner.html', sales=sales)
 
     else:  # salesperson
         # Get sales only for this salesperson, include total_price and batch number
-        cur.execute('''
-            SELECT s.*, 
-                   p.name AS product_name,
-                   s.batch_no AS batch_number,
-                  (s.quantity * s.price) AS total_price
+        cur.execute("""
+            SELECT 
+                s.batch_no AS batch_number,
+                MIN(s.date) AS date,
+                s.payment_method,
+                SUM(s.quantity) AS total_quantity,
+                SUM(s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
             WHERE s.salesperson_id = %s
-            ORDER BY s.date DESC
-        ''', (user_id,))
+            GROUP BY s.batch_no, s.payment_method
+            ORDER BY MIN(s.date) DESC
+        """, (user_id,))
         sales = cur.fetchall()
 
         # Fetch user inventory
