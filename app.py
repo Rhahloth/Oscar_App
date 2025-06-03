@@ -782,54 +782,87 @@ def request_stock():
                            inventory=inventory,
                            recipients=recipients)
 
-@app.route('/my_inventory', methods=['GET'])
+@app.route('/my_inventory')
 def my_inventory():
     if 'user_id' not in session or session['role'] != 'salesperson':
         return redirect('/login')
 
     user_id = session['user_id']
-    category = request.args.get('category', '')
-    search_term = request.args.get('search', '')
-
     conn = get_db()
     cur = conn.cursor()
 
-    # Get all categories for dropdown
-    cur.execute("SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category")
-    categories = [row['category'] for row in cur.fetchall()]
+    # --- Filters ---
+    selected_category = request.args.get('category')
+    search_term = request.args.get('search', '').lower()
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
 
-    # Build query based on filters
-    query = '''
-        SELECT ui.*, 
-               p.category,
-               p.name AS product_name,  
-               p.agent_price,
-               p.wholesale_price,
-               p.retail_price
+    # --- Inventory Query ---
+    inventory_query = """
+        SELECT ui.*, p.name AS product_name, p.category, p.agent_price, p.retail_price, p.wholesale_price
         FROM user_inventory ui
         JOIN products p ON ui.product_id = p.id
         WHERE ui.user_id = %s
-    '''
-    params = [user_id]
+    """
+    filters = [user_id]
 
-    if category:
-        query += ' AND p.category = %s'
-        params.append(category)
+    if selected_category:
+        inventory_query += " AND p.category = %s"
+        filters.append(selected_category)
 
     if search_term:
-        query += ' AND LOWER(p.name) LIKE %s'
-        params.append(f"%{search_term.lower()}%")
+        inventory_query += " AND LOWER(p.name) LIKE %s"
+        filters.append(f"%{search_term}%")
 
-    cur.execute(query, params)
+    cur.execute(inventory_query, tuple(filters))
     inventory = cur.fetchall()
 
-    return render_template('my_inventory.html',
-                           inventory=inventory,
-                           categories=categories,
-                           selected_category=category,
-                           search_term=search_term)
+    # --- Summary: Total Stocks & Worth ---
+    cur.execute("""
+        SELECT SUM(ui.quantity) AS total_stock,
+               SUM(ui.quantity * p.agent_price) AS total_worth
+        FROM user_inventory ui
+        JOIN products p ON ui.product_id = p.id
+        WHERE ui.user_id = %s
+    """, (user_id,))
+    stock_summary = cur.fetchone()
+    total_stock = stock_summary['total_stock'] or 0
+    total_worth = stock_summary['total_worth'] or 0
 
-""
+    # --- Summary: Cash and Credit Sales ---
+    sales_filter = ""
+    sales_params = [user_id]
+
+    if start_date and end_date:
+        sales_filter = "AND s.date::date BETWEEN %s AND %s"
+        sales_params += [start_date, end_date]
+
+    cur.execute(f"""
+        SELECT
+            SUM(CASE WHEN s.payment_method = 'Cash' THEN (s.quantity * s.price) ELSE 0 END) AS total_cash_sales,
+            SUM(CASE WHEN s.payment_method = 'Credit' THEN (s.quantity * s.price) ELSE 0 END) AS total_credit_sales
+        FROM sales s
+        WHERE s.salesperson_id = %s {sales_filter}
+    """, tuple(sales_params))
+    sales_summary = cur.fetchone()
+    total_cash_sales = sales_summary['total_cash_sales'] or 0
+    total_credit_sales = sales_summary['total_credit_sales'] or 0
+
+    cur.close()
+    conn.close()
+
+    return render_template("my_inventory.html",
+                           inventory=inventory,
+                           categories=get_all_categories(),
+                           selected_category=selected_category,
+                           search_term=search_term,
+                           total_stock=total_stock,
+                           total_worth=total_worth,
+                           total_cash_sales=total_cash_sales,
+                           total_credit_sales=total_credit_sales,
+                           start_date=start_date,
+                           end_date=end_date)
+
 @app.route('/report', methods=['GET', 'POST'])
 def report():
     if 'user_id' not in session or session['role'] != 'owner':

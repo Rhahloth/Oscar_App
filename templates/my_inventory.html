@@ -40,16 +40,59 @@
   </div>
 
   <div class="container">
-    <h4>My Current Inventory</h4>
     <div class="form-group action-buttons" style="text-align: left;">    
       <div style="margin-bottom: 20px;">
         <a href="/sales_upload_inventory">
-          <button style="background-color: #034078; color: white; padding: 8px 16px; border: none; border-radius: 4px;">
+          <button>
             + Add Stocks
           </button>
         </a>
       </div>
     </div>
+    <h4>My Current Inventory</h4>
+    <!-- 🔍 Inventory and Sales Summary -->
+     <div>
+    <form method="GET" action="/my_inventory" class="report-filters">
+      <fieldset>
+        <legend>Sales Summary Filters</legend>
+        <div class="filter-row">
+          <div class="filter-item">
+            <label for="start_date">Start Date</label>
+            <input type="date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+          </div>
+          <div class="filter-item">
+            <label for="end_date">End Date</label>
+            <input type="date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+          </div>
+          <div class="filter-item" style="align-self: flex-end">
+            <button type="submit">Apply Filter</button>
+          </div>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+    <div class="summary-container">
+      <div class="summary-card">
+        <h4>Total Stock Quantity</h4>
+        <p>{{ total_stock or 0 }}</p>
+      </div>
+
+      <div class="summary-card">
+        <h4>Total Inventory Worth (UGX)</h4>
+        <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
+      </div>
+
+      <div class="summary-card">
+        <h4>Total Cash Sales (UGX)</h4>
+        <p>UGX {{ "{:,.0f}".format(total_cash_sales or 0) }}</p>
+      </div>
+
+      <div class="summary-card">
+        <h4>Total Credit Sales (UGX)</h4>
+        <p>UGX {{ "{:,.0f}".format(total_credit_sales or 0) }}</p>
+      </div>
+    </div>
+
     <form method="GET" action="/my_inventory" class="report-filters">
       <fieldset>
         <legend>Filter Inventory</legend>
