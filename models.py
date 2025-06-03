@@ -326,12 +326,27 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
 def initialize_salesperson_inventory(user_id):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT id FROM products")
+    
+    # Get business_id of the user
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    result = cur.fetchone()
+    if not result:
+        raise ValueError("Business ID not found for user.")
+    business_id = result['business_id']
+
+    # Get all product IDs for that business
+    cur.execute("SELECT id FROM products WHERE business_id = %s", (business_id,))
     products = cur.fetchall()
+
     for product in products:
-        cur.execute("INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, 0)",
-                    (user_id, product["id"]))
+        cur.execute(
+            "INSERT INTO user_inventory (user_id, product_id, quantity) VALUES (%s, %s, 0)",
+            (user_id, product['id'])
+        )
+
     conn.commit()
+    cur.close()
+    conn.close()
 
 def approve_request(request_id, user_id):
     conn = get_db()
