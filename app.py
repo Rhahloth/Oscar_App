@@ -141,12 +141,15 @@ def submit_sale():
         return redirect('/login')
 
     cart_data = request.form.get('cart_data')
-    payment_method = request.form.get('payment_method')
+    payment_method = request.form.get('payment_method', '').strip().lower()
     customer_id = request.form.get('customer_id') or None
     due_date = request.form.get('due_date') or None
 
     if not cart_data or not payment_method:
         return "Missing sale data or payment method", 400
+
+    if payment_method not in ['cash', 'credit']:
+        return "Invalid payment method", 400
 
     items = json.loads(cart_data)
     user_id = session['user_id']
@@ -155,35 +158,42 @@ def submit_sale():
     cur = conn.cursor()
 
     try:
+        # Get username and business info
         cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
         user_row = cur.fetchone()
+        if not user_row:
+            return "User not found", 400
+
         username = user_row['username']
         business_id = user_row['business_id']
 
+        # Generate batch_no
         initials = ''.join(part[0] for part in username.strip().split()).upper()
         date_str = datetime.now().strftime("%Y%m%d")
-
         cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
         count = cur.fetchone()[0] + 1
-
         batch_no = f"{initials}_{date_str}_{count:03d}"
 
+        # Insert each item in the cart
         for item in items:
             product_id = int(item['productId'])
             quantity = int(item['quantity'])
             price = float(item['price'])
 
-            # Step 1: Deduct inventory
+            # Deduct stock from inventory
             cur.execute("""
                 UPDATE user_inventory
                 SET quantity = quantity - %s
                 WHERE user_id = %s AND product_id = %s
             """, (quantity, user_id, product_id))
 
-            amount_paid = quantity * price if payment_method == 'Cash' else 0
-            payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
+            # Compute amounts
+            total_amount = quantity * price
+            amount_paid = total_amount if payment_method == 'cash' else 0
+            payment_status = 'paid' if payment_method == 'cash' else 'unpaid'
 
-            if payment_method == 'Cash':
+            # Insert into sales
+            if payment_method == 'cash':
                 cur.execute("""
                     INSERT INTO sales (
                         product_id, quantity, salesperson_id, price, payment_method,
@@ -191,10 +201,12 @@ def submit_sale():
                     ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
                     RETURNING id
                 """, (
-                    product_id, quantity, user_id, price, payment_method,
+                    product_id, quantity, user_id, price, payment_method.capitalize(),
                     amount_paid, payment_status, business_id, batch_no
                 ))
             else:
+                if not customer_id:
+                    raise ValueError("Credit sales must have a customer.")
                 cur.execute("""
                     INSERT INTO sales (
                         product_id, quantity, salesperson_id, price, payment_method,
@@ -202,14 +214,14 @@ def submit_sale():
                     ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
                     RETURNING id
                 """, (
-                    product_id, quantity, user_id, price, payment_method,
+                    product_id, quantity, user_id, price, payment_method.capitalize(),
                     amount_paid, payment_status, business_id, int(customer_id), batch_no
                 ))
 
             sale_id = cur.fetchone()['id']
 
-            if payment_method == 'Credit' and customer_id:
-                total_amount = quantity * price
+            # Handle credit repayment record
+            if payment_method == 'credit' and customer_id:
                 cur.execute("""
                     INSERT INTO credit_sales (
                         sale_id, customer_id, amount, balance, due_date, status
@@ -223,7 +235,7 @@ def submit_sale():
 
     except Exception as e:
         conn.rollback()
-        return str(e), 400
+        return f"❌ An error occurred while submitting the sale: {str(e)}", 400
 
     finally:
         cur.close()
