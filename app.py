@@ -784,84 +784,75 @@ def request_stock():
 
 @app.route('/my_inventory')
 def my_inventory():
-    if 'user_id' not in session or session['role'] != 'salesperson':
+    if 'user_id' not in session:
         return redirect('/login')
 
-    user_id = session['user_id']
     conn = get_db()
     cur = conn.cursor()
 
-    # --- Filters ---
+    user_id = session['user_id']
+    role = session['role']
+
+    # Get user's business ID
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    business_row = cur.fetchone()
+    if not business_row:
+        return "Business not found", 400
+    business_id = business_row['business_id']
+
+    # Handle filters
     selected_category = request.args.get('category')
-    search_term = request.args.get('search', '').lower()
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
+    search_term = request.args.get('search', '').strip().lower()
 
-    # --- Inventory Query ---
-    inventory_query = """
-        SELECT ui.*, p.name AS product_name, p.category, p.agent_price, p.retail_price, p.wholesale_price
-        FROM user_inventory ui
-        JOIN products p ON ui.product_id = p.id
-        WHERE ui.user_id = %s
-    """
-    filters = [user_id]
-
-    if selected_category:
-        inventory_query += " AND p.category = %s"
-        filters.append(selected_category)
-
-    if search_term:
-        inventory_query += " AND LOWER(p.name) LIKE %s"
-        filters.append(f"%{search_term}%")
-
-    cur.execute(inventory_query, tuple(filters))
-    inventory = cur.fetchall()
-
-    # --- Summary: Total Stocks & Worth ---
+    # Get inventory
     cur.execute("""
-        SELECT SUM(ui.quantity) AS total_stock,
-               SUM(ui.quantity * p.agent_price) AS total_worth
+        SELECT ui.*, p.name AS product_name, p.category,
+               p.buying_price, p.agent_price, p.wholesale_price, p.retail_price
         FROM user_inventory ui
         JOIN products p ON ui.product_id = p.id
         WHERE ui.user_id = %s
     """, (user_id,))
-    stock_summary = cur.fetchone()
-    total_stock = stock_summary['total_stock'] or 0
-    total_worth = stock_summary['total_worth'] or 0
+    inventory = cur.fetchall()
 
-    # --- Summary: Cash and Credit Sales ---
-    sales_filter = ""
-    sales_params = [user_id]
+    # Apply filters manually
+    if selected_category:
+        inventory = [item for item in inventory if item['category'] == selected_category]
+    if search_term:
+        inventory = [item for item in inventory if search_term in item['product_name'].lower()]
 
-    if start_date and end_date:
-        sales_filter = "AND s.date::date BETWEEN %s AND %s"
-        sales_params += [start_date, end_date]
+    # Summary calculations
+    total_stock_qty = sum(item['quantity'] for item in inventory)
+    total_stock_value = sum(item['quantity'] * (item['buying_price'] or 0) for item in inventory)
 
-    cur.execute(f"""
-        SELECT
-            SUM(CASE WHEN s.payment_method = 'Cash' THEN (s.quantity * s.price) ELSE 0 END) AS total_cash_sales,
-            SUM(CASE WHEN s.payment_method = 'Credit' THEN (s.quantity * s.price) ELSE 0 END) AS total_credit_sales
-        FROM sales s
-        WHERE s.salesperson_id = %s {sales_filter}
-    """, tuple(sales_params))
-    sales_summary = cur.fetchone()
-    total_cash_sales = sales_summary['total_cash_sales'] or 0
-    total_credit_sales = sales_summary['total_credit_sales'] or 0
+    # Credit and Cash Sales for this user
+    cur.execute("""
+        SELECT payment_method, SUM(quantity * price) AS total
+        FROM sales
+        WHERE salesperson_id = %s
+        GROUP BY payment_method
+    """, (user_id,))
+    payment_summary = cur.fetchall()
+    cash_sales = sum(row['total'] for row in payment_summary if row['payment_method'] == 'cash')
+    credit_sales = sum(row['total'] for row in payment_summary if row['payment_method'] == 'credit')
 
-    cur.close()
-    conn.close()
+    # Get all categories for filter dropdown
+    cur.execute("""
+        SELECT DISTINCT category FROM products
+        WHERE business_id = %s
+        ORDER BY category ASC
+    """, (business_id,))
+    categories = [row['category'] for row in cur.fetchall() if row['category']]
 
-    return render_template("my_inventory.html",
+    return render_template('my_inventory.html',
                            inventory=inventory,
-                           categories=get_all_categories(),
+                           categories=categories,
                            selected_category=selected_category,
                            search_term=search_term,
-                           total_stock=total_stock,
-                           total_worth=total_worth,
-                           total_cash_sales=total_cash_sales,
-                           total_credit_sales=total_credit_sales,
-                           start_date=start_date,
-                           end_date=end_date)
+                           total_stock_qty=total_stock_qty,
+                           total_stock_value=total_stock_value,
+                           cash_sales=cash_sales,
+                           credit_sales=credit_sales,
+                           username=session['username'])
 
 @app.route('/report', methods=['GET', 'POST'])
 def report():

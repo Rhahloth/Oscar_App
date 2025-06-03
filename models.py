@@ -457,6 +457,17 @@ def reject_request(request_id, user_id, reason):
 
     conn.commit()
 
+def get_all_categories(business_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DISTINCT category FROM products
+        WHERE business_id = %s
+        ORDER BY category ASC
+    """, (business_id,))
+    rows = cur.fetchall()
+    return [row['category'] for row in rows if row['category']]
+
 def get_pending_requests_for_user(user_id):
     conn = get_db()
     cur = conn.cursor()
