@@ -42,7 +42,7 @@ def initialize_database():
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
-
+    
     # Products
     cur.execute('''
         CREATE TABLE IF NOT EXISTS products (
@@ -58,16 +58,14 @@ def initialize_database():
         );
     ''')
 
-    # Distribution Log
+    # Customers
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS distribution_log (
+        CREATE TABLE IF NOT EXISTS customers (
             id SERIAL PRIMARY KEY,
-            product_id INTEGER REFERENCES products(id),
-            salesperson_id INTEGER REFERENCES users(id),
-            receiver_id INTEGER REFERENCES users(id),
-            quantity INTEGER,
-            status TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            phone TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
 
@@ -85,6 +83,29 @@ def initialize_database():
             amount_paid FLOAT DEFAULT 0,
             payment_status TEXT DEFAULT 'unpaid',
             customer_id INTEGER REFERENCES customers(id)
+        );
+    ''')
+
+    # Credit Repayments
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS credit_repayments (
+            id SERIAL PRIMARY KEY,
+            credit_id INTEGER REFERENCES credit_sales(id) ON DELETE CASCADE,
+            amount NUMERIC NOT NULL,
+            paid_on DATE DEFAULT CURRENT_DATE
+        );
+    ''')
+    
+    # Distribution Log
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS distribution_log (
+            id SERIAL PRIMARY KEY,
+            product_id INTEGER REFERENCES products(id),
+            salesperson_id INTEGER REFERENCES users(id),
+            receiver_id INTEGER REFERENCES users(id),
+            quantity INTEGER,
+            status TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
 
@@ -114,17 +135,6 @@ def initialize_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
-    
-    # Customers
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS customers (
-            id SERIAL PRIMARY KEY,
-            business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE,
-            name TEXT NOT NULL,
-            phone TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
 
     # Credit Sales
     cur.execute('''
@@ -139,15 +149,6 @@ def initialize_database():
         );
     ''')
 
-    # Credit Repayments
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS credit_repayments (
-            id SERIAL PRIMARY KEY,
-            credit_id INTEGER REFERENCES credit_sales(id) ON DELETE CASCADE,
-            amount NUMERIC NOT NULL,
-            paid_on DATE DEFAULT CURRENT_DATE
-        );
-    ''')
 
     conn.commit()
     cur.close()
