@@ -477,16 +477,18 @@ def manage_users():
         role = 'salesperson'
         password_hash = generate_password_hash(password)
 
-        # Assign the new salesperson to the same business
+        # Add new user and get ID
         cur.execute("""
             INSERT INTO users (username, password, role, business_id)
             VALUES (%s, %s, %s, %s)
+            RETURNING id
         """, (username, password_hash, role, business_id))
+        new_user_id = cur.fetchone()['id']
         conn.commit()
-        new_user_id = cur.lastrowid
+
         initialize_salesperson_inventory(new_user_id)
 
-    # Only list salespeople from this owner's business
+    # Fetch existing salespeople for this business
     cur.execute("""
         SELECT id, username, role FROM users
         WHERE role = 'salesperson' AND business_id = %s
