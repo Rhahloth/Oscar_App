@@ -242,29 +242,41 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method, custom
         SELECT business_id FROM users WHERE id = %s
     """, (salesperson_id,))
     business = cur.fetchone()
+    if not business:
+        raise ValueError("❌ Salesperson has no associated business.")
     business_id = business['business_id']
 
     # Step 4: Determine payment details
     total_amount = quantity * price
-    amount_paid = total_amount if payment_method == 'Cash' else 0
-    payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
+    amount_paid = total_amount if payment_method.lower() == 'cash' else 0
+    payment_status = 'paid' if payment_method.lower() == 'cash' else 'unpaid'
 
-    # Step 5: Insert sale record
-    cur.execute("""
-        INSERT INTO sales (
-            product_id, quantity, salesperson_id, price, payment_method,
-            date, amount_paid, payment_status, business_id, customer_id
-        ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
-        RETURNING id
-    """, (product_id, quantity, salesperson_id, price, payment_method,
-          amount_paid, payment_status, business_id, customer_id))
+    # Step 5: Insert sale
+    if payment_method.lower() == 'cash':
+        cur.execute("""
+            INSERT INTO sales (
+                product_id, quantity, salesperson_id, price, payment_method,
+                date, amount_paid, payment_status, business_id
+            ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s)
+            RETURNING id
+        """, (product_id, quantity, salesperson_id, price, payment_method,
+              amount_paid, payment_status, business_id))
+    else:
+        if not customer_id:
+            raise ValueError("❌ Credit sales must have an assigned customer.")
+        cur.execute("""
+            INSERT INTO sales (
+                product_id, quantity, salesperson_id, price, payment_method,
+                date, amount_paid, payment_status, business_id, customer_id
+            ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
+            RETURNING id
+        """, (product_id, quantity, salesperson_id, price, payment_method,
+              amount_paid, payment_status, business_id, customer_id))
 
     sale_id = cur.fetchone()['id']
 
-    # Step 6: If Credit — insert into credit_sales table
+    # Step 6: Credit sale record
     if payment_method.lower() == 'credit':
-        if not customer_id:
-            raise ValueError("❌ Credit sales must have an assigned customer.")
         cur.execute("""
             INSERT INTO credit_sales (
                 sale_id, customer_id, amount, balance, due_date, status

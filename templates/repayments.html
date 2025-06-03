@@ -18,11 +18,29 @@
               Email: raysokello@gmail.com
             </div>
           </div>
-          <div class="navbar-right">
+          <div>
             {% if session.username %}
-            <span>Logged in as: {{ session.username }}</span>
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
             <a href="/logout">
-              <button class="btn btn-danger">Logout</button>
+              <button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button>
             </a>
             {% endif %}
           </div>

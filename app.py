@@ -108,15 +108,30 @@ def record_sale():
     if 'user_id' not in session or session['role'] != 'salesperson':
         return redirect('/login')
 
-    inventory = get_user_inventory(session['user_id'])
-
-    # 🔁 Get all distinct categories from the products table
     conn = get_db()
     cur = conn.cursor()
+
+    # Get the salesperson's inventory
+    inventory = get_user_inventory(session['user_id'])
+
+    # Get distinct categories (if needed elsewhere in the template)
     cur.execute("SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category")
     categories = [row['category'] for row in cur.fetchall()]
 
-    return render_template("record_sale.html", products=inventory, categories=categories)
+    # 🔁 Get customers belonging to the salesperson's business
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    result = cur.fetchone()
+    business_id = result['business_id'] if result else None
+
+    customers = []
+    if business_id:
+        cur.execute("SELECT id, name FROM customers WHERE business_id = %s ORDER BY name", (business_id,))
+        customers = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template("record_sale.html", products=inventory, categories=categories, customers=customers)
 
 
 @app.route('/submit_sale', methods=['POST'])
@@ -126,8 +141,8 @@ def submit_sale():
 
     cart_data = request.form.get('cart_data')
     payment_method = request.form.get('payment_method')
-    customer_id = request.form.get('customer_id')
-    due_date = request.form.get('due_date')  # Optional
+    customer_id = request.form.get('customer_id') or None
+    due_date = request.form.get('due_date') or None
 
     if not cart_data or not payment_method:
         return "Missing sale data or payment method", 400
@@ -144,7 +159,7 @@ def submit_sale():
             quantity = int(item['quantity'])
             price = float(item['price'])
 
-            # Step 1: Check and update inventory
+            # Step 1: Check inventory
             cur.execute("""
                 SELECT quantity FROM user_inventory
                 WHERE user_id = %s AND product_id = %s
@@ -153,38 +168,55 @@ def submit_sale():
             if not inv or inv['quantity'] < quantity:
                 raise ValueError(f"❌ Not enough stock for product ID {product_id}")
 
+            # Step 2: Deduct inventory
             cur.execute("""
                 UPDATE user_inventory
                 SET quantity = quantity - %s
                 WHERE user_id = %s AND product_id = %s
             """, (quantity, user_id, product_id))
 
-            # Step 2: Add sale
+            # Step 3: Insert sale
             amount_paid = quantity * price if payment_method == 'Cash' else 0
             payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
 
             cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
             business_id = cur.fetchone()['business_id']
 
-            cur.execute("""
-                INSERT INTO sales (
-                    product_id, quantity, salesperson_id, price, payment_method,
-                    date, amount_paid, payment_status, business_id, customer_id
-                ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
-                RETURNING id
-            """, (
-                product_id, quantity, user_id, price, payment_method,
-                amount_paid, payment_status, business_id, customer_id
-            ))
+            if payment_method == 'Cash':
+                cur.execute("""
+                    INSERT INTO sales (
+                        product_id, quantity, salesperson_id, price, payment_method,
+                        date, amount_paid, payment_status, business_id
+                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s)
+                    RETURNING id
+                """, (
+                    product_id, quantity, user_id, price, payment_method,
+                    amount_paid, payment_status, business_id
+                ))
+            else:
+                cur.execute("""
+                    INSERT INTO sales (
+                        product_id, quantity, salesperson_id, price, payment_method,
+                        date, amount_paid, payment_status, business_id, customer_id
+                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
+                    RETURNING id
+                """, (
+                    product_id, quantity, user_id, price, payment_method,
+                    amount_paid, payment_status, business_id, int(customer_id)
+                ))
+
             sale_id = cur.fetchone()['id']
 
-            # Step 3: If credit, log credit details
+            # Step 4: Record credit info if applicable
             if payment_method == 'Credit' and customer_id:
                 total_amount = quantity * price
                 cur.execute("""
-                    INSERT INTO credit_sales (sale_id, customer_id, amount, balance, due_date, status)
-                    VALUES (%s, %s, %s, %s, %s, 'unpaid')
-                """, (sale_id, customer_id, total_amount, total_amount, due_date or None))
+                    INSERT INTO credit_sales (
+                        sale_id, customer_id, amount, balance, due_date, status
+                    ) VALUES (%s, %s, %s, %s, %s, 'unpaid')
+                """, (
+                    sale_id, int(customer_id), total_amount, total_amount, due_date
+                ))
 
         conn.commit()
         return redirect('/dashboard')
