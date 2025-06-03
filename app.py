@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     get_user, get_sales, get_products, add_sale, get_user_inventory,
     add_salesperson_stock_bulk, approve_request, reject_request, get_pending_requests_for_user,
-    initialize_salesperson_inventory, get_db, get_customers_for_business, generate_batch_no
+    initialize_salesperson_inventory, get_db, get_customers_for_business, generate_batch_number
 )
 from models import initialize_database
 initialize_database()
