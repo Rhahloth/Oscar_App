@@ -240,26 +240,28 @@ def submit_sale():
 
 @app.route('/batch_sales/<batch_no>')
 def batch_sales(batch_no):
-    if 'user_id' not in session or session['role'] != 'salesperson':
+    if 'user_id' not in session:
         return redirect('/login')
 
     conn = get_db()
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT s.*, p.product_name, c.name AS customer_name
+        SELECT s.*, 
+               p.name AS product_name,
+               c.name AS customer_name
         FROM sales s
         JOIN products p ON s.product_id = p.id
         LEFT JOIN customers c ON s.customer_id = c.id
-        WHERE s.batch_no = %s AND s.salesperson_id = %s
-        ORDER BY s.date ASC
-    """, (batch_no, session['user_id']))
+        WHERE s.batch_no = %s
+        ORDER BY s.date
+    """, (batch_no,))
     sales = cur.fetchall()
 
     cur.close()
     conn.close()
 
-    return render_template('batch_sales.html', sales=sales, batch_no=batch_no)
+    return render_template('batch_sales.html', sales=sales, batch_number=batch_no)
 
 
 @app.route('/products', methods=['GET', 'POST'])
