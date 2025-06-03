@@ -148,18 +148,17 @@ def submit_sale():
     if not cart_data or not payment_method:
         return "Missing sale data or payment method", 400
 
+    items = json.loads(cart_data)
+    user_id = session['user_id']
+
+    conn = get_db()
+    cur = conn.cursor()
+
     try:
-        items = json.loads(cart_data)
-        user_id = session['user_id']
-
-        conn = get_db()
-        cur = conn.cursor()
-
         cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
         user_row = cur.fetchone()
         if not user_row:
-            raise Exception("❌ Salesperson not found in DB")
-
+            raise ValueError("❌ User not found.")
         username = user_row['username']
         business_id = user_row['business_id']
 
@@ -167,7 +166,9 @@ def submit_sale():
         date_str = datetime.now().strftime("%Y%m%d")
 
         cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
-        count = cur.fetchone()[0] + 1
+        count_row = cur.fetchone()
+        count = count_row[0] + 1 if count_row else 1
+
         batch_no = f"{initials}_{date_str}_{count:03d}"
 
         for item in items:
@@ -175,7 +176,6 @@ def submit_sale():
             quantity = int(item['quantity'])
             price = float(item['price'])
 
-            # Deduct inventory
             cur.execute("""
                 UPDATE user_inventory
                 SET quantity = quantity - %s
@@ -184,20 +184,6 @@ def submit_sale():
 
             amount_paid = quantity * price if payment_method == 'Cash' else 0
             payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
-
-            # Log what we’re about to insert
-            debug_payload = {
-                "product_id": product_id,
-                "quantity": quantity,
-                "price": price,
-                "amount_paid": amount_paid,
-                "payment_method": payment_method,
-                "payment_status": payment_status,
-                "customer_id": customer_id,
-                "business_id": business_id,
-                "batch_no": batch_no
-            }
-            print("🧾 Insert Payload:", debug_payload)
 
             if payment_method == 'Cash':
                 cur.execute("""
@@ -212,7 +198,7 @@ def submit_sale():
                 ))
             else:
                 if not customer_id:
-                    raise Exception("❌ Customer ID is required for credit sales")
+                    raise ValueError("❌ Credit sale missing customer.")
                 cur.execute("""
                     INSERT INTO sales (
                         product_id, quantity, salesperson_id, price, payment_method,
@@ -224,16 +210,12 @@ def submit_sale():
                     amount_paid, payment_status, business_id, int(customer_id), batch_no
                 ))
 
-            result = cur.fetchone()
-            print("🆔 Inserted Sale ID Result:", result)
+            sale_row = cur.fetchone()
+            if not sale_row:
+                raise ValueError("❌ Failed to fetch inserted sale ID.")
+            sale_id = sale_row['id']
 
-            if not result or 'id' not in result:
-                raise Exception("❌ Sale insertion failed — no ID returned.")
-
-            sale_id = result['id']
-
-            # Insert into credit_sales if credit
-            if payment_method == 'Credit':
+            if payment_method == 'Credit' and customer_id:
                 total_amount = quantity * price
                 cur.execute("""
                     INSERT INTO credit_sales (
@@ -244,17 +226,17 @@ def submit_sale():
                 ))
 
         conn.commit()
-        return redirect('/dashboard')
+        return redirect(f'/batch_sales/{batch_no}')
 
     except Exception as e:
-        if 'conn' in locals():
-            conn.rollback()
-        print("🚨 Sale Submission Error:", str(e))
-        return f"❌ An error occurred while submitting the sale: {str(e)}", 400
+        conn.rollback()
+        import traceback
+        print("❌ Sale Submission Error:", traceback.format_exc())
+        return str(e), 400
 
     finally:
-        if 'cur' in locals(): cur.close()
-        if 'conn' in locals(): conn.close()
+        cur.close()
+        conn.close()
 
 @app.route('/batch_sales/<batch_no>')
 def batch_sales(batch_no):
