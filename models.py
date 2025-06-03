@@ -2,6 +2,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 from dotenv import load_dotenv
+from datetime import datetime
+
 
 load_dotenv()
 
@@ -16,7 +18,7 @@ def initialize_database():
 
     # # Drop tables in order to avoid dependency issues
     # cur.execute('DROP TABLE IF EXISTS credit_repayments CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
@@ -88,9 +90,11 @@ def initialize_database():
             business_id INTEGER REFERENCES businesses(id),
             amount_paid FLOAT DEFAULT 0,
             payment_status TEXT DEFAULT 'unpaid',
-            customer_id INTEGER REFERENCES customers(id)
+            customer_id INTEGER REFERENCES customers(id),
+            batch_no VARCHAR(50)
         );
     ''')
+
 
     # Credit Sales
     cur.execute('''
@@ -419,6 +423,25 @@ def approve_request(request_id, user_id):
 
     conn.commit()
     return "approved"
+    
+def generate_batch_number(salesperson_name, conn):
+    # 1. Extract initials
+    initials = ''.join(part[0] for part in salesperson_name.strip().split()).upper()
+
+    # 2. Use today's date
+    date_str = datetime.now().strftime("%Y%m%d")
+
+    # 3. Get the count of existing batches for today by this salesperson
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT COUNT(*) FROM sales 
+        WHERE batch_number LIKE %s
+    """, (f"{initials}_{date_str}_%",))
+    count = cur.fetchone()[0] + 1
+
+    # 4. Format as PREFIX_YYYYMMDD_###
+    batch_number = f"{initials}_{date_str}_{count:03d}"
+    return batch_number
 
 def reject_request(request_id, user_id, reason):
     conn = get_db()

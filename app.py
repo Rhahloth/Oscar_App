@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     get_user, get_sales, get_products, add_sale, get_user_inventory,
     add_salesperson_stock_bulk, approve_request, reject_request, get_pending_requests_for_user,
-    initialize_salesperson_inventory, get_db, get_customers_for_business
+    initialize_salesperson_inventory, get_db, get_customers_for_business, generate_batch_number
 )
 from models import initialize_database
 initialize_database()
@@ -61,11 +61,12 @@ def dashboard():
             return "Business not found", 400
         business_id = business['business_id']
 
-        # Fetch only sales for this business, include total
+        # Fetch only sales for this business, include total and batch number
         cur.execute('''
             SELECT s.*, 
                    p.name AS product_name, 
                    u.username AS salesperson_name,
+                   s.batch_number,
                    (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
@@ -78,10 +79,11 @@ def dashboard():
         return render_template('dashboard_owner.html', sales=sales)
 
     else:  # salesperson
-        # Get sales only for this salesperson, include total_price
+        # Get sales only for this salesperson, include total_price and batch number
         cur.execute('''
             SELECT s.*, 
                    p.name AS product_name,
+                   s.batch_number,
                    (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
@@ -133,7 +135,6 @@ def record_sale():
 
     return render_template("record_sale.html", products=inventory, categories=categories, customers=customers)
 
-
 @app.route('/submit_sale', methods=['POST'])
 def submit_sale():
     if 'user_id' not in session or session['role'] != 'salesperson':
@@ -154,60 +155,59 @@ def submit_sale():
     cur = conn.cursor()
 
     try:
+        cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
+        user_row = cur.fetchone()
+        username = user_row['username']
+        business_id = user_row['business_id']
+
+        initials = ''.join(part[0] for part in username.strip().split()).upper()
+        date_str = datetime.now().strftime("%Y%m%d")
+
+        cur.execute("SELECT COUNT(DISTINCT batch_number) FROM sales WHERE batch_number LIKE %s", (f"{initials}_{date_str}_%",))
+        count = cur.fetchone()[0] + 1
+
+        batch_number = f"{initials}_{date_str}_{count:03d}"
+
         for item in items:
             product_id = int(item['productId'])
             quantity = int(item['quantity'])
             price = float(item['price'])
 
-            # Step 1: Check inventory
-            cur.execute("""
-                SELECT quantity FROM user_inventory
-                WHERE user_id = %s AND product_id = %s
-            """, (user_id, product_id))
-            inv = cur.fetchone()
-            if not inv or inv['quantity'] < quantity:
-                raise ValueError(f"❌ Not enough stock for product ID {product_id}")
-
-            # Step 2: Deduct inventory
+            # Step 1: Deduct inventory
             cur.execute("""
                 UPDATE user_inventory
                 SET quantity = quantity - %s
                 WHERE user_id = %s AND product_id = %s
             """, (quantity, user_id, product_id))
 
-            # Step 3: Insert sale
             amount_paid = quantity * price if payment_method == 'Cash' else 0
             payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
-
-            cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
-            business_id = cur.fetchone()['business_id']
 
             if payment_method == 'Cash':
                 cur.execute("""
                     INSERT INTO sales (
                         product_id, quantity, salesperson_id, price, payment_method,
-                        date, amount_paid, payment_status, business_id
-                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s)
+                        date, amount_paid, payment_status, business_id, batch_number
+                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
                     RETURNING id
                 """, (
                     product_id, quantity, user_id, price, payment_method,
-                    amount_paid, payment_status, business_id
+                    amount_paid, payment_status, business_id, batch_number
                 ))
             else:
                 cur.execute("""
                     INSERT INTO sales (
                         product_id, quantity, salesperson_id, price, payment_method,
-                        date, amount_paid, payment_status, business_id, customer_id
-                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
+                        date, amount_paid, payment_status, business_id, customer_id, batch_number
+                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
                     RETURNING id
                 """, (
                     product_id, quantity, user_id, price, payment_method,
-                    amount_paid, payment_status, business_id, int(customer_id)
+                    amount_paid, payment_status, business_id, int(customer_id), batch_number
                 ))
 
             sale_id = cur.fetchone()['id']
 
-            # Step 4: Record credit info if applicable
             if payment_method == 'Credit' and customer_id:
                 total_amount = quantity * price
                 cur.execute("""
@@ -228,6 +228,30 @@ def submit_sale():
     finally:
         cur.close()
         conn.close()
+
+@app.route('/batch_sales/<batch_number>')
+def batch_sales(batch_number):
+    if 'user_id' not in session or session['role'] != 'salesperson':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT s.*, p.product_name, c.name AS customer_name
+        FROM sales s
+        JOIN products p ON s.product_id = p.id
+        LEFT JOIN customers c ON s.customer_id = c.id
+        WHERE s.batch_number = %s AND s.salesperson_id = %s
+        ORDER BY s.date ASC
+    """, (batch_number, session['user_id']))
+    sales = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return render_template('batch_sales.html', sales=sales, batch_number=batch_number)
+
 
 @app.route('/products', methods=['GET', 'POST'])
 def products():
@@ -1080,26 +1104,20 @@ def repayments():
     conn = get_db()
     cur = conn.cursor()
 
-    # Get the salesperson's business_id
-    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
-    business = cur.fetchone()
-    business_id = business['business_id']
+    selected_customer_id = request.form.get('selected_customer_id') if request.method == 'POST' else None
+    total_owed = None
 
-    # Get all customers in this business
-    cur.execute("SELECT id, name FROM customers WHERE business_id = %s ORDER BY name", (business_id,))
-    customers = cur.fetchall()
-
-    selected_customer_id = request.args.get('customer_id', type=int)
-
-    if request.method == 'POST':
+    if request.method == 'POST' and 'credit_id' in request.form:
         credit_id = int(request.form['credit_id'])
         amount = float(request.form['amount'])
 
+        # Insert repayment
         cur.execute("""
             INSERT INTO credit_repayments (credit_id, amount)
             VALUES (%s, %s)
         """, (credit_id, amount))
 
+        # Update credit sale balance and status
         cur.execute("""
             UPDATE credit_sales
             SET balance = balance - %s,
@@ -1113,26 +1131,39 @@ def repayments():
 
         conn.commit()
 
-    # Filter credit sales by customer if selected
-    credit_query = """
-        SELECT cs.id AS credit_id, c.name AS customer_name, cs.amount, cs.balance, s.date
+    # Fetch all customers linked to this salesperson's business
+    cur.execute("""
+        SELECT DISTINCT c.id, c.name
         FROM credit_sales cs
-        JOIN sales s ON cs.sale_id = s.id
         JOIN customers c ON cs.customer_id = c.id
-        WHERE cs.status IN ('unpaid', 'partial')
-        AND s.salesperson_id = %s
-    """
-    params = [session['user_id']]
+        JOIN sales s ON cs.sale_id = s.id
+        WHERE s.salesperson_id = %s
+    """, (session['user_id'],))
+    customers = cur.fetchall()
 
+    # Fetch credit sales for the selected customer (if any)
     if selected_customer_id:
-        credit_query += " AND c.id = %s"
-        params.append(selected_customer_id)
+        cur.execute("""
+            SELECT cs.id AS credit_id, c.name AS customer_name, cs.amount, cs.balance, s.date
+            FROM credit_sales cs
+            JOIN sales s ON cs.sale_id = s.id
+            JOIN customers c ON cs.customer_id = c.id
+            WHERE cs.status IN ('unpaid', 'partial') AND s.salesperson_id = %s AND c.id = %s
+            ORDER BY s.date DESC
+        """, (session['user_id'], selected_customer_id))
+        credit_sales = cur.fetchall()
 
-    credit_query += " ORDER BY s.date DESC"
-    cur.execute(credit_query, tuple(params))
-    credit_sales = cur.fetchall()
+        cur.execute("""
+            SELECT SUM(balance) AS total_balance
+            FROM credit_sales cs
+            JOIN sales s ON cs.sale_id = s.id
+            WHERE cs.status IN ('unpaid', 'partial') AND s.salesperson_id = %s AND cs.customer_id = %s
+        """, (session['user_id'], selected_customer_id))
+        result = cur.fetchone()
+        total_owed = result['total_balance'] if result and result['total_balance'] else 0
+    else:
+        credit_sales = []
 
-    # Recent repayments
     cur.execute("""
         SELECT r.amount, r.paid_on, c.name AS customer_name
         FROM credit_repayments r
@@ -1145,13 +1176,12 @@ def repayments():
     """, (session['user_id'],))
     repayments = cur.fetchall()
 
-    return render_template(
-        'repayments.html',
+    return render_template('repayments.html',
+        customers=customers,
+        selected_customer_id=selected_customer_id,
         credit_sales=credit_sales,
         repayments=repayments,
-        customers=customers,
-        selected_customer_id=selected_customer_id
-    )
+        total_owed=total_owed)
 
 #credit buyers
 @app.route('/add_customer', methods=['GET', 'POST'])

@@ -65,7 +65,8 @@
       <table class="table">
         <thead>
           <tr>
-            <th>Time</th>
+            <th>Date</th>
+            <th>Batch No</th>
             <th>Product</th>
             <th>Quantity</th>
             <th>Sold By</th>
@@ -75,7 +76,12 @@
         <tbody>
           {% for sale in sales %}
           <tr>
-            <td>{{ sale.date.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ sale.date.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <a href="/batch_sales/{{ sale.batch_number }}"
+                >{{ sale.batch_number }}</a
+              >
+            </td>
             <td>{{ sale.product_name }}</td>
             <td>{{ sale.quantity }}</td>
             <td>{{ sale.salesperson_name }}</td>

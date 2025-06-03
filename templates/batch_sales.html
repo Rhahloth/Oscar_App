@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Batch Sales - RO Solutions</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RO Solutions</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button style="background-color: #d9534f; color: white">
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h2>
+        Sales for Batch: <span style="color: green">{{ batch_number }}</span>
+      </h2>
+
+      {% if sales %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Price</th>
+            <th>Amount Paid</th>
+            <th>Payment Method</th>
+            <th>Customer</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in sales %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.product_name }}</td>
+            <td>{{ s.quantity }}</td>
+            <td>{{ s.price }}</td>
+            <td>{{ s.amount_paid }}</td>
+            <td>{{ s.payment_method }}</td>
+            <td>{{ s.customer_name or '-' }}</td>
+            <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No sales found for this batch.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>
