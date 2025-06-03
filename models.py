@@ -15,12 +15,19 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    # Drop tables in order to avoid dependency issues
+    cur.execute('DROP TABLE IF EXISTS credit_repayments CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
     cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
     cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
     cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
+
+    # Create in correct dependency order
 
     # Businesses
     cur.execute('''
@@ -42,7 +49,7 @@ def initialize_database():
             business_id INTEGER REFERENCES businesses(id)
         );
     ''')
-    
+
     # Products
     cur.execute('''
         CREATE TABLE IF NOT EXISTS products (
@@ -86,6 +93,19 @@ def initialize_database():
         );
     ''')
 
+    # Credit Sales
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS credit_sales (
+            id SERIAL PRIMARY KEY,
+            sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
+            customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
+            amount NUMERIC NOT NULL,
+            balance NUMERIC NOT NULL,
+            due_date DATE,
+            status TEXT CHECK (status IN ('unpaid', 'partial', 'paid')) DEFAULT 'unpaid'
+        );
+    ''')
+
     # Credit Repayments
     cur.execute('''
         CREATE TABLE IF NOT EXISTS credit_repayments (
@@ -95,7 +115,7 @@ def initialize_database():
             paid_on DATE DEFAULT CURRENT_DATE
         );
     ''')
-    
+
     # Distribution Log
     cur.execute('''
         CREATE TABLE IF NOT EXISTS distribution_log (
@@ -109,7 +129,7 @@ def initialize_database():
         );
     ''')
 
-
+    # User Inventory
     cur.execute('''
         CREATE TABLE IF NOT EXISTS user_inventory (
             id SERIAL PRIMARY KEY,
@@ -119,7 +139,6 @@ def initialize_database():
             UNIQUE(user_id, product_id)
         );
     ''')
-
 
     # Stock Requests
     cur.execute('''
@@ -135,20 +154,6 @@ def initialize_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
-
-    # Credit Sales
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS credit_sales (
-            id SERIAL PRIMARY KEY,
-            sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
-            customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
-            amount NUMERIC NOT NULL,
-            balance NUMERIC NOT NULL,
-            due_date DATE,
-            status TEXT CHECK (status IN ('unpaid', 'partial', 'paid')) DEFAULT 'unpaid'
-        );
-    ''')
-
 
     conn.commit()
     cur.close()
