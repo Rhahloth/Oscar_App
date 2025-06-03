@@ -1080,17 +1080,26 @@ def repayments():
     conn = get_db()
     cur = conn.cursor()
 
+    # Get the salesperson's business_id
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    business = cur.fetchone()
+    business_id = business['business_id']
+
+    # Get all customers in this business
+    cur.execute("SELECT id, name FROM customers WHERE business_id = %s ORDER BY name", (business_id,))
+    customers = cur.fetchall()
+
+    selected_customer_id = request.args.get('customer_id', type=int)
+
     if request.method == 'POST':
         credit_id = int(request.form['credit_id'])
         amount = float(request.form['amount'])
 
-        # Insert repayment
         cur.execute("""
             INSERT INTO credit_repayments (credit_id, amount)
             VALUES (%s, %s)
         """, (credit_id, amount))
 
-        # Update credit sale balance and status
         cur.execute("""
             UPDATE credit_sales
             SET balance = balance - %s,
@@ -1104,18 +1113,26 @@ def repayments():
 
         conn.commit()
 
-    # Fetch unpaid credit sales assigned to this salesperson's business
-    cur.execute("""
+    # Filter credit sales by customer if selected
+    credit_query = """
         SELECT cs.id AS credit_id, c.name AS customer_name, cs.amount, cs.balance, s.date
         FROM credit_sales cs
         JOIN sales s ON cs.sale_id = s.id
         JOIN customers c ON cs.customer_id = c.id
-        WHERE cs.status IN ('unpaid', 'partial') AND s.salesperson_id = %s
-        ORDER BY s.date DESC
-    """, (session['user_id'],))
+        WHERE cs.status IN ('unpaid', 'partial')
+        AND s.salesperson_id = %s
+    """
+    params = [session['user_id']]
+
+    if selected_customer_id:
+        credit_query += " AND c.id = %s"
+        params.append(selected_customer_id)
+
+    credit_query += " ORDER BY s.date DESC"
+    cur.execute(credit_query, tuple(params))
     credit_sales = cur.fetchall()
 
-    # Fetch recent repayments
+    # Recent repayments
     cur.execute("""
         SELECT r.amount, r.paid_on, c.name AS customer_name
         FROM credit_repayments r
@@ -1128,7 +1145,13 @@ def repayments():
     """, (session['user_id'],))
     repayments = cur.fetchall()
 
-    return render_template('repayments.html', credit_sales=credit_sales, repayments=repayments)
+    return render_template(
+        'repayments.html',
+        credit_sales=credit_sales,
+        repayments=repayments,
+        customers=customers,
+        selected_customer_id=selected_customer_id
+    )
 
 #credit buyers
 @app.route('/add_customer', methods=['GET', 'POST'])

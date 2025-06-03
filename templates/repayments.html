@@ -1,94 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Credit Repayments - RO Solutions</title>
-    <link rel="stylesheet" href="/static/styles.css" />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Credit Repayments - RO Solutions</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="navbar-wrapper">
+    <div class="navbar-inner">
+      <div class="navbar">
+        <div class="navbar-left">
+          <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+          <div class="company-details-inline">
+            <strong>RO Solutions</strong><br />
+            <em>Your sales are guaranteed</em><br />
+            Tel: +256 778 412 136 <br />
+            Email: raysokello@gmail.com
           </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
+        </div>
+        <div>
+          {% if session.username %}
+          <div>BRANCH: {{ session.username }}</div>
+          {% endif %}
+        </div>
+        <div>
+          <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+        </div>
+        <div class="navbar-right" style="display: flex; align-items: center; gap: 10px">
+          {% if session.username %}
+          <a href="/logout">
+            <button style="background-color: #d9534f; color: white; margin-left: 12px;">
+              Logout
+            </button>
+          </a>
+          {% endif %}
         </div>
       </div>
     </div>
+  </div>
 
-    <div class="container">
-      <h2>Credit Repayments</h2>
+  <div class="container">
+    <h2>Credit Repayments</h2>
 
-      <form method="POST" action="/submit_repayment">
-        <label for="credit_id">Select Credit Sale</label>
-        <select name="credit_id" required>
-          <option value="">-- Choose Credit --</option>
-          {% for credit in outstanding_credits %}
-          <option value="{{ credit.id }}">
-            {{ credit.customer_name }} - {{ credit.amount }} UGX - Balance: {{
-            credit.balance }}
+    <!-- Filter by customer -->
+    <form method="GET" action="/repayments">
+      <label for="customer_id">Filter by Customer</label>
+      <select name="customer_id" id="customer_id" onchange="this.form.submit()">
+        <option value="">-- All Customers --</option>
+        {% for customer in customers %}
+          <option value="{{ customer.id }}" {% if customer.id == selected_customer_id %}selected{% endif %}>
+            {{ customer.name }}
           </option>
-          {% endfor %}
-        </select>
+        {% endfor %}
+      </select>
+    </form>
 
-        <label for="amount">Amount Paid (UGX)</label>
-        <input type="number" name="amount" min="100" required />
+    <!-- Submit repayment -->
+    <form method="POST" action="/repayments">
+      <label for="credit_id">Select Credit Sale</label>
+      <select name="credit_id" required>
+        <option value="">-- Choose Credit --</option>
+        {% for credit in credit_sales %}
+          <option value="{{ credit.credit_id }}">
+            {{ credit.customer_name }} - {{ credit.amount }} UGX - Balance: {{ credit.balance }}
+          </option>
+        {% endfor %}
+      </select>
 
-        <button type="submit">Submit Repayment</button>
-      </form>
+      <label for="amount">Amount Paid (UGX)</label>
+      <input type="number" name="amount" min="100" required />
 
-      <hr />
-      <h4>Recent Repayments</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>Customer</th>
-            <th>Amount</th>
-            <th>Paid On</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in recent_repayments %}
+      <button type="submit">Submit Repayment</button>
+    </form>
+
+    <hr />
+    <h4>Recent Repayments</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Amount</th>
+          <th>Paid On</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in repayments %}
           <tr>
             <td>{{ r.customer_name }}</td>
             <td>{{ r.amount }}</td>
             <td>{{ r.paid_on }}</td>
           </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </body>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</body>
 </html>
