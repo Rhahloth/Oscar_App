@@ -72,12 +72,7 @@
         <tbody>
           {% for sale in sales %}
           <tr>
-            <td>
-              {{ sale.date.strftime('%Y-%m-%d %H:%M') if sale.date else '' }}
-            </td>
-            <td>{{ sale.product_name }}</td>
-            <td>{{ sale.quantity }}</td>
-            <td>{{ "{:,.0f}".format(sale.total_price or 0) }}</td>
+            <td>{{ sale.date.strftime('%Y-%m-%d') if sale.date else '' }}</td>
             <td>
               <a
                 href="/batch_sales/{{ sale.batch_number }}"
@@ -86,6 +81,9 @@
                 {{ sale.batch_number }}
               </a>
             </td>
+            <td>{{ sale.product_name }}</td>
+            <td>{{ sale.quantity }}</td>
+            <td>{{ "{:,.0f}".format(sale.total_price or 0) }}</td>
           </tr>
           {% endfor %}
         </tbody>

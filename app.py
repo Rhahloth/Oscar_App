@@ -66,8 +66,9 @@ def dashboard():
             SELECT s.*, 
                    p.name AS product_name, 
                    u.username AS salesperson_name,
-                   s.batch_no,
+                   s.batch_no AS batch_number,
                    (s.quantity * s.price) AS total_price
+
             FROM sales s
             JOIN products p ON s.product_id = p.id
             JOIN users u ON s.salesperson_id = u.id
@@ -83,8 +84,8 @@ def dashboard():
         cur.execute('''
             SELECT s.*, 
                    p.name AS product_name,
-                   s.batch_no,
-                   (s.quantity * s.price) AS total_price
+                   s.batch_no AS batch_number,
+                  (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
             WHERE s.salesperson_id = %s
