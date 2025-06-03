@@ -832,8 +832,8 @@ def my_inventory():
         GROUP BY payment_method
     """, (user_id,))
     payment_summary = cur.fetchall()
-    cash_sales = sum(row['total'] for row in payment_summary if row['payment_method'] == 'cash')
-    credit_sales = sum(row['total'] for row in payment_summary if row['payment_method'] == 'credit')
+    cash_sales = sum(row['total'] for row in payment_summary if row['payment_method'].lower() == 'cash')
+    credit_sales = sum(row['total'] for row in payment_summary if row['payment_method'].lower() == 'credit')
 
     # Get all categories for filter dropdown
     cur.execute("""
@@ -844,19 +844,18 @@ def my_inventory():
     categories = [row['category'] for row in cur.fetchall() if row['category']]
 
     return render_template(
-                            "my_inventory.html",
-                            inventory=inventory,
-                            categories=categories,
-                            selected_category=category,
-                            search_term=search_term,
-                            total_stock_quantity=total_stock_quantity,
-                            inventory_worth=inventory_worth,
-                            cash_sales=cash_sales,
-                            credit_sales=credit_sales,
-                            start_date=start_date,
-                            end_date=end_date
+        "my_inventory.html",
+        inventory=inventory,
+        categories=categories,
+        selected_category=selected_category,
+        search_term=search_term,
+        total_stock_quantity=total_stock_qty,
+        inventory_worth=total_stock_value,
+        cash_sales=cash_sales,
+        credit_sales=credit_sales,
+        start_date=None,
+        end_date=None
     )
-
 
 @app.route('/report', methods=['GET', 'POST'])
 def report():
