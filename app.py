@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     get_user, get_sales, get_products, add_sale, get_user_inventory,
     add_salesperson_stock_bulk, approve_request, reject_request, get_pending_requests_for_user,
-    initialize_salesperson_inventory, get_db, get_customers_for_business, generate_batch_number
+    initialize_salesperson_inventory, get_db, get_customers_for_business, generate_batch_no
 )
 from models import initialize_database
 initialize_database()
@@ -66,7 +66,7 @@ def dashboard():
             SELECT s.*, 
                    p.name AS product_name, 
                    u.username AS salesperson_name,
-                   s.batch_number,
+                   s.batch_no,
                    (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
@@ -83,7 +83,7 @@ def dashboard():
         cur.execute('''
             SELECT s.*, 
                    p.name AS product_name,
-                   s.batch_number,
+                   s.batch_no,
                    (s.quantity * s.price) AS total_price
             FROM sales s
             JOIN products p ON s.product_id = p.id
@@ -163,10 +163,10 @@ def submit_sale():
         initials = ''.join(part[0] for part in username.strip().split()).upper()
         date_str = datetime.now().strftime("%Y%m%d")
 
-        cur.execute("SELECT COUNT(DISTINCT batch_number) FROM sales WHERE batch_number LIKE %s", (f"{initials}_{date_str}_%",))
+        cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
         count = cur.fetchone()[0] + 1
 
-        batch_number = f"{initials}_{date_str}_{count:03d}"
+        batch_no = f"{initials}_{date_str}_{count:03d}"
 
         for item in items:
             product_id = int(item['productId'])
@@ -187,23 +187,23 @@ def submit_sale():
                 cur.execute("""
                     INSERT INTO sales (
                         product_id, quantity, salesperson_id, price, payment_method,
-                        date, amount_paid, payment_status, business_id, batch_number
+                        date, amount_paid, payment_status, business_id, batch_no
                     ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
                     RETURNING id
                 """, (
                     product_id, quantity, user_id, price, payment_method,
-                    amount_paid, payment_status, business_id, batch_number
+                    amount_paid, payment_status, business_id, batch_no
                 ))
             else:
                 cur.execute("""
                     INSERT INTO sales (
                         product_id, quantity, salesperson_id, price, payment_method,
-                        date, amount_paid, payment_status, business_id, customer_id, batch_number
+                        date, amount_paid, payment_status, business_id, customer_id, batch_no
                     ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
                     RETURNING id
                 """, (
                     product_id, quantity, user_id, price, payment_method,
-                    amount_paid, payment_status, business_id, int(customer_id), batch_number
+                    amount_paid, payment_status, business_id, int(customer_id), batch_no
                 ))
 
             sale_id = cur.fetchone()['id']
@@ -229,8 +229,8 @@ def submit_sale():
         cur.close()
         conn.close()
 
-@app.route('/batch_sales/<batch_number>')
-def batch_sales(batch_number):
+@app.route('/batch_sales/<batch_no>')
+def batch_sales(batch_no):
     if 'user_id' not in session or session['role'] != 'salesperson':
         return redirect('/login')
 
@@ -242,15 +242,15 @@ def batch_sales(batch_number):
         FROM sales s
         JOIN products p ON s.product_id = p.id
         LEFT JOIN customers c ON s.customer_id = c.id
-        WHERE s.batch_number = %s AND s.salesperson_id = %s
+        WHERE s.batch_no = %s AND s.salesperson_id = %s
         ORDER BY s.date ASC
-    """, (batch_number, session['user_id']))
+    """, (batch_no, session['user_id']))
     sales = cur.fetchall()
 
     cur.close()
     conn.close()
 
-    return render_template('batch_sales.html', sales=sales, batch_number=batch_number)
+    return render_template('batch_sales.html', sales=sales, batch_no=batch_no)
 
 
 @app.route('/products', methods=['GET', 'POST'])
