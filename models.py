@@ -423,21 +423,16 @@ def approve_request(request_id, user_id):
     return "approved"
 
 def generate_batch_number(salesperson_name, conn):
-    # 1. Extract initials
     initials = ''.join(part[0] for part in salesperson_name.strip().split()).upper()
-
-    # 2. Use today's date
     date_str = datetime.now().strftime("%Y%m%d")
 
-    # 3. Get the count of existing batches for today by this salesperson
     cur = conn.cursor()
     cur.execute("""
         SELECT COUNT(*) FROM sales 
-        WHERE batch_number LIKE %s
+        WHERE batch_no LIKE %s
     """, (f"{initials}_{date_str}_%",))
     count = cur.fetchone()[0] + 1
 
-    # 4. Format as PREFIX_YYYYMMDD_###
     batch_number = f"{initials}_{date_str}_{count:03d}"
     return batch_number
 
