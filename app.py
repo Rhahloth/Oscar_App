@@ -167,7 +167,7 @@ def submit_sale():
 
         cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
         count_row = cur.fetchone()
-        count = count_row[0] + 1 if count_row else 1
+        count = list(count_row.values())[0] + 1 if count_row else 1
 
         batch_no = f"{initials}_{date_str}_{count:03d}"
 
