@@ -43,42 +43,52 @@
     </div>
 
     <div class="container">
-      <h2>
-        Sales for Batch: <span style="color: green">{{ batch_number }}</span>
-      </h2>
+      <div class="form-group action-buttons">
+        <div>
+          <h2>
+            Sales for Batch:
+            <span style="color: green">{{ batch_number }}</span>
+          </h2>
+        </div>
+        <div>
+          <a href="/record_sale"><button>Record another sale</button></a>
+        </div>
+      </div>
 
-      {% if sales %}
-      <table class="table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Product</th>
-            <th>Qty</th>
-            <th>Price</th>
-            <th>Amount Paid</th>
-            <th>Payment Method</th>
-            <th>Customer</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in sales %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ s.product_name }}</td>
-            <td>{{ s.quantity }}</td>
-            <td>{{ s.price }}</td>
-            <td>{{ s.amount_paid }}</td>
-            <td>{{ s.payment_method }}</td>
-            <td>{{ s.customer_name or '-' }}</td>
-            <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>No sales found for this batch.</p>
-      {% endif %}
+      <div>
+        {% if sales %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Amount Paid</th>
+              <th>Payment Method</th>
+              <th>Customer</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sales %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ s.product_name }}</td>
+              <td>{{ s.quantity }}</td>
+              <td>{{ s.price }}</td>
+              <td>{{ s.amount_paid }}</td>
+              <td>{{ s.payment_method }}</td>
+              <td>{{ s.customer_name or '-' }}</td>
+              <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>No sales found for this batch.</p>
+        {% endif %}
+      </div>
     </div>
   </body>
 </html>
