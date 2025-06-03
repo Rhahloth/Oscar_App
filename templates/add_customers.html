@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Manage Customers - RO Solutions</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RO Solutions</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>OWNER: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h4>Manage Customers</h4>
+      <div class="section-box">
+        <form method="POST">
+          <label for="name"><strong>Customer Name:</strong></label
+          ><br />
+          <input
+            type="text"
+            name="name"
+            required
+            style="width: 300px"
+          /><br /><br />
+
+          <label for="phone"><strong>Phone Number:</strong></label
+          ><br />
+          <input
+            type="text"
+            name="phone"
+            placeholder="Optional"
+            style="width: 300px"
+          /><br /><br />
+
+          <button type="submit">➕ Add Customer</button>
+        </form>
+      </div>
+
+      <hr />
+
+      <div class="section-box">
+        <h5>📋 Existing Customers</h5>
+        {% if customers %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in customers %}
+            <tr>
+              <td>{{ c.name }}</td>
+              <td>{{ c.phone or '—' }}</td>
+              <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p>No customers yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>

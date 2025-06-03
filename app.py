@@ -1096,6 +1096,44 @@ def repayments():
 
     return render_template('repayments.html', credit_sales=credit_sales, repayments=repayments)
 
+#credit buyers
+@app.route('/add_customer', methods=['GET', 'POST'])
+def add_customer():
+    if 'user_id' not in session or session['role'] != 'owner':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+
+        cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+        business = cur.fetchone()
+        if not business:
+            return "Business not found", 400
+
+        cur.execute("""
+            INSERT INTO customers (name, phone, business_id)
+            VALUES (%s, %s, %s)
+        """, (name, phone, business['business_id']))
+        conn.commit()
+        return redirect('/add_customer')
+
+    # View all existing customers for the business
+    cur.execute("""
+        SELECT c.id, c.name, c.phone, c.created_at
+        FROM customers c
+        JOIN users u ON u.business_id = c.business_id
+        WHERE u.id = %s
+        ORDER BY c.created_at DESC
+    """, (session['user_id'],))
+    customers = cur.fetchall()
+
+    return render_template('add_customer.html', customers=customers)
+
+
 @app.route('/logout')
 def logout():
     session.clear()
