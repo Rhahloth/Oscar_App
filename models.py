@@ -18,11 +18,11 @@ def initialize_database():
 
     # # Drop tables in order to avoid dependency issues
     # cur.execute('DROP TABLE IF EXISTS credit_repayments CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
@@ -423,7 +423,7 @@ def approve_request(request_id, user_id):
 
     conn.commit()
     return "approved"
-    
+
 def generate_batch_number(salesperson_name, conn):
     # 1. Extract initials
     initials = ''.join(part[0] for part in salesperson_name.strip().split()).upper()
