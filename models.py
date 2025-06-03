@@ -114,16 +114,7 @@ def initialize_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
-    # Customers
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS customers (
-            id SERIAL PRIMARY KEY,
-            business_id INTEGER REFERENCES businesses(id),
-            name TEXT NOT NULL,
-            phone TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ''')
+    
     # Customers
     cur.execute('''
         CREATE TABLE IF NOT EXISTS customers (
