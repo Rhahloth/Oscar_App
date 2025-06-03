@@ -107,6 +107,19 @@
           <p>Total Amount: UGX <span id="total_amount">0</span></p>
         </div>
 
+        <div class="section-box" id="creditOptions" style="display: none">
+          <label for="customerSelect">Select Customer (for Credit Sale):</label>
+          <select name="customer_id" id="customerSelect" required>
+            <option value="">-- Select a Customer --</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}">{{ customer.name }}</option>
+            {% endfor %}
+          </select>
+
+          <label for="dueDate">Due Date:</label>
+          <input type="date" name="due_date" id="dueDate" required />
+        </div>
+
         <div class="section-box">
           <input type="hidden" name="payment_method" id="payment_method" />
           <input type="hidden" name="cart_data" id="cart_data" />
@@ -122,16 +135,9 @@
 
     <script>
       let cart = [];
-
       const fullProductList = [
         {% for p in products %}
-          {
-            name: "{{ p.product_name }}",
-            id: "{{ p.product_id }}",
-            retail: "{{ p.retail_price }}",
-            cost: "{{ p.agent_price }}",
-            quantity: {{ p.quantity }}
-          },
+          { name: "{{ p.product_name }}", id: "{{ p.product_id }}", retail: "{{ p.retail_price }}", cost: "{{ p.agent_price }}", quantity: {{ p.quantity }} },
         {% endfor %}
       ];
 
@@ -246,8 +252,29 @@
         if (!cart.length) return alert("Add at least one item.");
         document.getElementById("cart_data").value = JSON.stringify(cart);
         document.getElementById("payment_method").value = method;
+
+        if (method === 'Credit') {
+          const customerId = document.getElementById("customerSelect").value;
+          const dueDate = document.getElementById("dueDate").value;
+
+          if (!customerId || !dueDate) {
+            alert("❌ For credit sales, please select a customer and due date.");
+            return;
+          }
+        }
+
         document.getElementById("saleForm").submit();
       }
+
+      document.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (btn.innerText === "Credit") {
+            document.getElementById("creditOptions").style.display = "block";
+          } else {
+            document.getElementById("creditOptions").style.display = "none";
+          }
+        });
+      });
     </script>
   </body>
 </html>

@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     get_user, get_sales, get_products, add_sale, get_user_inventory,
     add_salesperson_stock_bulk, approve_request, reject_request, get_pending_requests_for_user,
-    initialize_salesperson_inventory, get_db
+    initialize_salesperson_inventory, get_db, get_customers_for_business
 )
 from models import initialize_database
 initialize_database()
@@ -124,25 +124,78 @@ def submit_sale():
     if 'user_id' not in session or session['role'] != 'salesperson':
         return redirect('/login')
 
-
     cart_data = request.form.get('cart_data')
     payment_method = request.form.get('payment_method')
+    customer_id = request.form.get('customer_id')
+    due_date = request.form.get('due_date')  # Optional
 
     if not cart_data or not payment_method:
         return "Missing sale data or payment method", 400
 
     items = json.loads(cart_data)
+    user_id = session['user_id']
 
-    for item in items:
-        product_id = int(item['productId'])
-        quantity = int(item['quantity'])
-        price = float(item['price'])
-        try:
-            add_sale(product_id, quantity, session['user_id'], price, payment_method)
-        except ValueError as e:
-            return str(e), 400
+    conn = get_db()
+    cur = conn.cursor()
 
-    return redirect('/dashboard')
+    try:
+        for item in items:
+            product_id = int(item['productId'])
+            quantity = int(item['quantity'])
+            price = float(item['price'])
+
+            # Step 1: Check and update inventory
+            cur.execute("""
+                SELECT quantity FROM user_inventory
+                WHERE user_id = %s AND product_id = %s
+            """, (user_id, product_id))
+            inv = cur.fetchone()
+            if not inv or inv['quantity'] < quantity:
+                raise ValueError(f"❌ Not enough stock for product ID {product_id}")
+
+            cur.execute("""
+                UPDATE user_inventory
+                SET quantity = quantity - %s
+                WHERE user_id = %s AND product_id = %s
+            """, (quantity, user_id, product_id))
+
+            # Step 2: Add sale
+            amount_paid = quantity * price if payment_method == 'Cash' else 0
+            payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
+
+            cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+            business_id = cur.fetchone()['business_id']
+
+            cur.execute("""
+                INSERT INTO sales (
+                    product_id, quantity, salesperson_id, price, payment_method,
+                    date, amount_paid, payment_status, business_id, customer_id
+                ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
+                RETURNING id
+            """, (
+                product_id, quantity, user_id, price, payment_method,
+                amount_paid, payment_status, business_id, customer_id
+            ))
+            sale_id = cur.fetchone()['id']
+
+            # Step 3: If credit, log credit details
+            if payment_method == 'Credit' and customer_id:
+                total_amount = quantity * price
+                cur.execute("""
+                    INSERT INTO credit_sales (sale_id, customer_id, amount, balance, due_date, status)
+                    VALUES (%s, %s, %s, %s, %s, 'unpaid')
+                """, (sale_id, customer_id, total_amount, total_amount, due_date or None))
+
+        conn.commit()
+        return redirect('/dashboard')
+
+    except Exception as e:
+        conn.rollback()
+        return str(e), 400
+
+    finally:
+        cur.close()
+        conn.close()
 
 @app.route('/products', methods=['GET', 'POST'])
 def products():
@@ -985,6 +1038,63 @@ def sales_upload_inventory():
         product_names=product_names,
         product_categories=product_categories
     )
+@app.route('/repayments', methods=['GET', 'POST'])
+def repayments():
+    if 'user_id' not in session or session['role'] != 'salesperson':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == 'POST':
+        credit_id = int(request.form['credit_id'])
+        amount = float(request.form['amount'])
+
+        # Insert repayment
+        cur.execute("""
+            INSERT INTO credit_repayments (credit_id, amount)
+            VALUES (%s, %s)
+        """, (credit_id, amount))
+
+        # Update credit sale balance and status
+        cur.execute("""
+            UPDATE credit_sales
+            SET balance = balance - %s,
+                status = CASE
+                    WHEN balance - %s <= 0 THEN 'paid'
+                    WHEN balance - %s < amount THEN 'partial'
+                    ELSE 'unpaid'
+                END
+            WHERE id = %s
+        """, (amount, amount, amount, credit_id))
+
+        conn.commit()
+
+    # Fetch unpaid credit sales assigned to this salesperson's business
+    cur.execute("""
+        SELECT cs.id AS credit_id, c.name AS customer_name, cs.amount, cs.balance, s.date
+        FROM credit_sales cs
+        JOIN sales s ON cs.sale_id = s.id
+        JOIN customers c ON cs.customer_id = c.id
+        WHERE cs.status IN ('unpaid', 'partial') AND s.salesperson_id = %s
+        ORDER BY s.date DESC
+    """, (session['user_id'],))
+    credit_sales = cur.fetchall()
+
+    # Fetch recent repayments
+    cur.execute("""
+        SELECT r.amount, r.paid_on, c.name AS customer_name
+        FROM credit_repayments r
+        JOIN credit_sales cs ON r.credit_id = cs.id
+        JOIN customers c ON cs.customer_id = c.id
+        JOIN sales s ON cs.sale_id = s.id
+        WHERE s.salesperson_id = %s
+        ORDER BY r.paid_on DESC
+        LIMIT 10
+    """, (session['user_id'],))
+    repayments = cur.fetchall()
+
+    return render_template('repayments.html', credit_sales=credit_sales, repayments=repayments)
 
 @app.route('/logout')
 def logout():

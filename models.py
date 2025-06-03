@@ -15,12 +15,12 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-   # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
 
     # Businesses
     cur.execute('''
@@ -81,9 +81,13 @@ def initialize_database():
             payment_method TEXT,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             salesperson_id INTEGER REFERENCES users(id),
-            business_id INTEGER REFERENCES businesses(id)
+            business_id INTEGER REFERENCES businesses(id),
+            amount_paid FLOAT DEFAULT 0,
+            payment_status TEXT DEFAULT 'unpaid',
+            customer_id INTEGER REFERENCES customers(id)
         );
     ''')
+
 
     cur.execute('''
         CREATE TABLE IF NOT EXISTS user_inventory (
@@ -108,6 +112,49 @@ def initialize_database():
             status TEXT DEFAULT 'pending',
             rejection_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    # Customers
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS customers (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER REFERENCES businesses(id),
+            name TEXT NOT NULL,
+            phone TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    # Customers
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS customers (
+            id SERIAL PRIMARY KEY,
+            business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            phone TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+
+    # Credit Sales
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS credit_sales (
+            id SERIAL PRIMARY KEY,
+            sale_id INTEGER REFERENCES sales(id) ON DELETE CASCADE,
+            customer_id INTEGER REFERENCES customers(id) ON DELETE CASCADE,
+            amount NUMERIC NOT NULL,
+            balance NUMERIC NOT NULL,
+            due_date DATE,
+            status TEXT CHECK (status IN ('unpaid', 'partial', 'paid')) DEFAULT 'unpaid'
+        );
+    ''')
+
+    # Credit Repayments
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS credit_repayments (
+            id SERIAL PRIMARY KEY,
+            credit_id INTEGER REFERENCES credit_sales(id) ON DELETE CASCADE,
+            amount NUMERIC NOT NULL,
+            paid_on DATE DEFAULT CURRENT_DATE
         );
     ''')
 
@@ -173,11 +220,11 @@ def get_user_inventory(user_id):
     """, (user_id,))
     return cur.fetchall()
 
-def add_sale(product_id, quantity, salesperson_id, price, payment_method):
+def add_sale(product_id, quantity, salesperson_id, price, payment_method, customer_id=None, due_date=None):
     conn = get_db()
     cur = conn.cursor()
 
-    # Step 1: Check salesperson inventory
+    # Step 1: Check inventory
     cur.execute("""
         SELECT quantity FROM user_inventory
         WHERE user_id = %s AND product_id = %s
@@ -187,24 +234,56 @@ def add_sale(product_id, quantity, salesperson_id, price, payment_method):
     if not inv or inv['quantity'] < quantity:
         raise ValueError("❌ Not enough stock in your inventory.")
 
-    # Step 2: Subtract quantity from salesperson's inventory
-    new_quantity = inv['quantity'] - quantity
+    # Step 2: Update inventory
     cur.execute("""
         UPDATE user_inventory
-        SET quantity = %s
+        SET quantity = quantity - %s
         WHERE user_id = %s AND product_id = %s
-    """, (new_quantity, salesperson_id, product_id))
+    """, (quantity, salesperson_id, product_id))
 
-    # Step 3: Record the sale
+    # Step 3: Get business ID
     cur.execute("""
-        INSERT INTO sales (product_id, quantity, salesperson_id, price, payment_method, date)
-        VALUES (%s, %s, %s, %s, %s, NOW())
-    """, (product_id, quantity, salesperson_id, price, payment_method))
+        SELECT business_id FROM users WHERE id = %s
+    """, (salesperson_id,))
+    business = cur.fetchone()
+    business_id = business['business_id']
 
-    # ✅ No update to warehouse stock in products table
+    # Step 4: Determine payment details
+    total_amount = quantity * price
+    amount_paid = total_amount if payment_method == 'Cash' else 0
+    payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
+
+    # Step 5: Insert sale record
+    cur.execute("""
+        INSERT INTO sales (
+            product_id, quantity, salesperson_id, price, payment_method,
+            date, amount_paid, payment_status, business_id, customer_id
+        ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
+        RETURNING id
+    """, (product_id, quantity, salesperson_id, price, payment_method,
+          amount_paid, payment_status, business_id, customer_id))
+
+    sale_id = cur.fetchone()['id']
+
+    # Step 6: If Credit — insert into credit_sales table
+    if payment_method.lower() == 'credit':
+        if not customer_id:
+            raise ValueError("❌ Credit sales must have an assigned customer.")
+        cur.execute("""
+            INSERT INTO credit_sales (
+                sale_id, customer_id, amount, balance, due_date, status
+            ) VALUES (%s, %s, %s, %s, %s, %s)
+        """, (sale_id, customer_id, total_amount, total_amount, due_date, 'unpaid'))
+
     conn.commit()
     cur.close()
     conn.close()
+
+def get_customers_for_business(business_id):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name FROM customers WHERE business_id = %s ORDER BY name", (business_id,))
+    return cur.fetchall()
 
 def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
