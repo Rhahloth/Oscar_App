@@ -65,6 +65,45 @@
 
     <div class="container">
       <h4>📦 Branch-wise Inventory Summary</h4>
+      <form method="GET" action="/owner_inventory" class="report-filters">
+        <fieldset>
+          <legend>Filter by Branch and Date</legend>
+          <div class="filter-row">
+            <div class="filter-item">
+              <label for="branch">Branch</label>
+              <select name="branch">
+                <option value="">-- All Branches --</option>
+                {% for b in branches %}
+                <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="filter-item">
+              <label for="start_date">Start Date</label>
+              <input type="date" name="start_date" value="{{ start_date or '' }}">
+            </div>
+            <div class="filter-item">
+              <label for="end_date">End Date</label>
+              <input type="date" name="end_date" value="{{ end_date or '' }}">
+            </div>
+            <div class="filter-item" style="align-self: flex-end">
+              <button type="submit">Apply Filter</button>
+            </div>
+          </div>
+        </fieldset>
+      </form>
+      
+      <div class="summary-container">
+        <div class="summary-card">
+          <h4>Total Stock Quantity</h4>
+          <p>{{ total_stock or 0 }}</p>
+        </div>
+        <div class="summary-card">
+          <h4>Total Inventory Worth (UGX)</h4>
+          <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
+        </div>
+      </div>
+      
 
       {% if table %}
       <table class="table" id="ownerInventoryTable">

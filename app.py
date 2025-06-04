@@ -429,40 +429,79 @@ def owner_inventory():
         return "Business not found", 400
     business_id = business['business_id']
 
-    # Restrict data to only products under this business
-    cur.execute("""
+    # Filters
+    selected_branch = request.args.get('branch')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+
+    # Inventory query
+    query = """
         SELECT 
             p.name AS product_name,
             p.category,
             u.username AS branch,
-            ui.quantity
+            ui.quantity,
+            p.buying_price,
+            ui.updated_at
         FROM user_inventory ui
         JOIN users u ON ui.user_id = u.id
         JOIN products p ON ui.product_id = p.id
         WHERE u.role = 'salesperson'
           AND p.business_id = %s
-        ORDER BY p.category, p.name, u.username
-    """, (business_id,))
+    """
+    params = [business_id]
+
+    if selected_branch:
+        query += " AND u.username = %s"
+        params.append(selected_branch)
+    if start_date:
+        query += " AND ui.updated_at >= %s"
+        params.append(start_date)
+    if end_date:
+        query += " AND ui.updated_at <= %s"
+        params.append(end_date)
+
+    query += " ORDER BY p.category, p.name, u.username"
+    cur.execute(query, tuple(params))
     rows = cur.fetchall()
+
+    # Get all branches for the filter dropdown
+    cur.execute("SELECT DISTINCT username FROM users WHERE role = 'salesperson' AND business_id = %s", (business_id,))
+    all_branches = sorted(row['username'] for row in cur.fetchall())
+
     conn.close()
 
+    # Organize into table and summary
     from collections import defaultdict
     table = defaultdict(lambda: defaultdict(int))  # table[product][branch] = qty
     totals = defaultdict(int)
-    all_branches = set()
+    total_stock = 0
+    total_worth = 0
 
     for row in rows:
         key = f"{row['category']} - {row['product_name']}"
-        table[key][row['branch']] += row['quantity']
-        totals[key] += row['quantity']
-        all_branches.add(row['branch'])
+        qty = row['quantity']
+        price = row['buying_price'] or 0
+        branch = row['branch']
+
+        table[key][branch] += qty
+        totals[key] += qty
+
+        total_stock += qty
+        total_worth += qty * price
 
     return render_template(
         "owner_inventory.html",
         table=table,
-        branches=sorted(all_branches),
-        totals=totals
+        branches=all_branches,
+        totals=totals,
+        total_stock=total_stock,
+        total_worth=total_worth,
+        selected_branch=selected_branch,
+        start_date=start_date,
+        end_date=end_date
     )
+
 
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
