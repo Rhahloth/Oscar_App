@@ -99,11 +99,10 @@
           const div = document.createElement("div");
           div.className = "cart-item";
           div.innerHTML = `
-          <span>${item.name}</span>
-          <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
-          <small style="color: grey;">You have: ${item.available}</small>
-          <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
-        `;
+      <span>${item.name}</span>
+      <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
+      <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+    `;
           container.appendChild(div);
         });
       }
