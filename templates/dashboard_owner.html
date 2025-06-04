@@ -18,14 +18,21 @@
               Email: raysokello@gmail.com
             </div>
           </div>
-
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
           <div
             class="navbar-right"
             style="display: flex; align-items: center; gap: 10px"
           >
             {% if session.username %}
-            <a href="/logout"
-              ><button
+            <a href="/logout">
+              <button
                 style="
                   background-color: #d9534f;
                   color: white;
@@ -33,8 +40,8 @@
                 "
               >
                 Logout
-              </button></a
-            >
+              </button>
+            </a>
             {% endif %}
           </div>
         </div>

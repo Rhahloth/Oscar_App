@@ -646,7 +646,6 @@ def manage_users():
     conn = get_db()
     cur = conn.cursor()
 
-    # Get the owner's business_id
     owner_id = session['user_id']
     cur.execute("SELECT business_id FROM users WHERE id = %s", (owner_id,))
     owner = cur.fetchone()
@@ -662,7 +661,6 @@ def manage_users():
         role = 'salesperson'
         password_hash = generate_password_hash(password)
 
-        # Add new user and get ID
         cur.execute("""
             INSERT INTO users (username, password, role, business_id)
             VALUES (%s, %s, %s, %s)
@@ -673,51 +671,54 @@ def manage_users():
 
         initialize_salesperson_inventory(new_user_id)
 
-    # Fetch existing salespeople for this business
     cur.execute("""
-        SELECT id, username, role FROM users
+        SELECT id, username, role, is_active FROM users
         WHERE role = 'salesperson' AND business_id = %s
     """, (business_id,))
     users = cur.fetchall()
+
+    for user in users:
+        user['is_active'] = bool(user['is_active'])  # Ensure correct Boolean logic
 
     return render_template('users.html', users=users)
 
 @app.route('/delete_user', methods=['POST'])
 def delete_user():
+    from flask import request, redirect, flash, session
     user_id = request.form.get('user_id')
-    
+
     if not user_id:
         flash("❌ No user ID provided.", "error")
-        return redirect('/manage_users')
+        return redirect('/users')  # Make sure this matches the template page URL
 
     try:
         user_id = int(user_id)
     except ValueError:
         flash("❌ Invalid user ID format.", "error")
-        return redirect('/manage_users')
+        return redirect('/users')
 
     conn = get_db()
     cur = conn.cursor()
 
-    # Check if user has sales
+    # Check if the user has any recorded sales
     cur.execute("SELECT COUNT(*) AS sale_count FROM sales WHERE salesperson_id = %s", (user_id,))
     result = cur.fetchone()
 
     if result and result['sale_count'] > 0:
-        # Soft delete
+        # Deactivate instead of delete
         cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s", (user_id,))
         flash("🔒 User has recorded sales and was deactivated.", "warning")
     else:
-        # Delete related inventory first
+        # Delete from user_inventory first
         cur.execute("DELETE FROM user_inventory WHERE user_id = %s", (user_id,))
-        # Then delete user
+        # Then delete from users
         cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
         flash("🗑️ User permanently deleted (no sales found).", "success")
 
     conn.commit()
     cur.close()
     conn.close()
-    return redirect('/manage_users')
+    return redirect('/users')  # Ensure this matches the correct redirect target
 
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
