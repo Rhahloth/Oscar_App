@@ -14,6 +14,7 @@ import random
 import string
 import csv
 import io
+import psycopg2.extras
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'
