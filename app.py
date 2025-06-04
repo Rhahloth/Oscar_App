@@ -274,12 +274,15 @@ def batch_sales(batch_no):
 
 @app.route('/transactions')
 def transactions():
-    if 'user_id' not in session or session['role'] != 'salesperson':
+    if 'user_id' not in session:
         return redirect('/login')
 
-    import psycopg2.extras  # Ensure imported
+    import psycopg2.extras
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    salesperson_id = session['user_id']
+    user_id = session['user_id']
+    role = session['role']
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     payment_method = request.args.get('payment_method')
@@ -287,11 +290,22 @@ def transactions():
     per_page = 10
     offset = (page - 1) * per_page
 
-    conn = get_db()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    filters = []
+    params = []
 
-    filters = ["salesperson_id = %s"]
-    params = [salesperson_id]
+    if role == 'salesperson':
+        filters.append("salesperson_id = %s")
+        params.append(user_id)
+    elif role == 'owner':
+        cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+        business_row = cur.fetchone()
+        if not business_row or not business_row['business_id']:
+            return "❌ Business not found", 400
+        business_id = business_row['business_id']
+        filters.append("product_id IN (SELECT id FROM products WHERE business_id = %s)")
+        params.append(business_id)
+    else:
+        return "❌ Unauthorized", 403
 
     if start_date:
         filters.append("DATE(date) >= %s")
@@ -342,6 +356,9 @@ def transactions():
         WHERE {filter_query} AND payment_method = 'Credit'
     """, tuple(params))
     total_credit_sales = cur.fetchone()[0] or 0
+
+    cur.close()
+    conn.close()
 
     return render_template('transactions.html',
         sales=sales,
