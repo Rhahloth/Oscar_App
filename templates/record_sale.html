@@ -5,25 +5,17 @@
     <title>Record Sale - RO Solutions</title>
     <link rel="stylesheet" href="/static/styles.css" />
     <style>
-      .matching-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
-      }
-      .matching-pill {
+      .match-pill {
         background-color: #034078;
         color: white;
-        padding: 8px 14px;
-        border-radius: 8px;
+        padding: 6px 12px;
+        margin: 4px;
+        border-radius: 6px;
         cursor: pointer;
-        font-size: 0.9em;
-        border: none;
-        white-space: nowrap;
-        transition: background-color 0.3s ease;
+        display: inline-block;
       }
-      .matching-pill:hover {
-        background-color: #012c5c;
+      .match-pill:hover {
+        background-color: #012d5a;
       }
     </style>
   </head>
@@ -53,8 +45,8 @@
             style="display: flex; align-items: center; gap: 10px"
           >
             {% if session.username %}
-            <a href="/logout"
-              ><button
+            <a href="/logout">
+              <button
                 style="
                   background-color: #d9534f;
                   color: white;
@@ -62,8 +54,8 @@
                 "
               >
                 Logout
-              </button></a
-            >
+              </button>
+            </a>
             {% endif %}
           </div>
         </div>
@@ -71,7 +63,26 @@
     </div>
 
     <div class="container">
-      <h4>Point of Sales</h4>
+      <h4>POINT OF SALES</h4>
+      {% if not products %}
+      <p style="color: red; font-weight: bold">
+        You don't have any inventory assigned. Contact your manager.
+      </p>
+      <a href="/sales_upload_inventory">
+        <button
+          style="
+            background-color: #034078;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+          "
+        >
+          + Add Stocks
+        </button>
+      </a>
+      <br />
+      {% endif %}
 
       <form
         id="saleForm"
@@ -87,15 +98,11 @@
             oninput="handleProductInput()"
             autocomplete="off"
           />
-          <div
-            id="stockStatus"
-            style="margin-top: 10px; font-weight: bold"
-          ></div>
         </div>
 
-        <div class="form-group">
-          <label>Matching Products</label>
-          <div id="searchResults" class="matching-container"></div>
+        <div class="section-box">
+          <h5>Matching Products</h5>
+          <div id="matchResults"></div>
         </div>
 
         <div class="section-box">
@@ -127,12 +134,28 @@
           <p>Total Amount: UGX <span id="total_amount">0</span></p>
         </div>
 
-        <input type="hidden" name="payment_method" id="payment_method" />
-        <input type="hidden" name="cart_data" id="cart_data" />
+        <div class="section-box" id="creditOptions" style="display: none">
+          <label for="customerSelect">Select Customer (for Credit Sale):</label>
+          <select name="customer_id" id="customerSelect" required>
+            <option value="">-- Select a Customer --</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}">{{ customer.name }}</option>
+            {% endfor %}
+          </select>
 
-        <div class="cart-actions" style="text-align: right">
-          <button type="button" onclick="finalizeSale('Cash')">Cash</button>
-          <button type="button" onclick="finalizeSale('Credit')">Credit</button>
+          <label for="dueDate">Due Date:</label>
+          <input type="date" name="due_date" id="dueDate" required />
+        </div>
+
+        <div class="section-box">
+          <input type="hidden" name="payment_method" id="payment_method" />
+          <input type="hidden" name="cart_data" id="cart_data" />
+          <div class="cart-actions" style="text-align: right">
+            <button type="button" onclick="finalizeSale('Credit')">
+              Credit
+            </button>
+            <button type="button" onclick="finalizeSale('Cash')">Cash</button>
+          </div>
         </div>
       </form>
     </div>
@@ -141,41 +164,28 @@
       let cart = [];
       const fullProductList = [
         {% for p in products %}
-          { name: "{{ p.product_name }}", id: "{{ p.product_id }}", retail: "{{ p.retail_price }}", cost: "{{ p.agent_price }}", quantity: {{ p.quantity }} },
+          { name: "{{ p.product_name }} ({{ p.quantity }} available)", id: "{{ p.product_id }}", retail: "{{ p.retail_price }}", cost: "{{ p.agent_price }}", quantity: {{ p.quantity }} },
         {% endfor %}
       ];
 
       function handleProductInput() {
-        const input = document.getElementById("productSearch");
-        const query = input.value.toLowerCase();
-        const status = document.getElementById("stockStatus");
-        const resultsDiv = document.getElementById("searchResults");
-        resultsDiv.innerHTML = "";
-        status.innerHTML = "";
+        const input = document.getElementById("productSearch").value.toLowerCase();
+        const results = document.getElementById("matchResults");
+        results.innerHTML = "";
 
-        if (query.length >= 2) {
-          const matches = fullProductList.filter(p => p.name.toLowerCase().includes(query));
-
-          matches.forEach(product => {
-            const pill = document.createElement("button");
-            pill.className = "matching-pill";
-            pill.innerText = product.name;
-            pill.onclick = () => selectProduct(product);
-            resultsDiv.appendChild(pill);
+        if (input.length >= 2) {
+          const matches = fullProductList.filter(p => p.name.toLowerCase().includes(input));
+          matches.forEach(p => {
+            const btn = document.createElement("button");
+            btn.textContent = p.name;
+            btn.className = "match-pill";
+            btn.onclick = () => addToCart(p);
+            results.appendChild(btn);
           });
-
-          resultsDiv.style.display = matches.length ? "flex" : "none";
-        } else {
-          resultsDiv.style.display = "none";
         }
       }
 
-      function selectProduct(product) {
-        if (product.quantity === 0) {
-          alert("❌ This product is out of stock.");
-          return;
-        }
-
+      function addToCart(product) {
         cart.push({
           productId: product.id,
           productName: product.name,
@@ -184,18 +194,14 @@
           cost: parseFloat(product.cost),
           subtotal: parseFloat(product.retail)
         });
-
         renderCart();
         document.getElementById("productSearch").value = "";
-        document.getElementById("searchResults").innerHTML = "";
-        document.getElementById("searchResults").style.display = "none";
+        document.getElementById("matchResults").innerHTML = "";
+      }
 
-        const status = document.getElementById("stockStatus");
-        if (product.quantity < 5) {
-          status.innerHTML = `<span style="color: orange;">⚠️ Low Stock (${product.quantity})</span>`;
-        } else {
-          status.innerHTML = `<span style="color: green;">✅ In Stock (${product.quantity})</span>`;
-        }
+      function getProductStock(productId) {
+        const product = fullProductList.find(p => p.id == productId);
+        return product ? product.quantity : 'N/A';
       }
 
       function renderCart() {
@@ -207,15 +213,18 @@
         cart.forEach((item, i) => {
           totalQty += item.quantity;
           totalAmount += item.subtotal;
-
-          tbody.innerHTML += `
-            <tr>
-              <td>${item.productName}</td>
-              <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" style="width: 60px;" /></td>
-              <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" /></td>
-              <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
-              <td><button type="button" onclick="removeItem(${i})">X</button></td>
-            </tr>`;
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>
+              ${item.productName}
+              <span style="color:gray; font-size: 0.9em;">(Available: ${getProductStock(item.productId)})</span>
+            </td>
+            <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" style="width: 60px;" /></td>
+            <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" /></td>
+            <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
+            <td><button type="button" onclick="removeItem(${i})">X</button></td>
+          `;
+          tbody.appendChild(row);
         });
 
         document.getElementById("total_qty").innerText = totalQty;
@@ -230,7 +239,7 @@
 
       function updatePrice(index, value) {
         const newPrice = parseFloat(value) || 0;
-        if (newPrice < cart[index].cost) {
+        if (newPrice < parseFloat(cart[index].cost)) {
           alert("⚠️ Check the price and try again");
           renderCart();
           return;
@@ -240,8 +249,8 @@
         renderCart();
       }
 
-      function removeItem(index) {
-        cart.splice(index, 1);
+      function removeItem(i) {
+        cart.splice(i, 1);
         renderCart();
       }
 
@@ -253,8 +262,28 @@
         if (!cart.length) return alert("Add at least one item.");
         document.getElementById("cart_data").value = JSON.stringify(cart);
         document.getElementById("payment_method").value = method;
+
+        if (method === 'Credit') {
+          const customerId = document.getElementById("customerSelect").value;
+          const dueDate = document.getElementById("dueDate").value;
+          if (!customerId || !dueDate) {
+            alert("❌ For credit sales, please select a customer and due date.");
+            return;
+          }
+        }
+
         document.getElementById("saleForm").submit();
       }
+
+      document.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (btn.innerText === "Credit") {
+            document.getElementById("creditOptions").style.display = "block";
+          } else {
+            document.getElementById("creditOptions").style.display = "none";
+          }
+        });
+      });
     </script>
   </body>
 </html>
