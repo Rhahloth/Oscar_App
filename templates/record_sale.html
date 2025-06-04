@@ -5,24 +5,25 @@
     <title>Record Sale - RO Solutions</title>
     <link rel="stylesheet" href="/static/styles.css" />
     <style>
-      .search-result {
-        padding: 6px 10px;
+      .matching-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .matching-pill {
+        background-color: #034078;
+        color: white;
+        padding: 8px 14px;
+        border-radius: 8px;
         cursor: pointer;
-        border-bottom: 1px solid #ddd;
+        font-size: 0.9em;
+        border: none;
+        white-space: nowrap;
+        transition: background-color 0.3s ease;
       }
-      .search-result:hover {
-        background-color: #f0f0f0;
-      }
-      #searchResults {
-        border: 1px solid #ccc;
-        max-height: 150px;
-        overflow-y: auto;
-        margin-top: 5px;
-        display: none;
-        position: absolute;
-        background: #fff;
-        z-index: 1000;
-        width: 300px;
+      .matching-pill:hover {
+        background-color: #012c5c;
       }
     </style>
   </head>
@@ -41,19 +42,19 @@
           </div>
           <div>
             {% if session.username %}
-            <div>OWNER: {{ session.username }}</div>
+            <div>BRANCH: {{ session.username }}</div>
             {% endif %}
           </div>
           <div>
-            <a href="/dashboard"><button>Back to Dashboard</button></a>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
           </div>
           <div
             class="navbar-right"
             style="display: flex; align-items: center; gap: 10px"
           >
             {% if session.username %}
-            <a href="/logout">
-              <button
+            <a href="/logout"
+              ><button
                 style="
                   background-color: #d9534f;
                   color: white;
@@ -61,8 +62,8 @@
                 "
               >
                 Logout
-              </button>
-            </a>
+              </button></a
+            >
             {% endif %}
           </div>
         </div>
@@ -70,18 +71,7 @@
     </div>
 
     <div class="container">
-      <h4>POINT OF SALES</h4>
-      {% if not products %}
-      <p style="color: red; font-weight: bold">
-        You don't have any inventory assigned. Contact your manager.
-      </p>
-      <a href="/sales_upload_inventory">
-        <button style="background-color: #034078; color: white">
-          + Add Stocks
-        </button>
-      </a>
-      <br />
-      {% endif %}
+      <h4>Point of Sales</h4>
 
       <form
         id="saleForm"
@@ -94,13 +84,18 @@
           <input
             id="productSearch"
             placeholder="Type to search..."
+            oninput="handleProductInput()"
             autocomplete="off"
           />
-          <div id="searchResults"></div>
           <div
             id="stockStatus"
             style="margin-top: 10px; font-weight: bold"
           ></div>
+        </div>
+
+        <div class="form-group">
+          <label>Matching Products</label>
+          <div id="searchResults" class="matching-container"></div>
         </div>
 
         <div class="section-box">
@@ -132,24 +127,12 @@
           <p>Total Amount: UGX <span id="total_amount">0</span></p>
         </div>
 
-        <div class="section-box" id="creditOptions" style="display: none">
-          <label for="customerSelect">Select Customer (for Credit Sale):</label>
-          <select name="customer_id" id="customerSelect" required>
-            <option value="">-- Select a Customer --</option>
-            {% for customer in customers %}
-            <option value="{{ customer.id }}">{{ customer.name }}</option>
-            {% endfor %}
-          </select>
-          <label for="dueDate">Due Date:</label>
-          <input type="date" name="due_date" id="dueDate" required />
-        </div>
-
         <input type="hidden" name="payment_method" id="payment_method" />
         <input type="hidden" name="cart_data" id="cart_data" />
 
-        <div style="text-align: right; margin-top: 10px">
-          <button type="button" onclick="finalizeSale('Credit')">Credit</button>
+        <div class="cart-actions" style="text-align: right">
           <button type="button" onclick="finalizeSale('Cash')">Cash</button>
+          <button type="button" onclick="finalizeSale('Credit')">Credit</button>
         </div>
       </form>
     </div>
@@ -162,42 +145,49 @@
         {% endfor %}
       ];
 
-      document.getElementById("productSearch").addEventListener("input", function () {
-        const query = this.value.toLowerCase();
-        const resultsDiv = document.getElementById("searchResults");
+      function handleProductInput() {
+        const input = document.getElementById("productSearch");
+        const query = input.value.toLowerCase();
         const status = document.getElementById("stockStatus");
+        const resultsDiv = document.getElementById("searchResults");
         resultsDiv.innerHTML = "";
         status.innerHTML = "";
 
         if (query.length >= 2) {
           const matches = fullProductList.filter(p => p.name.toLowerCase().includes(query));
 
-          if (matches.length > 0) {
-            resultsDiv.style.display = "block";
-            matches.forEach(product => {
-              const div = document.createElement("div");
-              div.className = "search-result";
-              div.textContent = `${product.name} (${product.quantity} in stock)`;
-              div.onclick = () => selectProduct(product);
-              resultsDiv.appendChild(div);
-            });
-          } else {
-            resultsDiv.style.display = "none";
-          }
+          matches.forEach(product => {
+            const pill = document.createElement("button");
+            pill.className = "matching-pill";
+            pill.innerText = product.name;
+            pill.onclick = () => selectProduct(product);
+            resultsDiv.appendChild(pill);
+          });
+
+          resultsDiv.style.display = matches.length ? "flex" : "none";
         } else {
           resultsDiv.style.display = "none";
         }
-      });
+      }
 
       function selectProduct(product) {
-        if (product.quantity == 0) {
+        if (product.quantity === 0) {
           alert("❌ This product is out of stock.");
           return;
         }
 
-        cart.push({ productId: product.id, productName: product.name, quantity: 1, price: parseFloat(product.retail), cost: parseFloat(product.cost), subtotal: parseFloat(product.retail) });
+        cart.push({
+          productId: product.id,
+          productName: product.name,
+          quantity: 1,
+          price: parseFloat(product.retail),
+          cost: parseFloat(product.cost),
+          subtotal: parseFloat(product.retail)
+        });
+
         renderCart();
         document.getElementById("productSearch").value = "";
+        document.getElementById("searchResults").innerHTML = "";
         document.getElementById("searchResults").style.display = "none";
 
         const status = document.getElementById("stockStatus");
@@ -220,7 +210,7 @@
 
           tbody.innerHTML += `
             <tr>
-              <td>${item.productName} <span style="color:gray; font-size: 0.9em;">(Available: ${getProductStock(item.productId)})</span></td>
+              <td>${item.productName}</td>
               <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" style="width: 60px;" /></td>
               <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" /></td>
               <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
@@ -232,11 +222,6 @@
         document.getElementById("total_amount").innerText = totalAmount.toLocaleString('en-UG');
       }
 
-      function getProductStock(productId) {
-        const product = fullProductList.find(p => p.id == productId);
-        return product ? product.quantity : 'N/A';
-      }
-
       function updateQty(index, value) {
         cart[index].quantity = parseInt(value) || 1;
         cart[index].subtotal = cart[index].quantity * cart[index].price;
@@ -245,8 +230,8 @@
 
       function updatePrice(index, value) {
         const newPrice = parseFloat(value) || 0;
-        if (newPrice < parseFloat(cart[index].cost)) {
-          alert("⚠️ Price too low. Try again.");
+        if (newPrice < cart[index].cost) {
+          alert("⚠️ Check the price and try again");
           renderCart();
           return;
         }
@@ -260,34 +245,16 @@
         renderCart();
       }
 
-      function finalizeSale(method) {
-        if (!cart.length) return alert("Add at least one item.");
-        document.getElementById("cart_data").value = JSON.stringify(cart);
-        document.getElementById("payment_method").value = method;
-
-        if (method === 'Credit') {
-          const customerId = document.getElementById("customerSelect").value;
-          const dueDate = document.getElementById("dueDate").value;
-          if (!customerId || !dueDate) {
-            alert("❌ Please select customer and due date for credit.");
-            return;
-          }
-        }
-
-        document.getElementById("saleForm").submit();
-      }
-
       function submitSale(e) {
         e.preventDefault();
       }
 
-      // Toggle credit input
-      document.querySelectorAll("button").forEach(btn => {
-        btn.addEventListener("click", () => {
-          document.getElementById("creditOptions").style.display =
-            btn.innerText === "Credit" ? "block" : "none";
-        });
-      });
+      function finalizeSale(method) {
+        if (!cart.length) return alert("Add at least one item.");
+        document.getElementById("cart_data").value = JSON.stringify(cart);
+        document.getElementById("payment_method").value = method;
+        document.getElementById("saleForm").submit();
+      }
     </script>
   </body>
 </html>
