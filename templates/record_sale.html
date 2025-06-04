@@ -148,70 +148,70 @@
     </div>
 
     <script>
-            let cart = [];
-            const fullProductList = [
-              {% for p in products %}
-                { name: "{{ p.product_name }}", id: "{{ p.product_id }}", retail: "{{ p.retail_price }}", cost: "{{ p.agent_price }}", quantity: {{ p.quantity }} },
-              {% endfor %}
-            ];
+      let cart = [];
+      const fullProductList = [
+        {% for p in products %}
+          { name: "{{ p.product_name }}", id: "{{ p.product_id }}", retail: "{{ p.retail_price }}", cost: "{{ p.agent_price }}", quantity: {{ p.quantity }} },
+        {% endfor %}
+      ];
 
-            function handleProductInput() {
-              const input = document.getElementById("productSearch");
-              const list = document.getElementById("productList");
-              const status = document.getElementById("stockStatus");
-              const query = input.value.toLowerCase();
-              list.innerHTML = "";
-              status.innerHTML = "";
+      function handleProductInput() {
+        const input = document.getElementById("productSearch");
+        const list = document.getElementById("productList");
+        const status = document.getElementById("stockStatus");
+        const query = input.value.toLowerCase();
+        list.innerHTML = "";
+        status.innerHTML = "";
 
-              if (query.length >= 2) {
-                const matches = fullProductList.filter(p => p.name.toLowerCase().includes(query));
-                matches.forEach(p => {
-                  const opt = document.createElement("option");
-                  opt.value = p.name;
-                  opt.setAttribute("data-id", p.id);
-                  opt.setAttribute("data-retail", p.retail);
-                  opt.setAttribute("data-cost", p.cost);
-                  opt.setAttribute("data-qty", p.quantity);
-                  list.appendChild(opt);
-                });
+        if (query.length >= 2) {
+          const matches = fullProductList.filter(p => p.name.toLowerCase().includes(query));
+          matches.forEach(p => {
+            const opt = document.createElement("option");
+            opt.value = p.name;
+            opt.setAttribute("data-id", p.id);
+            opt.setAttribute("data-retail", p.retail);
+            opt.setAttribute("data-cost", p.cost);
+            opt.setAttribute("data-qty", p.quantity);
+            list.appendChild(opt);
+          });
 
-                if (matches.length === 1) {
-                  const product = matches[0];
-                  if (product.quantity == 0) {
-                    status.innerHTML = `<span style="color: red;">❌ Out of Stock</span>`;
-                  } else if (product.quantity < 5) {
-                    status.innerHTML = `<span style="color: orange;">⚠️ Low Stock (${product.quantity})</span>`;
-                  } else {
-                    status.innerHTML = `<span style="color: green;">✅ In Stock (${product.quantity})</span>`;
-                  }
-                }
-              }
+          if (matches.length === 1) {
+            const product = matches[0];
+            if (product.quantity == 0) {
+              status.innerHTML = `<span style="color: red;">❌ Out of Stock</span>`;
+            } else if (product.quantity < 5) {
+              status.innerHTML = `<span style="color: orange;">⚠️ Low Stock (${product.quantity})</span>`;
+            } else {
+              status.innerHTML = `<span style="color: green;">✅ In Stock (${product.quantity})</span>`;
             }
+          }
+        }
+      }
 
-            document.getElementById("productSearch").addEventListener("change", function () {
-              const name = this.value;
-              const option = [...document.getElementById("productList").options].find(opt => opt.value === name);
-              if (!option) return;
+      document.getElementById("productSearch").addEventListener("change", function () {
+        const name = this.value;
+        const option = [...document.getElementById("productList").options].find(opt => opt.value === name);
+        if (!option) return;
 
-              const productId = option.dataset.id;
-              const productName = option.value;
-              const price = parseFloat(option.dataset.retail);
-              const cost = parseFloat(option.dataset.cost);
-              const quantity = parseInt(option.dataset.qty);
+        const productId = option.dataset.id;
+        const productName = option.value;
+        const price = parseFloat(option.dataset.retail);
+        const cost = parseFloat(option.dataset.cost);
+        const quantity = parseInt(option.dataset.qty);
 
-              if (quantity === 0) {
-                alert("❌ This product is out of stock.");
-                this.value = "";
-                return;
-              }
+        if (quantity === 0) {
+          alert("❌ This product is out of stock.");
+          this.value = "";
+          return;
+        }
 
-              cart.push({ productId, productName, quantity: 1, price, cost, subtotal: price });
-              renderCart();
-              this.value = "";
-              document.getElementById("stockStatus").innerHTML = "";
-            });
+        cart.push({ productId, productName, quantity: 1, price, cost, subtotal: price });
+        renderCart();
+        this.value = "";
+        document.getElementById("stockStatus").innerHTML = "";
+      });
 
-            function getProductStock(productId) {
+      function getProductStock(productId) {
         const product = fullProductList.find(p => p.id == productId);
         return product ? product.quantity : 'N/A';
       }
@@ -238,70 +238,69 @@
               <td>
                 <input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" />
               </td>
-              <td>UGX ${item.subtotal.toFixed(2)}</td>
+              <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
               <td><button type="button" onclick="removeItem(${i})">X</button></td>
             </tr>`;
         });
 
         document.getElementById("total_qty").innerText = totalQty;
-        document.getElementById("total_amount").innerText = totalAmount.toFixed(2);
+        document.getElementById("total_amount").innerText = totalAmount.toLocaleString('en-UG');
       }
 
+      function updateQty(index, value) {
+        cart[index].quantity = parseInt(value) || 1;
+        cart[index].subtotal = cart[index].quantity * cart[index].price;
+        renderCart();
+      }
 
-            function updateQty(index, value) {
-              cart[index].quantity = parseInt(value) || 1;
-              cart[index].subtotal = cart[index].quantity * cart[index].price;
-              renderCart();
-            }
+      function updatePrice(index, value) {
+        const newPrice = parseFloat(value) || 0;
+        if (newPrice < parseFloat(cart[index].cost)) {
+          alert("⚠️ Check the price and try again");
+          renderCart();
+          return;
+        }
+        cart[index].price = newPrice;
+        cart[index].subtotal = cart[index].quantity * cart[index].price;
+        renderCart();
+      }
 
-            function updatePrice(index, value) {
-              const newPrice = parseFloat(value) || 0;
-              if (newPrice < parseFloat(cart[index].cost)) {
-                alert("⚠️ Check the price and try again");
-                renderCart();
-                return;
-              }
-              cart[index].price = newPrice;
-              cart[index].subtotal = cart[index].quantity * cart[index].price;
-              renderCart();
-            }
+      function removeItem(i) {
+        cart.splice(i, 1);
+        renderCart();
+      }
 
-            function removeItem(i) {
-              cart.splice(i, 1);
-              renderCart();
-            }
+      function submitSale(e) {
+        e.preventDefault();
+      }
 
-            function submitSale(e) {
-              e.preventDefault();
-            }
+      function finalizeSale(method) {
+        if (!cart.length) return alert("Add at least one item.");
+        document.getElementById("cart_data").value = JSON.stringify(cart);
+        document.getElementById("payment_method").value = method;
 
-            function finalizeSale(method) {
-              if (!cart.length) return alert("Add at least one item.");
-              document.getElementById("cart_data").value = JSON.stringify(cart);
-              document.getElementById("payment_method").value = method;
+        if (method === 'Credit') {
+          const customerId = document.getElementById("customerSelect").value;
+          const dueDate = document.getElementById("dueDate").value;
 
-              if (method === 'Credit') {
-                const customerId = document.getElementById("customerSelect").value;
-                const dueDate = document.getElementById("dueDate").value;
+          if (!customerId || !dueDate) {
+            alert("❌ For credit sales, please select a customer and due date.");
+            return;
+          }
+        }
 
-                if (!customerId || !dueDate) {
-                  alert("❌ For credit sales, please select a customer and due date.");
-                  return;
-                }
-              }
+        document.getElementById("saleForm").submit();
+      }
 
-              document.getElementById("saleForm").submit();
-            }
-
-            document.querySelectorAll("button").forEach(btn => {
-              btn.addEventListener("click", () => {
-                if (btn.innerText === "Credit") {
-                  document.getElementById("creditOptions").style.display = "block";
-                } else {
-                  document.getElementById("creditOptions").style.display = "none";
-                }
-              });
-            });
+      document.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (btn.innerText === "Credit") {
+            document.getElementById("creditOptions").style.display = "block";
+          } else {
+            document.getElementById("creditOptions").style.display = "none";
+          }
+        });
+      });
     </script>
   </body>
 </html>
