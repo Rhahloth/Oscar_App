@@ -67,7 +67,7 @@
       <h4>📦 Branch-wise Inventory Summary</h4>
       <form method="GET" action="/owner_inventory" class="report-filters">
         <fieldset>
-          <legend>Filter by Branch and Date</legend>
+          <legend>Filter by Branch</legend>
           <div class="filter-row">
             <div class="filter-item">
               <label for="branch">Branch</label>
@@ -78,20 +78,12 @@
                 {% endfor %}
               </select>
             </div>
-            <div class="filter-item">
-              <label for="start_date">Start Date</label>
-              <input type="date" name="start_date" value="{{ start_date or '' }}">
-            </div>
-            <div class="filter-item">
-              <label for="end_date">End Date</label>
-              <input type="date" name="end_date" value="{{ end_date or '' }}">
-            </div>
             <div class="filter-item" style="align-self: flex-end">
               <button type="submit">Apply Filter</button>
             </div>
           </div>
         </fieldset>
-      </form>
+      </form>      
       
       <div class="summary-container">
         <div class="summary-card">

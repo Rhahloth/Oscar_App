@@ -431,18 +431,15 @@ def owner_inventory():
 
     # Filters
     selected_branch = request.args.get('branch')
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
 
-    # Inventory query
+    # Inventory query (without updated_at)
     query = """
         SELECT 
             p.name AS product_name,
             p.category,
             u.username AS branch,
             ui.quantity,
-            p.buying_price,
-            ui.updated_at
+            p.buying_price
         FROM user_inventory ui
         JOIN users u ON ui.user_id = u.id
         JOIN products p ON ui.product_id = p.id
@@ -454,24 +451,18 @@ def owner_inventory():
     if selected_branch:
         query += " AND u.username = %s"
         params.append(selected_branch)
-    if start_date:
-        query += " AND ui.updated_at >= %s"
-        params.append(start_date)
-    if end_date:
-        query += " AND ui.updated_at <= %s"
-        params.append(end_date)
 
     query += " ORDER BY p.category, p.name, u.username"
     cur.execute(query, tuple(params))
     rows = cur.fetchall()
 
-    # Get all branches for the filter dropdown
+    # Get all branches for filter dropdown
     cur.execute("SELECT DISTINCT username FROM users WHERE role = 'salesperson' AND business_id = %s", (business_id,))
     all_branches = sorted(row['username'] for row in cur.fetchall())
 
     conn.close()
 
-    # Organize into table and summary
+    # Organize into product-branch table and calculate totals
     from collections import defaultdict
     table = defaultdict(lambda: defaultdict(int))  # table[product][branch] = qty
     totals = defaultdict(int)
@@ -479,13 +470,13 @@ def owner_inventory():
     total_worth = 0
 
     for row in rows:
-        key = f"{row['category']} - {row['product_name']}"
+        label = f"{row['category']} - {row['product_name']}"
         qty = row['quantity']
         price = row['buying_price'] or 0
         branch = row['branch']
 
-        table[key][branch] += qty
-        totals[key] += qty
+        table[label][branch] += qty
+        totals[label] += qty
 
         total_stock += qty
         total_worth += qty * price
@@ -498,8 +489,8 @@ def owner_inventory():
         total_stock=total_stock,
         total_worth=total_worth,
         selected_branch=selected_branch,
-        start_date=start_date,
-        end_date=end_date
+        start_date=None,
+        end_date=None
     )
 
 
