@@ -135,12 +135,12 @@
               <a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a>
             </td>
             <td>{{ row.customer_name }}</td>
-            <td>{{ "{:,.0f}".format(row.total_credit or 0) }}</td>
+            <td>{{ "{:,.0f}".format(row.amount) }}</td>
             <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
             <td>
               {% if row.balance == 0 %}
               <span class="status paid">✅ Paid</span>
-              {% elif row.balance < row.total_credit %}
+              {% elif row.balance < row.amount %}
               <span class="status partial">🟡 Partial</span>
               {% else %}
               <span class="status unpaid">❌ Unpaid</span>
