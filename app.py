@@ -685,22 +685,39 @@ def manage_users():
 @app.route('/delete_user', methods=['POST'])
 def delete_user():
     user_id = request.form.get('user_id')
+    
+    if not user_id:
+        flash("❌ No user ID provided.", "error")
+        return redirect('/manage_users')
+
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        flash("❌ Invalid user ID format.", "error")
+        return redirect('/manage_users')
+
     conn = get_db()
     cur = conn.cursor()
 
-    # Check if user has sales
+    # Check if the user has any sales
     cur.execute("SELECT COUNT(*) AS sale_count FROM sales WHERE salesperson_id = %s", (user_id,))
     result = cur.fetchone()
 
     if result and result['sale_count'] > 0:
-        flash("❌ Cannot deactivate user: They have recorded sales.", "error")
-        return redirect('/manage_users')
+        # Soft delete (deactivate)
+        cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s", (user_id,))
+        flash("🔒 User has recorded sales and was deactivated instead.", "warning")
+    else:
+        # Permanently delete user
+        cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        flash("🗑️ User permanently deleted (no sales found).", "success")
 
-    # Soft delete (deactivate user)
-    cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s AND role = 'salesperson'", (user_id,))
     conn.commit()
-    flash("✅ User deactivated successfully.", "success")
+    cur.close()
+    conn.close()
     return redirect('/manage_users')
+
+
 
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
