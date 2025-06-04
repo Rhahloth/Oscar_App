@@ -6,65 +6,32 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          {% if session.username %}
-          <div>BRANCH: {{ session.username }}</div>
-          {% endif %}
-          <div>
-            <a href="/dashboard"><button>Back to Dashboard</button></a>
-          </div>
-          <div class="navbar-right">
-            {% if session.username %}
-            <a href="/logout">
-              <button style="background-color: #d9534f; color: white">
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div class="container">
       <h3>Request Stock</h3>
 
-      <!-- Search -->
+      <!-- Product Search -->
       <label for="productSearch">Search Product:</label>
       <input
         type="text"
         id="productSearch"
-        placeholder="Start typing to search..."
+        placeholder="Type product name..."
         onkeyup="filterProducts()"
         autocomplete="off"
       />
-
-      <!-- Product List -->
       <ul id="productList">
         {% for item in inventory %}
         <li
-          data-id="{{ item.product_id }}"
           data-name="{{ item.product_name }}"
           data-quantity="{{ item.quantity }}"
+          onclick="addToCart('{{ item.product_name }}', {{ item.quantity }})"
           style="display: none"
-          onclick="addToCart('{{ item.product_id }}', '{{ item.product_name }}', {{ item.quantity }})"
         >
-          {{ item.product_name }} (Available: {{ item.quantity }})
+          {{ item.product_name }} — You have {{ item.quantity }}
         </li>
         {% endfor %}
       </ul>
 
+      <!-- Cart -->
       <h4>Stock Request Cart</h4>
       <form method="POST" action="/request_stock">
         <div class="cart-table" id="cartContainer"></div>
@@ -84,7 +51,6 @@
         </div>
 
         <input type="hidden" name="cart_data" id="cartData" />
-
         <div class="cart-actions">
           <button type="button" onclick="clearCart()">Clear Cart</button>
           <button type="submit" onclick="prepareSubmission()">
@@ -103,21 +69,24 @@
           .value.toLowerCase();
         const items = document.querySelectorAll("#productList li");
 
+        if (query.length < 2) {
+          items.forEach((item) => (item.style.display = "none"));
+          return;
+        }
+
         items.forEach((item) => {
           const name = item.getAttribute("data-name").toLowerCase();
-          item.style.display =
-            query.length >= 2 && name.includes(query) ? "" : "none";
+          item.style.display = name.includes(query) ? "" : "none";
         });
       }
 
-      function addToCart(id, name, available) {
-        const existing = cart.find((item) => item.id === id);
+      function addToCart(name, available) {
+        const existing = cart.find((item) => item.name === name);
         if (existing) {
           existing.quantity += 1;
         } else {
-          cart.push({ id, name, quantity: 1, available });
+          cart.push({ name, quantity: 1, available });
         }
-
         renderCart();
         clearSearch();
       }
@@ -131,8 +100,8 @@
           div.className = "cart-item";
           div.innerHTML = `
           <span>${item.name}</span>
-          <input type="number" min="1" max="${item.available}" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
-          <small style="color: grey;">/ ${item.available} max</small>
+          <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
+          <small style="color: grey;">You have: ${item.available}</small>
           <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
         `;
           container.appendChild(div);
@@ -154,13 +123,20 @@
       }
 
       function clearSearch() {
-        document.getElementById("productSearch").value = "";
+        const search = document.getElementById("productSearch");
+        search.value = "";
+        search.blur();
         const items = document.querySelectorAll("#productList li");
         items.forEach((item) => (item.style.display = "none"));
       }
 
       function prepareSubmission() {
-        document.getElementById("cartData").value = JSON.stringify(cart);
+        document.getElementById("cartData").value = JSON.stringify(
+          cart.map((item) => ({
+            name: item.name,
+            quantity: item.quantity,
+          }))
+        );
       }
     </script>
   </body>

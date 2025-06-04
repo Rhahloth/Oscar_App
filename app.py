@@ -845,33 +845,20 @@ def request_stock():
     cur = conn.cursor()
     current_user_id = session['user_id']
 
-    # Category filter
-    cur.execute("SELECT DISTINCT category FROM products")
-    categories = [row['category'] for row in cur.fetchall()]
-    selected_category = request.args.get('category')
-
-    # Get inventory
-    if selected_category:
-        cur.execute('''
-            SELECT ui.product_id, ui.quantity, p.name AS product_name
-            FROM user_inventory ui
-            JOIN products p ON ui.product_id = p.id
-            WHERE ui.user_id = %s AND p.category = %s
-        ''', (current_user_id, selected_category))
-    else:
-        cur.execute('''
-            SELECT ui.product_id, ui.quantity, p.name AS product_name
-            FROM user_inventory ui
-            JOIN products p ON ui.product_id = p.id
-            WHERE ui.user_id = %s
-        ''', (current_user_id,))
+    # Get current user's inventory (all products)
+    cur.execute('''
+        SELECT ui.product_id, ui.quantity, p.name AS product_name
+        FROM user_inventory ui
+        JOIN products p ON ui.product_id = p.id
+        WHERE ui.user_id = %s
+    ''', (current_user_id,))
     inventory = cur.fetchall()
 
-    # Get recipients
+    # Get list of other salespersons (recipients)
     cur.execute("SELECT id, username FROM users WHERE role = 'salesperson' AND id != %s", (current_user_id,))
     recipients = cur.fetchall()
 
-    # Handle POST submission
+    # Handle POST request
     if request.method == 'POST':
         requester_name = request.form.get('requester_name')
         recipient_id = int(request.form.get('recipient_id'))
@@ -883,9 +870,17 @@ def request_stock():
             return f"Invalid cart data: {e}", 400
 
         for item in cart:
-            product_id = int(item['product_id'])
+            product_name = item['name']
             quantity = int(item['quantity'])
 
+            # Lookup product_id from product name
+            cur.execute("SELECT id FROM products WHERE name = %s", (product_name,))
+            result = cur.fetchone()
+            if not result:
+                continue  # or handle missing product error
+            product_id = result['id']
+
+            # Insert the stock request
             cur.execute('''
                 INSERT INTO stock_requests (
                     product_id, requester_id, recipient_id, quantity, requester_name, status
@@ -896,8 +891,6 @@ def request_stock():
         return redirect('/dashboard')
 
     return render_template('request_stock.html',
-                           categories=categories,
-                           selected_category=selected_category,
                            inventory=inventory,
                            recipients=recipients)
 
