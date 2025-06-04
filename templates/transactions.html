@@ -109,6 +109,21 @@
     {% else %}
       <p>No transactions found for the selected period.</p>
     {% endif %}
+
+    <div class="pagination-controls" style="text-align: center; margin-top: 20px;">
+        {% if page > 1 %}
+          <a href="{{ url_for('transactions', start_date=start_date, end_date=end_date, payment_method=payment_method, page=page-1) }}">
+            <button>Previous</button>
+          </a>
+        {% endif %}
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        {% if page < total_pages %}
+          <a href="{{ url_for('transactions', start_date=start_date, end_date=end_date, payment_method=payment_method, page=page+1) }}">
+            <button>Next</button>
+          </a>
+        {% endif %}
+      </div>
+      
   </div>
 </body>
 </html>

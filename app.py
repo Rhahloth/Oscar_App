@@ -275,13 +275,18 @@ def transactions():
     if 'user_id' not in session or session['role'] != 'salesperson':
         return redirect('/login')
 
+    import psycopg2.extras  # Ensure imported
+
     salesperson_id = session['user_id']
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     payment_method = request.args.get('payment_method')
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    offset = (page - 1) * per_page
 
     conn = get_db()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)  # Ensure dict-style access
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     filters = ["salesperson_id = %s"]
     params = [salesperson_id]
@@ -298,7 +303,15 @@ def transactions():
 
     filter_query = " AND ".join(filters)
 
-    # Get batch-level sales summary
+    # Total count for pagination
+    cur.execute(f"""
+        SELECT COUNT(DISTINCT batch_no) FROM sales
+        WHERE {filter_query}
+    """, tuple(params))
+    total_batches = cur.fetchone()[0]
+    total_pages = (total_batches + per_page - 1) // per_page
+
+    # Paginated batch-level sales summary
     cur.execute(f"""
         SELECT 
             DATE(date) AS date,
@@ -310,24 +323,23 @@ def transactions():
         WHERE {filter_query}
         GROUP BY batch_no, DATE(date), payment_method
         ORDER BY DATE(date) DESC
-    """, params)
+        LIMIT {per_page} OFFSET {offset}
+    """, tuple(params))
     sales = cur.fetchall()
 
     # Total Cash Sales
     cur.execute(f"""
-        SELECT SUM(price * quantity) AS total FROM sales
+        SELECT SUM(price * quantity) FROM sales
         WHERE {filter_query} AND payment_method = 'Cash'
-    """, params)
-    row = cur.fetchone()
-    total_cash_sales = row['total'] if row and row['total'] else 0
+    """, tuple(params))
+    total_cash_sales = cur.fetchone()[0] or 0
 
     # Total Credit Sales
     cur.execute(f"""
-        SELECT SUM(price * quantity) AS total FROM sales
+        SELECT SUM(price * quantity) FROM sales
         WHERE {filter_query} AND payment_method = 'Credit'
-    """, params)
-    row = cur.fetchone()
-    total_credit_sales = row['total'] if row and row['total'] else 0
+    """, tuple(params))
+    total_credit_sales = cur.fetchone()[0] or 0
 
     return render_template('transactions.html',
         sales=sales,
@@ -335,7 +347,9 @@ def transactions():
         total_credit_sales=total_credit_sales,
         start_date=start_date,
         end_date=end_date,
-        payment_method=payment_method
+        payment_method=payment_method,
+        page=page,
+        total_pages=total_pages
     )
 
 @app.route('/products', methods=['GET', 'POST'])
