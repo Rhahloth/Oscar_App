@@ -803,6 +803,8 @@ def my_inventory():
     # Handle filters
     selected_category = request.args.get('category')
     search_term = request.args.get('search', '').strip().lower()
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
 
     # Get inventory
     cur.execute("""
@@ -814,28 +816,38 @@ def my_inventory():
     """, (user_id,))
     inventory = cur.fetchall()
 
-    # Apply filters manually
+    # Apply category and search filters
     if selected_category:
         inventory = [item for item in inventory if item['category'] == selected_category]
     if search_term:
         inventory = [item for item in inventory if search_term in item['product_name'].lower()]
 
-    # Summary calculations
+    # Summary: total stock and inventory worth
     total_stock_qty = sum(item['quantity'] for item in inventory)
     total_stock_value = sum(item['quantity'] * (item['buying_price'] or 0) for item in inventory)
 
-    # Credit and Cash Sales for this user
-    cur.execute("""
+    # Dynamic sales query with date filters
+    query = """
         SELECT payment_method, SUM(quantity * price) AS total
         FROM sales
         WHERE salesperson_id = %s
-        GROUP BY payment_method
-    """, (user_id,))
+    """
+    params = [user_id]
+    if start_date:
+        query += " AND date >= %s"
+        params.append(start_date)
+    if end_date:
+        query += " AND date <= %s"
+        params.append(end_date)
+    query += " GROUP BY payment_method"
+
+    cur.execute(query, tuple(params))
     payment_summary = cur.fetchall()
+
     cash_sales = sum(row['total'] for row in payment_summary if row['payment_method'].lower() == 'cash')
     credit_sales = sum(row['total'] for row in payment_summary if row['payment_method'].lower() == 'credit')
 
-    # Get all categories for filter dropdown
+    # Categories for filter dropdown
     cur.execute("""
         SELECT DISTINCT category FROM products
         WHERE business_id = %s
@@ -849,12 +861,12 @@ def my_inventory():
         categories=categories,
         selected_category=selected_category,
         search_term=search_term,
-        total_stock_quantity=total_stock_qty,
-        inventory_worth=total_stock_value,
-        cash_sales=cash_sales,
-        credit_sales=credit_sales,
-        start_date=None,
-        end_date=None
+        total_stock=total_stock_qty,
+        total_worth=total_stock_value,
+        total_cash_sales=cash_sales,
+        total_credit_sales=credit_sales,
+        start_date=start_date,
+        end_date=end_date
     )
 
 @app.route('/report', methods=['GET', 'POST'])
