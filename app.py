@@ -269,6 +269,46 @@ def batch_sales(batch_no):
 
     return render_template('batch_sales.html', sales=sales, batch_number=batch_no)
 
+@app.route('/transactions')
+def transactions():
+    if 'user_id' not in session or session['role'] != 'salesperson':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    user_id = session['user_id']
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    payment_method = request.args.get('payment_method')
+
+    query = """
+        SELECT s.id, p.name AS product_name, s.quantity, s.price, s.payment_method, s.date
+        FROM sales s
+        JOIN products p ON s.product_id = p.id
+        WHERE s.salesperson_id = %s
+    """
+    params = [user_id]
+
+    if start_date:
+        query += " AND s.date >= %s"
+        params.append(start_date)
+    if end_date:
+        query += " AND s.date <= %s"
+        params.append(end_date)
+    if payment_method:
+        query += " AND s.payment_method = %s"
+        params.append(payment_method)
+
+    query += " ORDER BY s.date DESC"
+    cur.execute(query, tuple(params))
+    transactions = cur.fetchall()
+
+    return render_template("transactions.html",
+                           transactions=transactions,
+                           start_date=start_date,
+                           end_date=end_date,
+                           payment_method=payment_method)
 
 @app.route('/products', methods=['GET', 'POST'])
 def products():
