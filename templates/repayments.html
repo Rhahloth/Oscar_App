@@ -5,20 +5,9 @@
   <title>Credit Repayments - RO Solutions</title>
   <link rel="stylesheet" href="/static/styles.css" />
   <style>
-    .status.paid {
-      color: green;
-      font-weight: bold;
-    }
-
-    .status.partial {
-      color: orange;
-      font-weight: bold;
-    }
-
-    .status.unpaid {
-      color: red;
-      font-weight: bold;
-    }
+    .status.paid { color: green; font-weight: bold; }
+    .status.partial { color: orange; font-weight: bold; }
+    .status.unpaid { color: red; font-weight: bold; }
 
     .flex {
       display: flex;
@@ -83,7 +72,7 @@
           <select name="customer_id" id="customer_id" onchange="this.form.submit()">
             <option value="">-- All Customers --</option>
             {% for customer in customers %}
-              <option value="{{ customer.id }}" {% if customer.id == selected_customer_id %}selected{% endif %}>
+              <option value="{{ customer.id }}" {% if customer.id|string == selected_customer_id|string %}selected{% endif %}>
                 {{ customer.name }}
               </option>
             {% endfor %}
@@ -95,11 +84,13 @@
       <div class="card">
         <h3>💰 Submit a Repayment</h3>
         <form method="POST" action="/repayments">
+          <input type="hidden" name="customer_id" value="{{ selected_customer_id }}">
+
           <label for="credit_id">Credit Sale</label>
-          <select name="credit_id" required>
+          <select name="credit_id" id="credit_id" required>
             <option value="">-- Choose Credit --</option>
             {% for credit in credit_sales %}
-              <option value="{{ credit.credit_id }}">
+              <option value="{{ credit.credit_id }}" {% if credit.credit_id|string == selected_credit_id|string %}selected{% endif %}>
                 {{ credit.customer_name }} — {{ "{:,.0f}".format(credit.amount) }} UGX | Balance: {{ "{:,.0f}".format(credit.balance) }}
               </option>
             {% endfor %}

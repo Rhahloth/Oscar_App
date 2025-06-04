@@ -607,15 +607,17 @@ def delete_user():
     cur = conn.cursor()
 
     # Check if user has sales
-    cur.execute("SELECT COUNT(*) FROM sales WHERE salesperson_id = %s", (user_id,))
-    if cur.fetchone()[0] > 0:
-        flash("❌ Cannot delete user: They have recorded sales.", "error")
+    cur.execute("SELECT COUNT(*) AS sale_count FROM sales WHERE salesperson_id = %s", (user_id,))
+    result = cur.fetchone()
+
+    if result and result['sale_count'] > 0:
+        flash("❌ Cannot deactivate user: They have recorded sales.", "error")
         return redirect('/manage_users')
 
-    # Safe to delete
-    cur.execute("DELETE FROM users WHERE id = %s AND role = 'salesperson'", (user_id,))
+    # Soft delete (deactivate user)
+    cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s AND role = 'salesperson'", (user_id,))
     conn.commit()
-    flash("✅ User deleted successfully.", "success")
+    flash("✅ User deactivated successfully.", "success")
     return redirect('/manage_users')
 
 @app.route('/reset_password', methods=['POST'])
@@ -1190,11 +1192,12 @@ def repayments():
     conn = get_db()
     cur = conn.cursor()
 
-    selected_customer_id = request.form.get('selected_customer_id') if request.method == 'POST' else None
+    selected_customer_id = request.args.get('customer_id') or request.form.get('customer_id')
+    selected_credit_id = request.form.get('credit_id') if request.method == 'POST' else None
     total_owed = None
 
-    if request.method == 'POST' and 'credit_id' in request.form:
-        credit_id = int(request.form['credit_id'])
+    if request.method == 'POST' and selected_credit_id:
+        credit_id = int(selected_credit_id)
         amount = float(request.form['amount'])
 
         # Insert repayment
@@ -1217,7 +1220,7 @@ def repayments():
 
         conn.commit()
 
-    # Fetch all customers linked to this salesperson's business
+    # Get customers
     cur.execute("""
         SELECT DISTINCT c.id, c.name
         FROM credit_sales cs
@@ -1227,7 +1230,7 @@ def repayments():
     """, (session['user_id'],))
     customers = cur.fetchall()
 
-    # Fetch credit sales for the selected customer (if any)
+    # Get credit sales for selected customer
     if selected_customer_id:
         cur.execute("""
             SELECT cs.id AS credit_id, c.name AS customer_name, cs.amount, cs.balance, s.date
@@ -1250,6 +1253,7 @@ def repayments():
     else:
         credit_sales = []
 
+    # Get repayment history
     cur.execute("""
         SELECT r.amount, r.paid_on, c.name AS customer_name
         FROM credit_repayments r
@@ -1265,6 +1269,7 @@ def repayments():
     return render_template('repayments.html',
         customers=customers,
         selected_customer_id=selected_customer_id,
+        selected_credit_id=selected_credit_id,
         credit_sales=credit_sales,
         repayments=repayments,
         total_owed=total_owed)
