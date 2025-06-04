@@ -1320,13 +1320,31 @@ def repayments():
     """, (session['user_id'],))
     repayments = cur.fetchall()
 
+    # Get customer-level credit summary
+    cur.execute("""
+        SELECT 
+            c.id AS customer_id,
+            c.name AS customer_name,
+            SUM(cs.amount) AS total_credit,
+            SUM(cs.balance) AS total_balance
+        FROM credit_sales cs
+        JOIN customers c ON cs.customer_id = c.id
+        JOIN sales s ON cs.sale_id = s.id
+        WHERE s.salesperson_id = %s
+        GROUP BY c.id, c.name
+        ORDER BY c.name
+    """, (session['user_id'],))
+    credit_summary = cur.fetchall()
+
     return render_template('repayments.html',
         customers=customers,
         selected_customer_id=selected_customer_id,
         selected_credit_id=selected_credit_id,
         credit_sales=credit_sales,
         repayments=repayments,
-        total_owed=total_owed)
+        total_owed=total_owed,
+        credit_summary=credit_summary
+    )
 
 #credit buyers
 @app.route('/add_customer', methods=['GET', 'POST'])
