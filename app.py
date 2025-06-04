@@ -843,16 +843,14 @@ def request_stock():
 
     conn = get_db()
     cur = conn.cursor()
-
-    # Fetch logged-in user's ID
     current_user_id = session['user_id']
 
-    # Get categories for filter dropdown
+    # Category filter
     cur.execute("SELECT DISTINCT category FROM products")
     categories = [row['category'] for row in cur.fetchall()]
     selected_category = request.args.get('category')
 
-    # Get user's current inventory (filtered by category if needed)
+    # Get inventory
     if selected_category:
         cur.execute('''
             SELECT ui.product_id, ui.quantity, p.name AS product_name
@@ -869,23 +867,30 @@ def request_stock():
         ''', (current_user_id,))
     inventory = cur.fetchall()
 
-    # Get list of other salespersons (to send request to)
+    # Get recipients
     cur.execute("SELECT id, username FROM users WHERE role = 'salesperson' AND id != %s", (current_user_id,))
     recipients = cur.fetchall()
 
-    # Handle form submission
+    # Handle POST submission
     if request.method == 'POST':
-        product_id = int(request.form['product_id'])
-        recipient_id = int(request.form['recipient_id'])
-        quantity = int(request.form['quantity'])
-        requester_name = request.form['requester_name']
+        requester_name = request.form.get('requester_name')
+        recipient_id = int(request.form.get('recipient_id'))
+        cart_data = request.form.get('cart_data')
 
-        cur.execute('''
-            INSERT INTO stock_requests (
-                product_id, requester_id, recipient_id, quantity, requester_name, status
-            ) VALUES (%s, %s, %s, %s, %s, 'pending')
-        ''', (product_id, current_user_id, recipient_id, quantity, requester_name))
+        try:
+            cart = json.loads(cart_data)
+        except Exception as e:
+            return f"Invalid cart data: {e}", 400
 
+        for item in cart:
+            product_id = int(item['product_id'])
+            quantity = int(item['quantity'])
+
+            cur.execute('''
+                INSERT INTO stock_requests (
+                    product_id, requester_id, recipient_id, quantity, requester_name, status
+                ) VALUES (%s, %s, %s, %s, %s, 'pending')
+            ''', (product_id, current_user_id, recipient_id, quantity, requester_name))
 
         conn.commit()
         return redirect('/dashboard')

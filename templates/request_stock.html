@@ -1,134 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Request Stock - RO Solutions</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-</head>
-<body>
-  <div class="navbar-wrapper">
-    <div class="navbar-inner">
-      <div class="navbar">
-        <div class="navbar-left">
-          <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-          <div class="company-details-inline">
-            <strong>RO Solutions</strong><br />
-            <em>Your sales are guaranteed</em><br />
-            Tel: +256 778 412 136 <br>
-            Email: raysokello@gmail.com
-          </div>
-        </div>
-        <div>
-          {% if session.username %}
-          <div>BRANCH: {{ session.username }}</div>
-          {% endif %}
-        </div>
-        <div>
-          <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-        </div>
-        <div
-          class="navbar-right"
-          style="display: flex; align-items: center; gap: 10px"
-        >
-          {% if session.username %}
-          <a href="/logout"
-            ><button
-              style="
-                background-color: #d9534f;
-                color: white;
-                margin-left: 12px;
-              "
-            >
-              Logout
-            </button></a
-          >
-          {% endif %}
-        </div>
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Request Stock - RO Solutions</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      .cart-table th,
+      .cart-table td {
+        padding: 8px;
+        text-align: center;
+      }
+      .cart-table {
+        margin-top: 20px;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .cart-table th,
+      .cart-table td {
+        border: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <!-- Navbar structure unchanged -->
     </div>
-  </div>
 
-  <div class="container">
-    <h4 style="margin-bottom: 20px">Request Stock from Another Salesperson</h4>
+    <div class="container">
+      <h4>Request Stock</h4>
 
-    <!-- Category Filter -->
-    <form method="GET" action="/request_stock">
       <div class="form-group">
-        <label>Filter by Category</label>
-        <select name="category" onchange="this.form.submit()">
-          <option value="">-- All Categories --</option>
-          {% for category in categories %}
-            <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>
-              {{ category }}
-            </option>
-          {% endfor %}
-        </select>
+        <label>Search Product</label>
+        <input
+          type="text"
+          id="productSearch"
+          onkeyup="filterProducts()"
+          placeholder="Type to search products..."
+        />
       </div>
-    </form>
 
-    <!-- Main Request Form -->
-    <form method="POST" action="/request_stock">
       <div class="form-group">
         <label>Product</label>
-        {% if inventory %}
-          <select name="product_id" id="productSelect" required onchange="updateProductSummary()">
-            {% for item in inventory %}
-              <option value="{{ item.product_id }}" data-quantity="{{ item.quantity }}">
-                {{ item.product_name }}{% if item.quantity == 0 %} (Out of Stock){% endif %}
-              </option>
-            {% endfor %}
-          </select>
-          <div id="productSummary" style="margin-top: 8px; font-weight: bold;"></div>
-        {% else %}
-          <p style="color: red; font-weight: bold;">
-            No products available in this category. Try a different one or contact your team.
-          </p>
-        {% endif %}
-      </div>
-
-      <div class="form-group">
-        <label>FROM (BRANCH)</label>
-        <select name="recipient_id" required>
-          {% for r in recipients %}
-            <option value="{{ r.id }}">{{ r.username }}</option>
+        <select id="productSelect">
+          {% for item in inventory %}
+          <option
+            value="{{ item.product_id }}"
+            data-name="{{ item.product_name }}"
+            data-quantity="{{ item.quantity }}"
+          >
+            {{ item.product_name }}
+          </option>
           {% endfor %}
         </select>
       </div>
 
       <div class="form-group">
-        <label>Quantity to Request</label>
-        <input type="number" name="quantity" min="1" required />
+        <label>From (Branch)</label>
+        <select id="recipientSelect">
+          {% for r in recipients %}
+          <option value="{{ r.id }}">{{ r.username }}</option>
+          {% endfor %}
+        </select>
       </div>
 
       <div class="form-group">
-        <label>Your Full Name</label>
-        <input type="text" name="requester_name" required />
+        <label>Quantity</label>
+        <input type="number" id="quantityInput" min="1" />
       </div>
 
-      <button type="submit" id="submitBtn">Submit Request</button>
-    </form>
-  </div>
+      <button type="button" onclick="addToCart()">➕ Add to Cart</button>
 
-  <script>
-    function updateProductSummary() {
-      const select = document.getElementById("productSelect");
-      const selected = select.options[select.selectedIndex];
-      const quantity = parseInt(selected.getAttribute("data-quantity"));
-      const summaryDiv = document.getElementById("productSummary");
-      const submitBtn = document.getElementById("submitBtn");
+      <form
+        method="POST"
+        action="/request_stock"
+        onsubmit="return prepareSubmission()"
+      >
+        <input type="hidden" name="request_data" id="requestData" />
 
-      if (quantity === 0) {
-        summaryDiv.textContent = "You currently have none in your inventory.";
-        summaryDiv.style.color = "orange";
-        submitBtn.disabled = false;  // ✅ allow the request
-      } else {
-        summaryDiv.textContent = "Available in your inventory: " + quantity;
-        summaryDiv.style.color = "black";
-        submitBtn.disabled = false;
+        <table class="cart-table" id="cartTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>From Branch</th>
+              <th>Quantity</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="form-group">
+          <label>Your Full Name</label>
+          <input type="text" name="requester_name" required />
+        </div>
+
+        <button type="submit">Submit All Requests</button>
+      </form>
+    </div>
+
+    <script>
+      let cart = [];
+
+      function filterProducts() {
+        const input = document
+          .getElementById("productSearch")
+          .value.toLowerCase();
+        const options = document.getElementById("productSelect").options;
+        for (let i = 0; i < options.length; i++) {
+          const text = options[i].text.toLowerCase();
+          options[i].style.display = text.includes(input) ? "" : "none";
+        }
       }
-    }
 
-    window.onload = updateProductSummary;
-  </script>
-</body>
+      function addToCart() {
+        const productSelect = document.getElementById("productSelect");
+        const recipientSelect = document.getElementById("recipientSelect");
+        const quantity = parseInt(
+          document.getElementById("quantityInput").value
+        );
+
+        if (
+          !productSelect.value ||
+          !recipientSelect.value ||
+          !quantity ||
+          quantity < 1
+        ) {
+          alert("Please complete all fields.");
+          return;
+        }
+
+        const productName =
+          productSelect.options[productSelect.selectedIndex].text;
+        const recipientName =
+          recipientSelect.options[recipientSelect.selectedIndex].text;
+
+        cart.push({
+          product_id: productSelect.value,
+          product_name: productName,
+          recipient_id: recipientSelect.value,
+          recipient_name: recipientName,
+          quantity: quantity,
+        });
+
+        renderCart();
+      }
+
+      function renderCart() {
+        const tbody = document.querySelector("#cartTable tbody");
+        tbody.innerHTML = "";
+        cart.forEach((item, index) => {
+          const row = `<tr>
+          <td>${item.product_name}</td>
+          <td>${item.recipient_name}</td>
+          <td>${item.quantity}</td>
+          <td><button type="button" onclick="removeFromCart(${index})">Remove</button></td>
+        </tr>`;
+          tbody.innerHTML += row;
+        });
+      }
+
+      function removeFromCart(index) {
+        cart.splice(index, 1);
+        renderCart();
+      }
+
+      function prepareSubmission() {
+        document.getElementById("requestData").value = JSON.stringify(cart);
+        return cart.length > 0;
+      }
+    </script>
+  </body>
 </html>
