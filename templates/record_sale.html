@@ -4,6 +4,27 @@
     <meta charset="UTF-8" />
     <title>Record Sale - RO Solutions</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      .search-result {
+        padding: 6px 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #ddd;
+      }
+      .search-result:hover {
+        background-color: #f0f0f0;
+      }
+      #searchResults {
+        border: 1px solid #ccc;
+        max-height: 150px;
+        overflow-y: auto;
+        margin-top: 5px;
+        display: none;
+        position: absolute;
+        background: #fff;
+        z-index: 1000;
+        width: 300px;
+      }
+    </style>
   </head>
   <body>
     <div class="navbar-wrapper">
@@ -20,11 +41,11 @@
           </div>
           <div>
             {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
+            <div>OWNER: {{ session.username }}</div>
             {% endif %}
           </div>
           <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+            <a href="/dashboard"><button>Back to Dashboard</button></a>
           </div>
           <div
             class="navbar-right"
@@ -55,15 +76,7 @@
         You don't have any inventory assigned. Contact your manager.
       </p>
       <a href="/sales_upload_inventory">
-        <button
-          style="
-            background-color: #034078;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-          "
-        >
+        <button style="background-color: #034078; color: white">
           + Add Stocks
         </button>
       </a>
@@ -80,12 +93,10 @@
           <label for="productSearch">Search Product</label>
           <input
             id="productSearch"
-            list="productList"
             placeholder="Type to search..."
-            oninput="handleProductInput()"
             autocomplete="off"
           />
-          <datalist id="productList"></datalist>
+          <div id="searchResults"></div>
           <div
             id="stockStatus"
             style="margin-top: 10px; font-weight: bold"
@@ -129,20 +140,16 @@
             <option value="{{ customer.id }}">{{ customer.name }}</option>
             {% endfor %}
           </select>
-
           <label for="dueDate">Due Date:</label>
           <input type="date" name="due_date" id="dueDate" required />
         </div>
 
-        <div class="section-box">
-          <input type="hidden" name="payment_method" id="payment_method" />
-          <input type="hidden" name="cart_data" id="cart_data" />
-          <div class="cart-actions" style="text-align: right">
-            <button type="button" onclick="finalizeSale('Credit')">
-              Credit
-            </button>
-            <button type="button" onclick="finalizeSale('Cash')">Cash</button>
-          </div>
+        <input type="hidden" name="payment_method" id="payment_method" />
+        <input type="hidden" name="cart_data" id="cart_data" />
+
+        <div style="text-align: right; margin-top: 10px">
+          <button type="button" onclick="finalizeSale('Credit')">Credit</button>
+          <button type="button" onclick="finalizeSale('Cash')">Cash</button>
         </div>
       </form>
     </div>
@@ -155,65 +162,50 @@
         {% endfor %}
       ];
 
-      function handleProductInput() {
-        const input = document.getElementById("productSearch");
-        const list = document.getElementById("productList");
+      document.getElementById("productSearch").addEventListener("input", function () {
+        const query = this.value.toLowerCase();
+        const resultsDiv = document.getElementById("searchResults");
         const status = document.getElementById("stockStatus");
-        const query = input.value.toLowerCase();
-        list.innerHTML = "";
+        resultsDiv.innerHTML = "";
         status.innerHTML = "";
 
         if (query.length >= 2) {
           const matches = fullProductList.filter(p => p.name.toLowerCase().includes(query));
-          matches.forEach(p => {
-            const opt = document.createElement("option");
-            opt.value = p.name;
-            opt.setAttribute("data-id", p.id);
-            opt.setAttribute("data-retail", p.retail);
-            opt.setAttribute("data-cost", p.cost);
-            opt.setAttribute("data-qty", p.quantity);
-            list.appendChild(opt);
-          });
 
-          if (matches.length === 1) {
-            const product = matches[0];
-            if (product.quantity == 0) {
-              status.innerHTML = `<span style="color: red;">❌ Out of Stock</span>`;
-            } else if (product.quantity < 5) {
-              status.innerHTML = `<span style="color: orange;">⚠️ Low Stock (${product.quantity})</span>`;
-            } else {
-              status.innerHTML = `<span style="color: green;">✅ In Stock (${product.quantity})</span>`;
-            }
+          if (matches.length > 0) {
+            resultsDiv.style.display = "block";
+            matches.forEach(product => {
+              const div = document.createElement("div");
+              div.className = "search-result";
+              div.textContent = `${product.name} (${product.quantity} in stock)`;
+              div.onclick = () => selectProduct(product);
+              resultsDiv.appendChild(div);
+            });
+          } else {
+            resultsDiv.style.display = "none";
           }
+        } else {
+          resultsDiv.style.display = "none";
         }
-      }
+      });
 
-      document.getElementById("productSearch").addEventListener("change", function () {
-        const name = this.value;
-        const option = [...document.getElementById("productList").options].find(opt => opt.value === name);
-        if (!option) return;
-
-        const productId = option.dataset.id;
-        const productName = option.value;
-        const price = parseFloat(option.dataset.retail);
-        const cost = parseFloat(option.dataset.cost);
-        const quantity = parseInt(option.dataset.qty);
-
-        if (quantity === 0) {
+      function selectProduct(product) {
+        if (product.quantity == 0) {
           alert("❌ This product is out of stock.");
-          this.value = "";
           return;
         }
 
-        cart.push({ productId, productName, quantity: 1, price, cost, subtotal: price });
+        cart.push({ productId: product.id, productName: product.name, quantity: 1, price: parseFloat(product.retail), cost: parseFloat(product.cost), subtotal: parseFloat(product.retail) });
         renderCart();
-        this.value = "";
-        document.getElementById("stockStatus").innerHTML = "";
-      });
+        document.getElementById("productSearch").value = "";
+        document.getElementById("searchResults").style.display = "none";
 
-      function getProductStock(productId) {
-        const product = fullProductList.find(p => p.id == productId);
-        return product ? product.quantity : 'N/A';
+        const status = document.getElementById("stockStatus");
+        if (product.quantity < 5) {
+          status.innerHTML = `<span style="color: orange;">⚠️ Low Stock (${product.quantity})</span>`;
+        } else {
+          status.innerHTML = `<span style="color: green;">✅ In Stock (${product.quantity})</span>`;
+        }
       }
 
       function renderCart() {
@@ -228,16 +220,9 @@
 
           tbody.innerHTML += `
             <tr>
-              <td>
-                ${item.productName}
-                <span style="color:gray; font-size: 0.9em;">(Available: ${getProductStock(item.productId)})</span>
-              </td>
-              <td>
-                <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" style="width: 60px;" />
-              </td>
-              <td>
-                <input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" />
-              </td>
+              <td>${item.productName} <span style="color:gray; font-size: 0.9em;">(Available: ${getProductStock(item.productId)})</span></td>
+              <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" style="width: 60px;" /></td>
+              <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" /></td>
               <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
               <td><button type="button" onclick="removeItem(${i})">X</button></td>
             </tr>`;
@@ -245,6 +230,11 @@
 
         document.getElementById("total_qty").innerText = totalQty;
         document.getElementById("total_amount").innerText = totalAmount.toLocaleString('en-UG');
+      }
+
+      function getProductStock(productId) {
+        const product = fullProductList.find(p => p.id == productId);
+        return product ? product.quantity : 'N/A';
       }
 
       function updateQty(index, value) {
@@ -256,7 +246,7 @@
       function updatePrice(index, value) {
         const newPrice = parseFloat(value) || 0;
         if (newPrice < parseFloat(cart[index].cost)) {
-          alert("⚠️ Check the price and try again");
+          alert("⚠️ Price too low. Try again.");
           renderCart();
           return;
         }
@@ -265,13 +255,9 @@
         renderCart();
       }
 
-      function removeItem(i) {
-        cart.splice(i, 1);
+      function removeItem(index) {
+        cart.splice(index, 1);
         renderCart();
-      }
-
-      function submitSale(e) {
-        e.preventDefault();
       }
 
       function finalizeSale(method) {
@@ -282,9 +268,8 @@
         if (method === 'Credit') {
           const customerId = document.getElementById("customerSelect").value;
           const dueDate = document.getElementById("dueDate").value;
-
           if (!customerId || !dueDate) {
-            alert("❌ For credit sales, please select a customer and due date.");
+            alert("❌ Please select customer and due date for credit.");
             return;
           }
         }
@@ -292,13 +277,15 @@
         document.getElementById("saleForm").submit();
       }
 
+      function submitSale(e) {
+        e.preventDefault();
+      }
+
+      // Toggle credit input
       document.querySelectorAll("button").forEach(btn => {
         btn.addEventListener("click", () => {
-          if (btn.innerText === "Credit") {
-            document.getElementById("creditOptions").style.display = "block";
-          } else {
-            document.getElementById("creditOptions").style.display = "none";
-          }
+          document.getElementById("creditOptions").style.display =
+            btn.innerText === "Credit" ? "block" : "none";
         });
       });
     </script>
