@@ -7,166 +7,183 @@
     <style>
       .cart-table th,
       .cart-table td {
+        text-align: left;
         padding: 8px;
-        text-align: center;
       }
-      .cart-table {
-        margin-top: 20px;
-        width: 100%;
-        border-collapse: collapse;
+      .cart-table th {
+        background-color: #f2f2f2;
       }
-      .cart-table th,
-      .cart-table td {
-        border: 1px solid #ddd;
+      .cart-table td button {
+        background-color: #d9534f;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      #totalQuantitySummary {
+        font-weight: bold;
+        margin-top: 10px;
       }
     </style>
   </head>
   <body>
     <div class="navbar-wrapper">
-      <!-- Navbar structure unchanged -->
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RO Solutions</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout"
+              ><button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button></a
+            >
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="container">
       <h4>Request Stock</h4>
-
-      <div class="form-group">
-        <label>Search Product</label>
-        <input
-          type="text"
-          id="productSearch"
-          onkeyup="filterProducts()"
-          placeholder="Type to search products..."
-        />
-      </div>
-
-      <div class="form-group">
-        <label>Product</label>
-        <select id="productSelect">
-          {% for item in inventory %}
-          <option
-            value="{{ item.product_id }}"
-            data-name="{{ item.product_name }}"
-            data-quantity="{{ item.quantity }}"
-          >
-            {{ item.product_name }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>From (Branch)</label>
-        <select id="recipientSelect">
-          {% for r in recipients %}
-          <option value="{{ r.id }}">{{ r.username }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Quantity</label>
-        <input type="number" id="quantityInput" min="1" />
-      </div>
-
-      <button type="button" onclick="addToCart()">➕ Add to Cart</button>
-
       <form
         method="POST"
         action="/request_stock"
-        onsubmit="return prepareSubmission()"
+        onsubmit="return prepareCartData();"
       >
-        <input type="hidden" name="request_data" id="requestData" />
+        <div class="form-group">
+          <label>Search Product</label>
+          <input
+            type="text"
+            id="productSearch"
+            placeholder="Enter product name"
+            style="width: 100%"
+          />
+        </div>
 
-        <table class="cart-table" id="cartTable">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>From Branch</th>
-              <th>Quantity</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div class="form-group">
+          <label>Matching Products</label>
+          <div id="searchResults"></div>
+        </div>
+
+        <div class="form-group">
+          <label>FROM (BRANCH)</label>
+          <select name="recipient_id" required>
+            {% for r in recipients %}
+            <option value="{{ r.id }}">{{ r.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
 
         <div class="form-group">
           <label>Your Full Name</label>
           <input type="text" name="requester_name" required />
         </div>
 
-        <button type="submit">Submit All Requests</button>
+        <div class="form-group">
+          <h4>Request Cart</h4>
+          <table class="cart-table" border="1" width="100%" id="cartTable">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="cartBody"></tbody>
+          </table>
+          <div id="totalQuantitySummary">Total Quantity: 0</div>
+        </div>
+
+        <input type="hidden" name="cart_data" id="cartDataInput" />
+        <button type="submit">Submit Request</button>
       </form>
     </div>
 
     <script>
-      let cart = [];
+      const products = [
+        {% for item in inventory %}
+          { id: {{ item.product_id }}, name: "{{ item.product_name }}" },
+        {% endfor %}
+      ];
 
-      function filterProducts() {
-        const input = document
-          .getElementById("productSearch")
-          .value.toLowerCase();
-        const options = document.getElementById("productSelect").options;
-        for (let i = 0; i < options.length; i++) {
-          const text = options[i].text.toLowerCase();
-          options[i].style.display = text.includes(input) ? "" : "none";
-        }
-      }
+      const cart = [];
 
-      function addToCart() {
-        const productSelect = document.getElementById("productSelect");
-        const recipientSelect = document.getElementById("recipientSelect");
-        const quantity = parseInt(
-          document.getElementById("quantityInput").value
-        );
+      document.getElementById('productSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const results = products.filter(p => p.name.toLowerCase().includes(searchTerm));
 
-        if (
-          !productSelect.value ||
-          !recipientSelect.value ||
-          !quantity ||
-          quantity < 1
-        ) {
-          alert("Please complete all fields.");
-          return;
-        }
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.innerHTML = '';
 
-        const productName =
-          productSelect.options[productSelect.selectedIndex].text;
-        const recipientName =
-          recipientSelect.options[recipientSelect.selectedIndex].text;
-
-        cart.push({
-          product_id: productSelect.value,
-          product_name: productName,
-          recipient_id: recipientSelect.value,
-          recipient_name: recipientName,
-          quantity: quantity,
+        results.forEach(product => {
+          const btn = document.createElement('button');
+          btn.textContent = product.name;
+          btn.onclick = () => addToCart(product);
+          resultsDiv.appendChild(btn);
         });
+      });
 
-        renderCart();
+      function addToCart(product) {
+        const qty = prompt("Enter quantity for " + product.name);
+        if (qty && !isNaN(qty)) {
+          cart.push({ id: product.id, name: product.name, quantity: parseInt(qty) });
+          renderCart();
+        }
       }
 
       function renderCart() {
-        const tbody = document.querySelector("#cartTable tbody");
-        tbody.innerHTML = "";
+        const tbody = document.getElementById('cartBody');
+        tbody.innerHTML = '';
+        let totalQuantity = 0;
+
         cart.forEach((item, index) => {
-          const row = `<tr>
-          <td>${item.product_name}</td>
-          <td>${item.recipient_name}</td>
-          <td>${item.quantity}</td>
-          <td><button type="button" onclick="removeFromCart(${index})">Remove</button></td>
-        </tr>`;
-          tbody.innerHTML += row;
+          totalQuantity += item.quantity;
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.quantity}</td>
+            <td><button onclick="removeCartItem(${index})">Remove</button></td>
+          `;
+          tbody.appendChild(row);
         });
+
+        document.getElementById('totalQuantitySummary').textContent = 'Total Quantity: ' + totalQuantity;
       }
 
-      function removeFromCart(index) {
+      function removeCartItem(index) {
         cart.splice(index, 1);
         renderCart();
       }
 
-      function prepareSubmission() {
-        document.getElementById("requestData").value = JSON.stringify(cart);
-        return cart.length > 0;
+      function prepareCartData() {
+        document.getElementById('cartDataInput').value = JSON.stringify(cart);
+        return true;
       }
     </script>
   </body>
