@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>RO Solutions - Manage Salespersons</title>
+    <title>RO Solutions - Manage Branches</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
@@ -49,7 +49,7 @@
     </div>
 
     <div class="container">
-      <h4>Add Salesperson</h4>
+      <h4>Add a Branch</h4>
       <form method="POST">
         <div class="form-group">
           <label>Username</label>
@@ -59,16 +59,17 @@
           <label>Password</label>
           <input type="password" name="password" required />
         </div>
-        <button type="submit">Add Salesperson</button>
+        <button type="submit">Add Branch</button>
       </form>
-      <h5>Existing Salespersons</h5>
+      <h5>Existing Branches</h5>
       <table class="table">
         <thead>
           <tr>
-            <th>Username</th>
+            <th>Branch Name</th>
             <th>Role</th>
             <th>Reset Password</th>
-            <th>Remove</th>
+            <th>Deactive User</th>
+            <th>User Status</th>
           </tr>
         </thead>
         <tbody>
@@ -101,6 +102,13 @@
                   🚫 Deactivate
                 </button>
               </form>
+            </td>
+            <td>
+              {% if not user.is_active %}
+              <span class="status unpaid">Deactivated</span>
+              {% else %}
+              <span class="status paid">Active</span>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
