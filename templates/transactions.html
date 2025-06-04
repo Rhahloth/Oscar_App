@@ -67,33 +67,35 @@
       </fieldset>
     </form>
 
-    {% if transactions %}
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Product</th>
-          <th>Qty</th>
-          <th>Price (UGX)</th>
-          <th>Subtotal (UGX)</th>
-          <th>Payment</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for t in transactions %}
-        <tr>
-          <td>{{ t.date }}</td>
-          <td>{{ t.product_name }}</td>
-          <td>{{ t.quantity }}</td>
-          <td>{{ "{:,.0f}".format(t.price) }}</td>
-          <td>{{ "{:,.0f}".format(t.price * t.quantity) }}</td>
-          <td>{{ t.payment_method }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <h3>📦 Transaction History</h3>
+
+    {% if sales %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Batch No</th>
+            <th>Payment Method</th>
+            <th>Total Quantity</th>
+            <th>Total Amount (UGX)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for batch in sales %}
+          <tr>
+            <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              <a href="/batch_sales/{{ batch.batch_number }}">{{ batch.batch_number }}</a>
+            </td>
+            <td>{{ batch.payment_method }}</td>
+            <td>{{ batch.total_quantity }}</td>
+            <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     {% else %}
-    <p>No transactions found for the selected period.</p>
+      <p>No transactions found for the selected period.</p>
     {% endif %}
   </div>
 </body>
