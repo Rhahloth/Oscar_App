@@ -149,7 +149,7 @@ button:hover {
 }
 
 .navbar a button {
-    background-color:rgb(251, 133, 15);
+    background-color: rgb(251, 133, 15);
     color: #034078;
     font-weight: bold;
     border: none;
@@ -171,6 +171,7 @@ button:hover {
 }
 
 /* Table Styling */
+/* Table Styling */
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -183,45 +184,6 @@ button:hover {
     border: 1px solid #ddd;
     text-align: left;
 }
-
-@media (max-width: 600px) {
-    .container {
-        padding: 15px;
-        margin: 20px;
-    }
-
-    .navbar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .navbar-left,
-    .navbar-right {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
-
-/* Footer
-.footer {
-    max-width: 1000px;
-    margin: 40px auto 20px auto;
-    padding: 20px;
-    border-top: 1px solid #ddd;
-    text-align: right;
-    font-size: 14px;
-    color: #555;
-}
-
-.footer a {
-    color: #034078;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-.footer a:hover {
-    text-decoration: underline;
-} */
 
 /* Report Filters */
 .report-filters {
@@ -440,6 +402,9 @@ button:hover {
     background: #f9f9f9;
     border: 1px solid #ccc;
     border-radius: 10px;
+    background: linear-gradient(to bottom, #ffffff, #f9f9f9);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease;
 }
 
 .summary-card h4 {
@@ -452,6 +417,10 @@ button:hover {
     font-size: 1.5rem;
     font-weight: bold;
     color: #222;
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
 }
 
 /* REPAYMENT CARD */

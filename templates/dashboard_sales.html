@@ -51,11 +51,11 @@
     <div class="container">
       <h4>Welcome, {{ session.username }}!</h4>
       <div class="form-group action-buttons">
-        <a href="/record_sale"><button>POS</button></a>
-        <a href="/my_inventory"><button>Manage Stocks</button></a>
-        <a href="/request_stock"><button>Request Stock</button></a>
-        <a href="/review_requests"><button>Review Transfer Requests</button></a>
-        <a href="/repayments"><button>Credit Repayments</button></a>
+        <a href="/record_sale"><button>🛒 POS</button></a>
+        <a href="/my_inventory"><button>📦 Manage Stock</button></a>
+        <a href="/request_stock"><button>📥 Request Stock</button></a>
+        <a href="/review_requests"><button>🔄 Review Transfers</button></a>
+        <a href="/repayments"><button>💳 Credit Repayments</button></a>
       </div>
 
       <h5>Your Recent Sales</h5>
@@ -86,7 +86,7 @@
           {% endfor %}
         </tbody>
       </table>
-      <div style="margin-top: 20px; text-align: center">
+      <div style="margin-top: 20px; text-align: ">
         <a href="/transactions">
           <button
             style="
