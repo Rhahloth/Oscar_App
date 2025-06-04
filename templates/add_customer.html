@@ -2,8 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Manage Customers - RO Solutions</title>
+    <title>Manage Customers & Credit Summary - RO Solutions</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <style>
+      .status.paid {
+        color: green;
+        font-weight: bold;
+      }
+      .status.partial {
+        color: orange;
+        font-weight: bold;
+      }
+      .status.unpaid {
+        color: red;
+        font-weight: bold;
+      }
+    </style>
   </head>
   <body>
     <div class="navbar-wrapper">
@@ -49,58 +63,96 @@
     </div>
 
     <div class="container">
-      <h4>Manage Customers</h4>
-      <div class="section-box">
-        <form method="POST">
-          <label for="name"><strong>Customer Name:</strong></label
-          ><br />
-          <input
-            type="text"
-            name="name"
-            required
-            style="width: 300px"
-          /><br /><br />
+      <h3>➕ Add New Customer</h3>
+      <form method="POST">
+        <label for="name"><strong>Customer Name:</strong></label
+        ><br />
+        <input
+          type="text"
+          name="name"
+          required
+          style="width: 300px"
+        /><br /><br />
 
-          <label for="phone"><strong>Phone Number:</strong></label
-          ><br />
-          <input
-            type="text"
-            name="phone"
-            placeholder="Optional"
-            style="width: 300px"
-          /><br /><br />
+        <label for="phone"><strong>Phone Number:</strong></label
+        ><br />
+        <input
+          type="text"
+          name="phone"
+          placeholder="Optional"
+          style="width: 300px"
+        /><br /><br />
 
-          <button type="submit">➕ Add Customer</button>
-        </form>
-      </div>
+        <button type="submit">➕ Add Customer</button>
+      </form>
 
       <hr />
 
-      <div class="section-box">
-        <h5>📋 Existing Customers</h5>
-        {% if customers %}
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for c in customers %}
-            <tr>
-              <td>{{ c.name }}</td>
-              <td>{{ c.phone or '—' }}</td>
-              <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p>No customers yet.</p>
-        {% endif %}
-      </div>
+      <h4>📋 Existing Customers</h4>
+      {% if customers %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in customers %}
+          <tr>
+            <td>{{ c.name }}</td>
+            <td>{{ c.phone or '—' }}</td>
+            <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No customers yet.</p>
+      {% endif %}
+
+      <hr />
+
+      <h4>💳 Credit Summary by Batch</h4>
+      {% if credit_summary %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Batch No</th>
+            <th>Customer</th>
+            <th>Total Credit (UGX)</th>
+            <th>Balance (UGX)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in credit_summary %}
+          <tr>
+            <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a>
+            </td>
+            <td>{{ row.customer_name }}</td>
+            <td>{{ "{:,.0f}".format(row.total_credit or 0) }}</td>
+            <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
+            <td>
+              {% if row.balance == 0 %}
+              <span class="status paid">✅ Paid</span>
+              {% elif row.balance < row.total_credit %}
+              <span class="status partial">🟡 Partial</span>
+              {% else %}
+              <span class="status unpaid">❌ Unpaid</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No credit summary available.</p>
+      {% endif %}
     </div>
   </body>
 </html>

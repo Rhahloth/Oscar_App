@@ -1346,7 +1346,6 @@ def repayments():
         credit_summary=credit_summary
     )
 
-#credit buyers
 @app.route('/add_customer', methods=['GET', 'POST'])
 def add_customer():
     if 'user_id' not in session or session['role'] != 'owner':
@@ -1355,33 +1354,56 @@ def add_customer():
     conn = get_db()
     cur = conn.cursor()
 
+    user_id = session['user_id']
+
+    # Get business ID
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    business = cur.fetchone()
+    if not business:
+        return "Business not found", 400
+    business_id = business['business_id']
+
+    # Handle POST (new customer)
     if request.method == 'POST':
         name = request.form.get('name')
         phone = request.form.get('phone')
 
-        cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
-        business = cur.fetchone()
-        if not business:
-            return "Business not found", 400
-
         cur.execute("""
             INSERT INTO customers (name, phone, business_id)
             VALUES (%s, %s, %s)
-        """, (name, phone, business['business_id']))
+        """, (name, phone, business_id))
         conn.commit()
         return redirect('/add_customer')
 
-    # View all existing customers for the business
+    # Fetch all customers
     cur.execute("""
         SELECT c.id, c.name, c.phone, c.created_at
         FROM customers c
-        JOIN users u ON u.business_id = c.business_id
-        WHERE u.id = %s
+        WHERE c.business_id = %s
         ORDER BY c.created_at DESC
-    """, (session['user_id'],))
+    """, (business_id,))
     customers = cur.fetchall()
 
-    return render_template('add_customer.html', customers=customers)
+    # Fetch credit sales summary grouped by batch
+    cur.execute("""
+        SELECT 
+            c.name AS customer_name,
+            cs.amount,
+            cs.balance,
+            cs.status,
+            s.date,
+            s.batch_no
+        FROM credit_sales cs
+        JOIN sales s ON cs.sale_id = s.id
+        JOIN customers c ON cs.customer_id = c.id
+        WHERE s.business_id = %s
+        ORDER BY s.date DESC
+    """, (business_id,))
+    credit_summary = cur.fetchall()
+
+    return render_template('add_customer.html',
+                           customers=customers,
+                           credit_summary=credit_summary)
 
 
 @app.route('/logout')
