@@ -280,7 +280,7 @@ def transactions():
     payment_method = request.args.get('payment_method')
 
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)  # Ensure dict-style access
 
     filters = ["salesperson_id = %s"]
     params = [salesperson_id]
@@ -314,17 +314,19 @@ def transactions():
 
     # Total Cash Sales
     cur.execute(f"""
-        SELECT SUM(price * quantity) FROM sales
+        SELECT SUM(price * quantity) AS total FROM sales
         WHERE {filter_query} AND payment_method = 'Cash'
     """, params)
-    total_cash_sales = cur.fetchone()[0] or 0
+    row = cur.fetchone()
+    total_cash_sales = row['total'] if row and row['total'] else 0
 
     # Total Credit Sales
     cur.execute(f"""
-        SELECT SUM(price * quantity) FROM sales
+        SELECT SUM(price * quantity) AS total FROM sales
         WHERE {filter_query} AND payment_method = 'Credit'
     """, params)
-    total_credit_sales = cur.fetchone()[0] or 0
+    row = cur.fetchone()
+    total_credit_sales = row['total'] if row and row['total'] else 0
 
     return render_template('transactions.html',
         sales=sales,
