@@ -81,16 +81,7 @@
         <h4>Total Inventory Worth (UGX)</h4>
         <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
       </div>
-
-      <div class="summary-card">
-        <h4>Total Cash Sales (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(total_cash_sales or 0) }}</p>
-      </div>
-
-      <div class="summary-card">
-        <h4>Total Credit Sales (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(total_credit_sales or 0) }}</p>
-      </div>
+      
     </div>
 
     <form method="GET" action="/my_inventory" class="report-filters">

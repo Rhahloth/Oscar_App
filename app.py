@@ -274,41 +274,66 @@ def transactions():
     if 'user_id' not in session or session['role'] != 'salesperson':
         return redirect('/login')
 
-    conn = get_db()
-    cur = conn.cursor()
-
-    user_id = session['user_id']
+    salesperson_id = session['user_id']
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     payment_method = request.args.get('payment_method')
 
-    query = """
-        SELECT s.id, p.name AS product_name, s.quantity, s.price, s.payment_method, s.date
-        FROM sales s
-        JOIN products p ON s.product_id = p.id
-        WHERE s.salesperson_id = %s
-    """
-    params = [user_id]
+    conn = get_db()
+    cur = conn.cursor()
+
+    filters = ["salesperson_id = %s"]
+    params = [salesperson_id]
 
     if start_date:
-        query += " AND s.date >= %s"
+        filters.append("DATE(date) >= %s")
         params.append(start_date)
     if end_date:
-        query += " AND s.date <= %s"
+        filters.append("DATE(date) <= %s")
         params.append(end_date)
     if payment_method:
-        query += " AND s.payment_method = %s"
+        filters.append("payment_method = %s")
         params.append(payment_method)
 
-    query += " ORDER BY s.date DESC"
-    cur.execute(query, tuple(params))
-    transactions = cur.fetchall()
+    filter_query = " AND ".join(filters)
 
-    return render_template("transactions.html",
-                           transactions=transactions,
-                           start_date=start_date,
-                           end_date=end_date,
-                           payment_method=payment_method)
+    # Get batch-level sales summary
+    cur.execute(f"""
+        SELECT 
+            DATE(date) AS date,
+            batch_no AS batch_number,
+            payment_method,
+            SUM(quantity) AS total_quantity,
+            SUM(price * quantity) AS total_price
+        FROM sales
+        WHERE {filter_query}
+        GROUP BY batch_no, DATE(date), payment_method
+        ORDER BY DATE(date) DESC
+    """, params)
+    sales = cur.fetchall()
+
+    # Total Cash Sales
+    cur.execute(f"""
+        SELECT SUM(price * quantity) FROM sales
+        WHERE {filter_query} AND payment_method = 'Cash'
+    """, params)
+    total_cash_sales = cur.fetchone()[0] or 0
+
+    # Total Credit Sales
+    cur.execute(f"""
+        SELECT SUM(price * quantity) FROM sales
+        WHERE {filter_query} AND payment_method = 'Credit'
+    """, params)
+    total_credit_sales = cur.fetchone()[0] or 0
+
+    return render_template('transactions.html',
+        sales=sales,
+        total_cash_sales=total_cash_sales,
+        total_credit_sales=total_credit_sales,
+        start_date=start_date,
+        end_date=end_date,
+        payment_method=payment_method
+    )
 
 @app.route('/products', methods=['GET', 'POST'])
 def products():
@@ -863,7 +888,6 @@ def my_inventory():
     cur = conn.cursor()
 
     user_id = session['user_id']
-    role = session['role']
 
     # Get user's business ID
     cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
@@ -875,10 +899,8 @@ def my_inventory():
     # Handle filters
     selected_category = request.args.get('category')
     search_term = request.args.get('search', '').strip().lower()
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
 
-    # Get inventory
+    # Get inventory for the logged-in user
     cur.execute("""
         SELECT ui.*, p.name AS product_name, p.category,
                p.buying_price, p.agent_price, p.wholesale_price, p.retail_price
@@ -898,27 +920,6 @@ def my_inventory():
     total_stock_qty = sum(item['quantity'] for item in inventory)
     total_stock_value = sum(item['quantity'] * (item['buying_price'] or 0) for item in inventory)
 
-    # Dynamic sales query with date filters
-    query = """
-        SELECT payment_method, SUM(quantity * price) AS total
-        FROM sales
-        WHERE salesperson_id = %s
-    """
-    params = [user_id]
-    if start_date:
-        query += " AND date >= %s"
-        params.append(start_date)
-    if end_date:
-        query += " AND date <= %s"
-        params.append(end_date)
-    query += " GROUP BY payment_method"
-
-    cur.execute(query, tuple(params))
-    payment_summary = cur.fetchall()
-
-    cash_sales = sum(row['total'] for row in payment_summary if row['payment_method'].lower() == 'cash')
-    credit_sales = sum(row['total'] for row in payment_summary if row['payment_method'].lower() == 'credit')
-
     # Categories for filter dropdown
     cur.execute("""
         SELECT DISTINCT category FROM products
@@ -934,11 +935,7 @@ def my_inventory():
         selected_category=selected_category,
         search_term=search_term,
         total_stock=total_stock_qty,
-        total_worth=total_stock_value,
-        total_cash_sales=cash_sales,
-        total_credit_sales=credit_sales,
-        start_date=start_date,
-        end_date=end_date
+        total_worth=total_stock_value
     )
 
 @app.route('/report', methods=['GET', 'POST'])

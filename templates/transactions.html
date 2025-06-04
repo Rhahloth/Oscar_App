@@ -68,6 +68,18 @@
     </form>
 
     <h3>📦 Transaction History</h3>
+    <div class="summary-container">
+  
+        <div class="summary-card">
+          <h4>Total Cash Sales (UGX)</h4>
+          <p>UGX {{ "{:,.0f}".format(total_cash_sales or 0) }}</p>
+        </div>
+  
+        <div class="summary-card">
+          <h4>Total Credit Sales (UGX)</h4>
+          <p>UGX {{ "{:,.0f}".format(total_credit_sales or 0) }}</p>
+        </div>
+      </div>
 
     {% if sales %}
       <table class="table">
