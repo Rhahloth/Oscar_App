@@ -77,6 +77,7 @@ def dashboard():
             WHERE p.business_id = %s
             GROUP BY s.batch_no, u.username, s.payment_method
             ORDER BY MIN(s.date) DESC
+            LIMIT 10
         """, (business_id,))
         sales = cur.fetchall()
 
@@ -96,6 +97,7 @@ def dashboard():
             WHERE s.salesperson_id = %s
             GROUP BY s.batch_no, s.payment_method
             ORDER BY MIN(s.date) DESC
+            LIMIT 10
         """, (user_id,))
         sales = cur.fetchall()
 
