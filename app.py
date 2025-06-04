@@ -699,16 +699,18 @@ def delete_user():
     conn = get_db()
     cur = conn.cursor()
 
-    # Check if the user has any sales
+    # Check if user has sales
     cur.execute("SELECT COUNT(*) AS sale_count FROM sales WHERE salesperson_id = %s", (user_id,))
     result = cur.fetchone()
 
     if result and result['sale_count'] > 0:
-        # Soft delete (deactivate)
+        # Soft delete
         cur.execute("UPDATE users SET is_active = FALSE WHERE id = %s", (user_id,))
-        flash("🔒 User has recorded sales and was deactivated instead.", "warning")
+        flash("🔒 User has recorded sales and was deactivated.", "warning")
     else:
-        # Permanently delete user
+        # Delete related inventory first
+        cur.execute("DELETE FROM user_inventory WHERE user_id = %s", (user_id,))
+        # Then delete user
         cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
         flash("🗑️ User permanently deleted (no sales found).", "success")
 
@@ -716,8 +718,6 @@ def delete_user():
     cur.close()
     conn.close()
     return redirect('/manage_users')
-
-
 
 @app.route('/reset_password', methods=['POST'])
 def reset_password():
