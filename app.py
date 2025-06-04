@@ -59,10 +59,10 @@ def dashboard():
         cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
         business = cur.fetchone()
         if not business:
-            return "❌ Business not found", 400
+            return "Business not found", 400
         business_id = business['business_id']
 
-        # Fetch recent 5 sales batches for this business
+        # Fetch only sales for this business, include total and batch number
         cur.execute("""
             SELECT 
                 s.batch_no AS batch_number,
@@ -77,17 +77,13 @@ def dashboard():
             WHERE p.business_id = %s
             GROUP BY s.batch_no, u.username, s.payment_method
             ORDER BY MIN(s.date) DESC
-            LIMIT 5
         """, (business_id,))
         sales = cur.fetchall()
-
-        cur.close()
-        conn.close()
 
         return render_template('dashboard_owner.html', sales=sales)
 
     else:  # salesperson
-        # Fetch recent 5 sales batches for this salesperson
+        # Get sales only for this salesperson, include total_price and batch number
         cur.execute("""
             SELECT 
                 s.batch_no AS batch_number,
@@ -100,23 +96,19 @@ def dashboard():
             WHERE s.salesperson_id = %s
             GROUP BY s.batch_no, s.payment_method
             ORDER BY MIN(s.date) DESC
-            LIMIT 5
         """, (user_id,))
         sales = cur.fetchall()
 
-        # Fetch current inventory for the salesperson
-        cur.execute("""
+        # Fetch user inventory
+        cur.execute('''
             SELECT ui.*, 
                    p.name AS product_name, 
                    p.category
             FROM user_inventory ui
             JOIN products p ON ui.product_id = p.id
             WHERE ui.user_id = %s
-        """, (user_id,))
+        ''', (user_id,))
         inventory = cur.fetchall()
-
-        cur.close()
-        conn.close()
 
         return render_template('dashboard_sales.html', inventory=inventory, sales=sales, username=session['username'])
 
