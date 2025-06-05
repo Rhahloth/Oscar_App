@@ -26,27 +26,31 @@ def generate_random_password(length=4):
 def home():
     return redirect('/login')
 
-@app.route('/create_super_admin')
+@app.route('/create_super_admin', methods=['GET', 'POST'])
 def create_super_admin():
     from werkzeug.security import generate_password_hash
-    conn = get_db()
-    cur = conn.cursor()
-    
-    username = 'Raymond'
-    password = generate_password_hash('super_admin123')
-    
-    # Check if already exists
-    cur.execute("SELECT * FROM users WHERE username = %s", (username,))
-    if cur.fetchone():
-        return "Super admin already exists."
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-    cur.execute("""
-        INSERT INTO users (username, password, role, is_active)
-        VALUES (%s, %s, 'super_admin', TRUE)
-    """, (username, password))
-    
-    conn.commit()
-    return "✅ Super admin created."
+        conn = get_db()
+        cur = conn.cursor()
+
+        # Check if already exists
+        cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+        if cur.fetchone():
+            return "Super admin already exists."
+
+        password_hash = generate_password_hash(password)
+        cur.execute("""
+            INSERT INTO users (username, password, role, is_active)
+            VALUES (%s, %s, 'super_admin', TRUE)
+        """, (username, password_hash))
+
+        conn.commit()
+        return redirect('/login')
+
+    return render_template('setup_superadmin.html')
 
 
 @app.route('/register_owner', methods=['GET', 'POST'])
