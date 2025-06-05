@@ -1005,9 +1005,10 @@ def report():
     conn = get_db()
     cur = conn.cursor()
 
-    # Get business_id
-    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
-    business = cur.fetchone()
+    # 4. Salespeople Dropdown (Exclude owner)
+    cur.execute("SELECT username FROM users WHERE business_id = %s AND role != 'owner'", (business_id,))
+    salespeople = [r['username'] for r in cur.fetchall()]
+
     if not business:
         return "Business not found", 400
     business_id = business['business_id']
