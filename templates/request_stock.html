@@ -50,6 +50,7 @@
         </div>
       </div>
     </div>
+
     <div class="container">
       <h3>Request Stock</h3>
 
@@ -67,7 +68,8 @@
         <li
           data-name="{{ item.product_name }}"
           data-quantity="{{ item.quantity }}"
-          onclick="addToCart('{{ item.product_name }}', {{ item.quantity }})"
+          data-price="{{ item.buying_price }}"
+          onclick="addToCart('{{ item.product_name }}', {{ item.quantity }}, {{ item.buying_price }})"
           style="display: none"
         >
           {{ item.product_name }} — You have {{ item.quantity }}
@@ -77,7 +79,11 @@
 
       <!-- Cart -->
       <h4>Stock Request Cart</h4>
-      <form method="POST" action="/request_stock">
+      <form
+        method="POST"
+        action="/request_stock"
+        onsubmit="prepareSubmission()"
+      >
         <div class="cart-table" id="cartContainer"></div>
 
         <div class="form-group">
@@ -91,15 +97,18 @@
 
         <div class="form-group">
           <label>Your Full Name</label>
-          <input type="text" name="requester_name" required />
+          <input
+            type="text"
+            name="requester_name"
+            required
+            autocomplete="off"
+          />
         </div>
 
         <input type="hidden" name="cart_data" id="cartData" />
         <div class="cart-actions">
           <button type="button" onclick="clearCart()">Clear Cart</button>
-          <button type="submit" onclick="prepareSubmission()">
-            Submit Request
-          </button>
+          <button type="submit">Submit Request</button>
         </div>
       </form>
     </div>
@@ -124,12 +133,12 @@
         });
       }
 
-      function addToCart(name, available) {
+      function addToCart(name, available, price) {
         const existing = cart.find((item) => item.name === name);
         if (existing) {
           existing.quantity += 1;
         } else {
-          cart.push({ name, quantity: 1, available });
+          cart.push({ name, quantity: 1, available, price });
         }
         renderCart();
         clearSearch();
@@ -139,20 +148,29 @@
         const container = document.getElementById("cartContainer");
         container.innerHTML = "";
 
+        let totalUGX = 0;
+
         cart.forEach((item, index) => {
+          totalUGX += item.quantity * item.price;
           const div = document.createElement("div");
           div.className = "cart-item";
           div.innerHTML = `
-      <span>${item.name}</span>
-      <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
-      <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
-    `;
+            <span>${item.name}</span>
+            <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
+            <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+          `;
           container.appendChild(div);
         });
+
+        const totalDiv = document.createElement("div");
+        totalDiv.className = "cart-total";
+        totalDiv.innerHTML = `<strong>Total Stock Value (UGX): ${totalUGX.toLocaleString()}</strong>`;
+        container.appendChild(totalDiv);
       }
 
       function updateQty(index, newQty) {
         cart[index].quantity = parseInt(newQty);
+        renderCart();
       }
 
       function removeItem(index) {

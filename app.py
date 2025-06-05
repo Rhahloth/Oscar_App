@@ -882,9 +882,9 @@ def request_stock():
     cur = conn.cursor()
     current_user_id = session['user_id']
 
-    # Get current user's inventory (all products)
+    # ✅ Add buying_price to the fetched data
     cur.execute('''
-        SELECT ui.product_id, ui.quantity, p.name AS product_name
+        SELECT ui.product_id, ui.quantity, p.name AS product_name, p.buying_price
         FROM user_inventory ui
         JOIN products p ON ui.product_id = p.id
         WHERE ui.user_id = %s
