@@ -52,13 +52,6 @@ def initialize_database():
         );
     ''')
 
-    # Step 3: Then alter businesses to add created_by_user_id
-    cur.execute('''
-        ALTER TABLE businesses
-        ADD COLUMN created_by_user_id INTEGER REFERENCES users(id);
-    ''')
-
-
     # Products
     cur.execute('''
         CREATE TABLE IF NOT EXISTS products (
