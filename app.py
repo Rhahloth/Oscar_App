@@ -882,9 +882,9 @@ def request_stock():
     cur = conn.cursor()
     current_user_id = session['user_id']
 
-    # ✅ Add buying_price to the fetched data
+    # Get current user's inventory (all products)
     cur.execute('''
-        SELECT ui.product_id, ui.quantity, p.name AS product_name, p.buying_price
+        SELECT ui.product_id, ui.quantity, p.name AS product_name
         FROM user_inventory ui
         JOIN products p ON ui.product_id = p.id
         WHERE ui.user_id = %s
@@ -910,19 +910,28 @@ def request_stock():
             product_name = item['name']
             quantity = int(item['quantity'])
 
-            # Lookup product_id from product name
-            cur.execute("SELECT id FROM products WHERE name = %s", (product_name,))
+            # Lookup product_id and buying_price from product name
+            cur.execute("SELECT id, buying_price FROM products WHERE name = %s", (product_name,))
             result = cur.fetchone()
             if not result:
-                continue  # or handle missing product error
+                continue
             product_id = result['id']
+            buying_price = result['buying_price']
+            total_value = quantity * buying_price
 
-            # Insert the stock request
+            # Insert into stock_requests
             cur.execute('''
                 INSERT INTO stock_requests (
                     product_id, requester_id, recipient_id, quantity, requester_name, status
                 ) VALUES (%s, %s, %s, %s, %s, 'pending')
             ''', (product_id, current_user_id, recipient_id, quantity, requester_name))
+
+            # Insert into distribution_log with value
+            cur.execute('''
+                INSERT INTO distribution_log (
+                    product_id, salesperson_id, receiver_id, quantity, status, total
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+            ''', (product_id, current_user_id, recipient_id, quantity, 'pending', total_value))
 
         conn.commit()
         return redirect('/dashboard')
