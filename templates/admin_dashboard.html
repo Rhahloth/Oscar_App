@@ -39,16 +39,24 @@
     </div>
 
     <div class="container">
-      <h2>Admin Dashboard</h2>
-
-      <div class="summary-cards">
-        <div class="card">Total Businesses: {{ total_businesses }}</div>
-        <div class="card">Total Salespeople: {{ total_salespeople }}</div>
-        <div class="card">Total Owners: {{ total_owners }}</div>
+      <h3 style="margin-top: 20px">System Overview</h3>
+      <div class="summary-container">
+        <div class="summary-card">
+          <h4>Total Businesses</h4>
+          <p>{{ total_businesses }}</p>
+        </div>
+        <div class="summary-card">
+          <h4>Total Owners</h4>
+          <p>{{ total_owners }}</p>
+        </div>
+        <div class="summary-card">
+          <h4>Total Salespeople</h4>
+          <p>{{ total_salespeople }}</p>
+        </div>
       </div>
 
       <h3>Registered Businesses</h3>
-      <table>
+      <table class="table">
         <thead>
           <tr>
             <th>Business Name</th>
