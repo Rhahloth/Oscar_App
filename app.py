@@ -26,6 +26,29 @@ def generate_random_password(length=4):
 def home():
     return redirect('/login')
 
+@app.route('/create_super_admin')
+def create_super_admin():
+    from werkzeug.security import generate_password_hash
+    conn = get_db()
+    cur = conn.cursor()
+    
+    username = 'Raymond'
+    password = generate_password_hash('super_admin123')
+    
+    # Check if already exists
+    cur.execute("SELECT * FROM users WHERE username = %s", (username,))
+    if cur.fetchone():
+        return "Super admin already exists."
+
+    cur.execute("""
+        INSERT INTO users (username, password, role, is_active)
+        VALUES (%s, %s, 'super_admin', TRUE)
+    """, (username, password))
+    
+    conn.commit()
+    return "✅ Super admin created."
+
+
 @app.route('/register_owner', methods=['GET', 'POST'])
 def register_owner():
     if request.method == 'POST':
@@ -34,7 +57,7 @@ def register_owner():
         fullname = request.form['fullname']
         business_name = request.form['business_name']
         business_type = request.form['business_type']
-        phone = request.form['phone']  # Replaces 'location'
+        phone = request.form['phone'] 
 
         conn = get_db()
         cur = conn.cursor()
@@ -43,7 +66,7 @@ def register_owner():
             # Step 1: Create the business as active
             cur.execute(
                 "INSERT INTO businesses (name, type, phone, is_active) VALUES (%s, %s, %s, TRUE) RETURNING id",
-                (business_name, business_type, phone)  # Use phone in place of location
+                (business_name, business_type, phone)  
             )
             business = cur.fetchone()
             if business is None:
