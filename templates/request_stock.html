@@ -155,15 +155,25 @@
           const div = document.createElement("div");
           div.className = "cart-item";
           div.innerHTML = `
-            <span>${item.name}</span>
-            <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
-            <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
-          `;
+                          <span>${item.name}</span>
+                          <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
+                          <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
+                        `;
           container.appendChild(div);
         });
 
         const totalDiv = document.createElement("div");
         totalDiv.className = "cart-total";
+        totalDiv.style = `
+                          margin-top: 20px;
+                          text-align: center;
+                          font-weight: bold;
+                          font-size: 1.2rem;
+                          background-color: #f2f2f2;
+                          padding: 12px;
+                          border-radius: 8px;
+                          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        `;
         totalDiv.innerHTML = `<strong>Total Stock Value (UGX): ${totalUGX.toLocaleString()}</strong>`;
         container.appendChild(totalDiv);
       }
