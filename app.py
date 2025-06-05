@@ -1542,7 +1542,7 @@ def admin_dashboard():
     conn = get_db()
     cur = conn.cursor()
 
-    # 1. Summary cards
+    # Count summaries
     cur.execute("SELECT COUNT(*) AS total_businesses FROM businesses")
     total_businesses = cur.fetchone()['total_businesses']
 
@@ -1552,22 +1552,13 @@ def admin_dashboard():
     cur.execute("SELECT COUNT(*) AS total_owners FROM users WHERE role = 'owner'")
     total_owners = cur.fetchone()['total_owners']
 
-    cur.execute("SELECT COUNT(*) AS total_products FROM products")
-    total_products = cur.fetchone()['total_products']
-
+    # Business list
     cur.execute("""
-        SELECT COUNT(*) AS total_sales, 
-               SUM(s.quantity * s.price) AS total_revenue 
-        FROM sales s
-        JOIN products p ON s.product_id = p.id
-    """)
-    sales_stats = cur.fetchone()
-
-    # 2. Businesses with phone number and registration date
-    cur.execute("""
-        SELECT id, name, phone, is_active, created_at
-        FROM businesses
-        ORDER BY created_at DESC
+        SELECT b.id, b.name, b.type, b.phone, b.is_active, COUNT(u.id) AS user_count
+        FROM businesses b
+        LEFT JOIN users u ON b.id = u.business_id
+        GROUP BY b.id
+        ORDER BY b.name
     """)
     businesses = cur.fetchall()
 
@@ -1576,11 +1567,9 @@ def admin_dashboard():
         total_businesses=total_businesses,
         total_salespeople=total_salespeople,
         total_owners=total_owners,
-        total_products=total_products,
-        total_sales=sales_stats['total_sales'],
-        total_revenue=sales_stats['total_revenue'],
         businesses=businesses
     )
+
 
 @app.route('/toggle_business/<int:business_id>', methods=['POST'])
 def toggle_business(business_id):

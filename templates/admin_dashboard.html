@@ -39,56 +39,36 @@
     </div>
 
     <div class="container">
-      <h3 style="margin-top: 20px">System Overview</h3>
-      <div class="summary-container">
-        <div class="summary-card">
-          <h4>Total Businesses</h4>
-          <p>{{ total_businesses }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Owners</h4>
-          <p>{{ total_owners }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Salespeople</h4>
-          <p>{{ total_salespeople }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Products</h4>
-          <p>{{ total_products }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Sales Transactions</h4>
-          <p>{{ total_sales }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Revenue (UGX)</h4>
-          <p>UGX {{ "{:,.0f}".format(total_revenue or 0) }}</p>
-        </div>
+      <h2>Admin Dashboard</h2>
+
+      <div class="summary-cards">
+        <div class="card">Total Businesses: {{ total_businesses }}</div>
+        <div class="card">Total Salespeople: {{ total_salespeople }}</div>
+        <div class="card">Total Owners: {{ total_owners }}</div>
       </div>
 
-      <h3 style="margin-top: 40px">Manage Businesses</h3>
-      <table class="table">
+      <h3>Registered Businesses</h3>
+      <table>
         <thead>
           <tr>
             <th>Business Name</th>
-            <th>Phone Number</th>
+            <th>Type</th>
+            <th>Phone</th>
+            <th>Users</th>
             <th>Status</th>
-            <th>Registered</th>
-            <th>Action</th>
+            <th>Toggle</th>
           </tr>
         </thead>
         <tbody>
           {% for b in businesses %}
           <tr>
             <td>{{ b.name }}</td>
+            <td>{{ b.type }}</td>
             <td>{{ b.phone }}</td>
+            <td>{{ b.user_count }}</td>
             <td>{{ 'Active' if b.is_active else 'Inactive' }}</td>
             <td>
-              {{ b.created_at.strftime('%Y-%m-%d') if b.created_at else '—' }}
-            </td>
-            <td>
-              <form method="POST" action="/toggle_business/{{ b.id }}">
+              <form action="/toggle_business/{{ b.id }}" method="POST">
                 <button type="submit">
                   {{ 'Deactivate' if b.is_active else 'Activate' }}
                 </button>
