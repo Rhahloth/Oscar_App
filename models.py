@@ -28,30 +28,36 @@ def initialize_database():
     cur.execute('DROP TABLE IF EXISTS users CASCADE;')
     cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
 
-    # Businesses table (with approval and creator tracking)
+    # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
         CREATE TABLE IF NOT EXISTS businesses (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
             type TEXT,
             phone TEXT NOT NULL,
-            created_by_user_id INTEGER REFERENCES users(id),
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT NOW()
         );
     ''')
 
-    # Users table
+    # Step 2: Then create users
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT NOT NULL,  -- super_admin, owner, salesperson
+            role TEXT NOT NULL,
             business_id INTEGER REFERENCES businesses(id),
             is_active BOOLEAN DEFAULT TRUE
         );
     ''')
+
+    # Step 3: Then alter businesses to add created_by_user_id
+    cur.execute('''
+        ALTER TABLE businesses
+        ADD COLUMN created_by_user_id INTEGER REFERENCES users(id);
+    ''')
+
 
     # Products
     cur.execute('''
