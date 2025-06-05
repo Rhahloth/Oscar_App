@@ -148,19 +148,45 @@
         const container = document.getElementById("cartContainer");
         container.innerHTML = "";
 
+        if (cart.length === 0) {
+          container.innerHTML = "<p>No items in cart.</p>";
+          return;
+        }
+
         let totalUGX = 0;
+
+        const table = document.createElement("table");
+        table.className = "table";
+        table.style.width = "100%";
+        table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Product Name</th>
+        <th style="text-align: center;">Quantity</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+        const tbody = table.querySelector("tbody");
 
         cart.forEach((item, index) => {
           totalUGX += item.quantity * item.price;
-          const div = document.createElement("div");
-          div.className = "cart-item";
-          div.innerHTML = `
-                          <span>${item.name}</span>
-                          <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)">
-                          <button class="remove-btn" onclick="removeItem(${index})">Remove</button>
-                        `;
-          container.appendChild(div);
+          const row = document.createElement("tr");
+
+          row.innerHTML = `
+                            <td>${item.name}</td>
+                            <td style="text-align: center;">
+                              <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)" style="text-align: center; width: 60px;" />
+                            </td>
+                            <td><button class="remove-btn" onclick="removeItem(${index})">Remove</button></td>
+                          `;
+
+          tbody.appendChild(row);
         });
+
+        container.appendChild(table);
 
         const totalDiv = document.createElement("div");
         totalDiv.className = "cart-total";
