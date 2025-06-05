@@ -28,18 +28,6 @@ def initialize_database():
     cur.execute('DROP TABLE IF EXISTS users CASCADE;')
     cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
 
-    # Users table
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            role TEXT NOT NULL,  -- super_admin, owner, salesperson
-            business_id INTEGER REFERENCES businesses(id),
-            is_active BOOLEAN DEFAULT TRUE
-        );
-    ''')
-
     # Businesses table (with approval and creator tracking)
     cur.execute('''
         CREATE TABLE IF NOT EXISTS businesses (
@@ -50,6 +38,18 @@ def initialize_database():
             created_by_user_id INTEGER REFERENCES users(id),
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT NOW()
+        );
+    ''')
+
+    # Users table
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL,  -- super_admin, owner, salesperson
+            business_id INTEGER REFERENCES businesses(id),
+            is_active BOOLEAN DEFAULT TRUE
         );
     ''')
 
