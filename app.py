@@ -136,7 +136,7 @@ def login():
             elif user['role'] == 'owner':
                 return redirect('/dashboard')
             else:
-                return redirect('/sales_dashboard')
+                return redirect('/dashboard')
 
         else:
             return render_template('login.html', error='Invalid credentials.')
