@@ -74,6 +74,8 @@
       <div class="summary-card"><h4>Total Transactions</h4><p>{{ summary.total_transactions or 0 }}</p></div>
       <div class="summary-card"><h4>Total Quantity Sold</h4><p>{{ summary.total_quantity or 0 }}</p></div>
       <div class="summary-card"><h4>Total Revenue (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p></div>
+      <div class="summary-card"><h4>Total Cost Price (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_cost_price or 0) }}</p></div>
+      <div class="summary-card"><h4>Gross Profit (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_profit or 0) }}</p></div>
       <div class="summary-card"><h4>Top Salesperson</h4><p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p></div>
     </div>
 

@@ -1057,13 +1057,16 @@ def report():
     # 2. Summary Cards
     sum_query = '''
         SELECT COUNT(*) AS total_transactions,
-               SUM(s.quantity) AS total_quantity,
-               SUM(s.quantity * s.price) AS total_revenue
+            SUM(s.quantity) AS total_quantity,
+            SUM(s.quantity * s.price) AS total_revenue,
+            SUM(s.quantity * p.buying_price) AS total_cost_price,
+            SUM((s.quantity * s.price) - (s.quantity * p.buying_price)) AS total_profit
         FROM sales s
         JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
         WHERE p.business_id = %s
     '''
+
     sum_params = [business_id]
     if start_date:
         sum_query += ' AND date(s.date) >= date(%s)'
