@@ -882,7 +882,7 @@ def request_stock():
     cur = conn.cursor()
     current_user_id = session['user_id']
 
-    # Get current user's inventory with buying price
+    # Include buying_price in the SELECT to support JS total calculation
     cur.execute('''
         SELECT ui.product_id, ui.quantity, p.name AS product_name, p.buying_price
         FROM user_inventory ui
@@ -895,7 +895,6 @@ def request_stock():
     cur.execute("SELECT id, username FROM users WHERE role = 'salesperson' AND id != %s", (current_user_id,))
     recipients = cur.fetchall()
 
-    # Handle POST request
     if request.method == 'POST':
         requester_name = request.form.get('requester_name')
         recipient_id = int(request.form.get('recipient_id'))
@@ -910,7 +909,6 @@ def request_stock():
             product_name = item['name']
             quantity = int(item['quantity'])
 
-            # Lookup product_id and buying_price from product name
             cur.execute("SELECT id, buying_price FROM products WHERE name = %s", (product_name,))
             result = cur.fetchone()
             if not result:
@@ -926,7 +924,7 @@ def request_stock():
                 ) VALUES (%s, %s, %s, %s, %s, 'pending')
             ''', (product_id, current_user_id, recipient_id, quantity, requester_name))
 
-            # Insert into distribution_log with total value
+            # Insert into distribution_log
             cur.execute('''
                 INSERT INTO distribution_log (
                     product_id, salesperson_id, receiver_id, quantity, status, total
