@@ -42,7 +42,7 @@ def register_owner():
         try:
             # Step 1: Create the business as active
             cur.execute(
-                "INSERT INTO businesses (name, type, location, is_active) VALUES (%s, %s, %s, TRUE) RETURNING id",
+                "INSERT INTO businesses (name, type, phone, is_active) VALUES (%s, %s, %s, TRUE) RETURNING id",
                 (business_name, business_type, phone)  # Use phone in place of location
             )
             business = cur.fetchone()
@@ -1538,7 +1538,7 @@ def admin_dashboard():
 
     # 2. Businesses with phone number and registration date
     cur.execute("""
-        SELECT id, name, location, is_active, created_at
+        SELECT id, name, phone, is_active, created_at
         FROM businesses
         ORDER BY created_at DESC
     """)
