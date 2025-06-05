@@ -134,7 +134,7 @@
       <tbody>
         {% for dist in distribution_log %}
         <tr>
-          <td>{{ dist.timestamp }}</td>
+          <td>{{ dist.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
           <td>{{ dist.product_name }}</td>
           <td>{{ dist.from_salesperson }}</td>
           <td>{{ dist.to_salesperson }}</td>
