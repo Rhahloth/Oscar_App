@@ -882,9 +882,9 @@ def request_stock():
     cur = conn.cursor()
     current_user_id = session['user_id']
 
-    # Get current user's inventory (all products)
+    # Get current user's inventory with buying price
     cur.execute('''
-        SELECT ui.product_id, ui.quantity, p.name AS product_name
+        SELECT ui.product_id, ui.quantity, p.name AS product_name, p.buying_price
         FROM user_inventory ui
         JOIN products p ON ui.product_id = p.id
         WHERE ui.user_id = %s
@@ -926,7 +926,7 @@ def request_stock():
                 ) VALUES (%s, %s, %s, %s, %s, 'pending')
             ''', (product_id, current_user_id, recipient_id, quantity, requester_name))
 
-            # Insert into distribution_log with value
+            # Insert into distribution_log with total value
             cur.execute('''
                 INSERT INTO distribution_log (
                     product_id, salesperson_id, receiver_id, quantity, status, total
