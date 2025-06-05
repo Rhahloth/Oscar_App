@@ -26,22 +26,123 @@ def generate_random_password(length=4):
 def home():
     return redirect('/login')
 
+@app.route('/register_owner', methods=['GET', 'POST'])
+def register_owner():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        fullname = request.form['fullname']
+        business_name = request.form['business_name']
+        business_type = request.form['business_type']
+        phone = request.form['phone']  # Replaces 'location'
+
+        conn = get_db()
+        cur = conn.cursor()
+
+        try:
+            # Step 1: Create the business as active
+            cur.execute(
+                "INSERT INTO businesses (name, type, location, is_active) VALUES (%s, %s, %s, TRUE) RETURNING id",
+                (business_name, business_type, phone)  # Use phone in place of location
+            )
+            business = cur.fetchone()
+            if business is None:
+                conn.rollback()
+                return "Business creation failed", 500
+
+            business_id = business['id']
+
+            # Step 2: Create the owner user
+            password_hash = generate_password_hash(password)
+            cur.execute(
+                "INSERT INTO users (username, password, role, business_id, is_active) VALUES (%s, %s, 'owner', %s, TRUE)",
+                (username, password_hash, business_id)
+            )
+
+            conn.commit()
+            return redirect('/login')
+
+        except Exception as e:
+            conn.rollback()
+            print("ERROR:", e)
+            return f"An error occurred: {e}", 500
+
+    return render_template('register_owner.html')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        user = get_user(username)
+        conn = get_db()
+        cur = conn.cursor()
+
+        # Fetch user info and join with business (if applicable)
+        cur.execute('''
+            SELECT u.*, b.is_active AS business_active
+            FROM users u
+            LEFT JOIN businesses b ON u.business_id = b.id
+            WHERE u.username = %s
+        ''', (username,))
+        user = cur.fetchone()
+
+        # Validate credentials
         if user and check_password_hash(user['password'], password):
+            # Block inactive users
+            if not user['is_active']:
+                return render_template('login.html', error='Your user account is inactive.')
+
+            # Block inactive business (but allow super_admin to log in)
+            if user['role'] != 'super_admin' and not user['business_active']:
+                return render_template('login.html', error='Your business has been deactivated.')
+
+            # Set session
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['role'] = user['role']
-            return redirect('/dashboard')
+            session['business_id'] = user['business_id']
+
+            # Role-based redirect
+            if user['role'] == 'super_admin':
+                return redirect('/admin_dashboard')
+            elif user['role'] == 'owner':
+                return redirect('/dashboard')
+            else:
+                return redirect('/sales_dashboard')
+
         else:
             return render_template('login.html', error='Invalid credentials.')
 
     return render_template('login.html')
+
+@app.route('/setup_superadmin', methods=['GET', 'POST'])
+def setup_superadmin():
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Check if users already exist
+    cur.execute("SELECT COUNT(*) FROM users")
+    count = cur.fetchone()[0]
+
+    if count > 0:
+        return "Super admin already exists. Setup is locked.", 403
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        hashed_pw = generate_password_hash(password)
+
+        cur.execute('''
+            INSERT INTO users (username, password, role, business_id, is_active)
+            VALUES (%s, %s, 'super_admin', NULL, TRUE)
+        ''', (username, hashed_pw))
+
+        conn.commit()
+        return redirect('/login')
+
+    return render_template('setup_superadmin.html')
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -755,52 +856,6 @@ def reset_password():
 
     return render_template('reset_success.html', password=new_password)
 
-@app.route('/register_owner', methods=['GET', 'POST'])
-def register_owner():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        fullname = request.form['fullname']
-        business_name = request.form['business_name']
-        business_type = request.form['business_type']
-        location = request.form['location']
-
-        conn = get_db()
-        cur = conn.cursor()
-
-        try:
-            cur.execute(
-                "INSERT INTO businesses (name, type, location) VALUES (%s, %s, %s) RETURNING id",
-                (business_name, business_type, location)
-            )
-            result = cur.fetchone()
-            print("DEBUG: Insert result =", result)
-
-            # ✅ Updated access
-            if result is None:
-                print("ERROR: Business ID not returned.")
-                conn.rollback()
-                return "Failed to insert business.", 500
-
-            business_id = result['id']
-
-            password_hash = generate_password_hash(password)
-            cur.execute(
-                "INSERT INTO users (username, password, role, business_id) VALUES (%s, %s, 'owner', %s)",
-                (username, password_hash, business_id)
-            )
-
-            conn.commit()
-            return redirect('/login')
-
-        except Exception as e:
-            print("ERROR:", e)
-            conn.rollback()
-            return f"An error occurred: {e}", 500
-
-    return render_template('register_owner.html')
-
-
 @app.route('/review_requests', methods=['GET', 'POST'])
 def review_requests():
     if 'user_id' not in session or session['role'] != 'salesperson':
@@ -1451,6 +1506,84 @@ def add_customer():
     return render_template('add_customer.html',
                            customers=customers,
                            credit_summary=credit_summary)
+
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    if 'user_id' not in session or session['role'] != 'super_admin':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # 1. Summary cards
+    cur.execute("SELECT COUNT(*) AS total_businesses FROM businesses")
+    total_businesses = cur.fetchone()['total_businesses']
+
+    cur.execute("SELECT COUNT(*) AS total_salespeople FROM users WHERE role = 'salesperson'")
+    total_salespeople = cur.fetchone()['total_salespeople']
+
+    cur.execute("SELECT COUNT(*) AS total_owners FROM users WHERE role = 'owner'")
+    total_owners = cur.fetchone()['total_owners']
+
+    cur.execute("SELECT COUNT(*) AS total_products FROM products")
+    total_products = cur.fetchone()['total_products']
+
+    cur.execute("""
+        SELECT COUNT(*) AS total_sales, 
+               SUM(s.quantity * s.price) AS total_revenue 
+        FROM sales s
+        JOIN products p ON s.product_id = p.id
+    """)
+    sales_stats = cur.fetchone()
+
+    # 2. Businesses with phone number and registration date
+    cur.execute("""
+        SELECT id, name, location, is_active, created_at
+        FROM businesses
+        ORDER BY created_at DESC
+    """)
+    businesses = cur.fetchall()
+
+    return render_template(
+        'admin_dashboard.html',
+        total_businesses=total_businesses,
+        total_salespeople=total_salespeople,
+        total_owners=total_owners,
+        total_products=total_products,
+        total_sales=sales_stats['total_sales'],
+        total_revenue=sales_stats['total_revenue'],
+        businesses=businesses
+    )
+
+@app.route('/toggle_business/<int:business_id>', methods=['POST'])
+def toggle_business(business_id):
+    if 'user_id' not in session or session['role'] != 'super_admin':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("SELECT is_active, name FROM businesses WHERE id = %s", (business_id,))
+        business = cur.fetchone()
+
+        if not business:
+            flash("Business not found.", "error")
+            return redirect('/admin_dashboard')
+
+        new_status = not business['is_active']
+        cur.execute("UPDATE businesses SET is_active = %s WHERE id = %s", (new_status, business_id))
+        conn.commit()
+
+        status_msg = "activated" if new_status else "deactivated"
+        flash(f"{business['name']} has been {status_msg}.", "success")
+        return redirect('/admin_dashboard')
+
+    except Exception as e:
+        conn.rollback()
+        flash("Something went wrong while updating business status.", "error")
+        print("ERROR in toggle_business:", e)
+        return redirect('/admin_dashboard')
 
 
 @app.route('/logout')

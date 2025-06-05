@@ -16,34 +16,38 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    # # Drop tables in order to avoid dependency issues
-    # cur.execute('DROP TABLE IF EXISTS credit_repayments CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
+    # Drop tables in order to avoid dependency issues
+    cur.execute('DROP TABLE IF EXISTS credit_repayments CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
 
-    # Businesses
+    # Businesses table (with approval and creator tracking)
     cur.execute('''
         CREATE TABLE IF NOT EXISTS businesses (
             id SERIAL PRIMARY KEY,
-            name TEXT,
+            name TEXT NOT NULL,
             type TEXT,
-            location TEXT
+            phone TEXT NOT NULL,
+            created_by_user_id INTEGER REFERENCES users(id),
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT NOW()
         );
     ''')
 
+    # Users table
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT NOT NULL,
+            role TEXT NOT NULL,  -- super_admin, owner, salesperson
             business_id INTEGER REFERENCES businesses(id),
             is_active BOOLEAN DEFAULT TRUE
         );
