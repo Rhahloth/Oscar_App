@@ -405,6 +405,7 @@ button:hover {
     background: linear-gradient(to bottom, #ffffff, #f9f9f9);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
     transition: transform 0.2s ease;
+    text-align: center;
 }
 
 .summary-card h4 {
