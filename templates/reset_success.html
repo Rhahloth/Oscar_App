@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <title>Manage Products - AgriShop</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
     <style>
       .pagination-controls {
         text-align: center;
