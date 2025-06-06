@@ -417,30 +417,47 @@ def record_expense():
     conn = get_db()
     cur = conn.cursor()
 
+    # Get business_id of logged-in user
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    result = cur.fetchone()
+    if not result:
+        return "User not associated with a business", 400
+
+    business_id = result["business_id"]
+
+    # Fetch users under the same business for dropdown
+    cur.execute("SELECT username FROM users WHERE business_id = %s", (business_id,))
+    staff_list = [row["username"] for row in cur.fetchall()]
+
     if request.method == "POST":
         staff_name = request.form["staff_name"]
         item = request.form["item"]
         amount = request.form["amount"]
         comment = request.form["comment"]
 
-        # Get business_id of user
-        cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
-        result = cur.fetchone()
-        if not result:
-            return "User not associated with a business", 400
+        # Get staff_id from username
+        cur.execute("SELECT id FROM users WHERE username = %s AND business_id = %s", (staff_name, business_id))
+        staff_result = cur.fetchone()
+        if not staff_result:
+            flash("❌ Staff member not found.")
+            return redirect("/record_expense")
 
-        business_id = result["business_id"]
+        staff_id = staff_result["id"]
+
+        # Logged-in user's username (the one submitting)
+        submitted_by = session.get("username")
 
         cur.execute("""
-            INSERT INTO expenses (business_id, staff_name, item, amount, comment)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (business_id, staff_name, item, amount, comment))
+            INSERT INTO expenses (business_id, staff_id, staff_name, item, amount, comment, username)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (business_id, staff_id, staff_name, item, amount, comment, submitted_by))
 
         conn.commit()
         flash("✅ Expense recorded successfully.")
         return redirect("/dashboard")
 
-    return render_template("record_expense.html")
+    return render_template("record_expense.html", staff_list=staff_list)
+
 
 @app.route("/view_expenses")
 def view_expenses():

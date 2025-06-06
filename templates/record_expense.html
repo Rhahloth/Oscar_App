@@ -55,16 +55,23 @@
     <div class="container">
       <h3>💰 Record New Expense</h3>
 
+      {% with messages = get_flashed_messages() %} {% if messages %}
+      <ul style="color: green">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %}
+
       <form action="/record_expense" method="POST" class="form">
         <div class="form-group">
           <label for="staff_name">Staff Name</label>
-          <input
-            type="text"
-            id="staff_name"
-            name="staff_name"
-            required
-            placeholder="Enter staff name"
-          />
+          <select id="staff_name" name="staff_name" required>
+            <option value="">-- Select Staff --</option>
+            {% for name in staff_list %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+          </select>
         </div>
 
         <div class="form-group">

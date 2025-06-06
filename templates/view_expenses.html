@@ -59,6 +59,7 @@
               <th>Item</th>
               <th>Amount (UGX)</th>
               <th>Comment</th>
+              <th>Submitted By</th>
             </tr>
           </thead>
           <tbody>
@@ -68,7 +69,8 @@
               <td>{{ expense.staff_name }}</td>
               <td>{{ expense.item }}</td>
               <td>{{ "{:,.0f}".format(expense.amount) }}</td>
-              <td>{{ expense.comment }}</td>
+              <td>{{ expense.comment or '-' }}</td>
+              <td>{{ expense.username }}</td>
             </tr>
             {% endfor %}
           </tbody>

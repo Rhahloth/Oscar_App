@@ -174,7 +174,7 @@ def initialize_database():
 
     # Create the new expenses table
     cur.execute('''
-        CREATE TABLE expenses (
+        CREATE TABLE IF NOT EXISTS expenses (
             id SERIAL PRIMARY KEY,
             business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE,
             staff_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
