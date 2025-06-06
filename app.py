@@ -408,6 +408,40 @@ def batch_sales(batch_no):
 
     return render_template('batch_sales.html', sales=sales, batch_number=batch_no)
 
+@app.route("/record_expense", methods=["GET", "POST"])
+def record_expense():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user_id = session["user_id"]
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == "POST":
+        staff_name = request.form["staff_name"]
+        item = request.form["item"]
+        amount = request.form["amount"]
+        comment = request.form["comment"]
+
+        # Get business_id of user
+        cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+        result = cur.fetchone()
+        if not result:
+            return "User not associated with a business", 400
+
+        business_id = result["business_id"]
+
+        cur.execute("""
+            INSERT INTO expenses (business_id, staff_name, item, amount, comment)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (business_id, staff_name, item, amount, comment))
+
+        conn.commit()
+        flash("✅ Expense recorded successfully.")
+        return redirect("/record_expense")
+
+    return render_template("record_expense.html")
+
 @app.route('/transactions')
 def transactions():
     if 'user_id' not in session:
