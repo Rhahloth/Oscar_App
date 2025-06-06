@@ -1603,67 +1603,80 @@ def delete_business(business_id):
     cur = conn.cursor()
 
     try:
-        # Step 1: Delete user_inventory entries linked to products
-        cur.execute("""
-            DELETE FROM user_inventory
-            WHERE product_id IN (
-                SELECT id FROM products WHERE business_id = %s
-            )
-        """, (business_id,))
-
-        # Step 2: Delete sales linked to products
-        cur.execute("""
-            DELETE FROM sales
-            WHERE product_id IN (
-                SELECT id FROM products WHERE business_id = %s
-            )
-        """, (business_id,))
-
-        # Step 3: Delete credit_repayments
+        # Step 1: Delete credit repayments
         cur.execute("""
             DELETE FROM credit_repayments
-            WHERE credit_sale_id IN (
-                SELECT id FROM credit_sales 
-                WHERE product_id IN (SELECT id FROM products WHERE business_id = %s)
+            WHERE credit_id IN (
+                SELECT cs.id FROM credit_sales cs
+                JOIN sales s ON cs.sale_id = s.id
+                WHERE s.business_id = %s
             )
         """, (business_id,))
 
-        # Step 4: Delete credit_sales linked to products
+        # Step 2: Delete credit sales
         cur.execute("""
             DELETE FROM credit_sales
-            WHERE product_id IN (
-                SELECT id FROM products WHERE business_id = %s
+            WHERE sale_id IN (
+                SELECT id FROM sales WHERE business_id = %s
             )
         """, (business_id,))
 
-        # Step 5: Delete distribution_log
+        # Step 3: Delete sales
+        cur.execute("DELETE FROM sales WHERE business_id = %s", (business_id,))
+
+        # Step 4: Delete user_inventory
+        cur.execute("""
+            DELETE FROM user_inventory
+            WHERE user_id IN (
+                SELECT id FROM users WHERE business_id = %s
+            )
+        """, (business_id,))
+
+        # Step 5: Delete distribution logs
         cur.execute("""
             DELETE FROM distribution_log
-            WHERE salesperson_id IN (SELECT id FROM users WHERE business_id = %s)
-               OR receiver_id IN (SELECT id FROM users WHERE business_id = %s)
+            WHERE salesperson_id IN (
+                SELECT id FROM users WHERE business_id = %s
+            ) OR receiver_id IN (
+                SELECT id FROM users WHERE business_id = %s
+            )
         """, (business_id, business_id))
 
-        # Step 6: Delete customers
+        # Step 6: Delete stock requests
+        cur.execute("""
+            DELETE FROM stock_requests
+            WHERE requester_id IN (
+                SELECT id FROM users WHERE business_id = %s
+            ) OR recipient_id IN (
+                SELECT id FROM users WHERE business_id = %s
+            )
+        """, (business_id, business_id))
+
+        # Step 7: Delete customers
         cur.execute("DELETE FROM customers WHERE business_id = %s", (business_id,))
 
-        # Step 7: Delete users
-        cur.execute("DELETE FROM users WHERE business_id = %s", (business_id,))
-
-        # Step 8: Delete products now that all dependencies are removed
+        # Step 8: Delete products
         cur.execute("DELETE FROM products WHERE business_id = %s", (business_id,))
 
-        # Step 9: Finally, delete the business
+        # Step 9: Delete users
+        cur.execute("DELETE FROM users WHERE business_id = %s", (business_id,))
+
+        # Step 10: Delete the business
         cur.execute("DELETE FROM businesses WHERE id = %s", (business_id,))
 
         conn.commit()
         flash("Business and all related data deleted successfully.", "success")
+        return redirect('/admin_dashboard')
+
     except Exception as e:
         conn.rollback()
-        flash("An error occurred while deleting the business.", "error")
+        flash("Failed to delete business. Check logs for details.", "error")
         print("ERROR in delete_business:", e)
+        return redirect('/admin_dashboard')
 
-    return redirect('/admin_dashboard')
-
+    finally:
+        cur.close()
+        conn.close()
 
 
 @app.route('/logout')
