@@ -16,17 +16,17 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    # # Drop tables in order to avoid dependency issues
-    # cur.execute('DROP TABLE IF EXISTS credit_repayments CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
+    # Drop tables in order to avoid dependency issues
+    cur.execute('DROP TABLE IF EXISTS credit_repayments CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS credit_sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS products CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
 
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
