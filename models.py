@@ -26,7 +26,19 @@ def initialize_database():
     # cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
+    
+    cur.execute("""
+        TRUNCATE TABLE
+            credit_repayments,
+            credit_sales,
+            stock_requests,
+            distribution_log,
+            user_inventory,
+            sales,
+            customers,
+            products
+        RESTART IDENTITY CASCADE;
+    """)
 
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
@@ -309,23 +321,33 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
     conn = get_db()
     cur = conn.cursor()
 
+    # Get the salesperson's business_id
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    user = cur.fetchone()
+    if not user or not user['business_id']:
+        raise ValueError("❌ Salesperson has no associated business.")
+    business_id = user['business_id']
+
     for product_name, quantity, category in inventory_rows:
         product_name = product_name.strip()
         category = category.strip()
 
-        # Case-insensitive match
+        # 🔐 Match product ONLY within the salesperson's business
         cur.execute("""
             SELECT id FROM products
             WHERE LOWER(name) = LOWER(%s) AND LOWER(category) = LOWER(%s)
-        """, (product_name, category))
+              AND business_id = %s
+        """, (product_name, category, business_id))
         product = cur.fetchone()
 
         if not product:
-            raise ValueError(f"❌ Product not found: '{product_name}' in category '{category}'. Please check spelling or upload via CSV for auto-match.")
+            raise ValueError(
+                f"❌ Product not found or unauthorized: '{product_name}' in category '{category}'."
+            )
 
         product_id = product['id']
 
-        # Check for existing inventory
+        # Check existing inventory
         cur.execute("""
             SELECT quantity FROM user_inventory
             WHERE user_id = %s AND product_id = %s
@@ -346,6 +368,8 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
             """, (user_id, product_id, quantity))
 
     conn.commit()
+    cur.close()
+    conn.close()
 
 def initialize_salesperson_inventory(user_id):
     conn = get_db()
@@ -376,10 +400,18 @@ def approve_request(request_id, user_id):
     conn = get_db()
     cur = conn.cursor()
 
-    # Get request details
+    # Get the user's business_id
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    user = cur.fetchone()
+    if not user or not user['business_id']:
+        return "unauthorized"
+    business_id = user['business_id']
+
+    # ✅ Secure: fetch request + product and verify business ownership
     cur.execute("""
-        SELECT sr.product_id, sr.quantity, sr.requester_id
+        SELECT sr.product_id, sr.quantity, sr.requester_id, p.business_id AS product_business_id
         FROM stock_requests sr
+        JOIN products p ON sr.product_id = p.id
         WHERE sr.id = %s AND sr.recipient_id = %s AND sr.status = 'pending'
     """, (request_id, user_id))
     request = cur.fetchone()
@@ -387,11 +419,14 @@ def approve_request(request_id, user_id):
     if not request:
         return "not_found"
 
+    if request['product_business_id'] != business_id:
+        return "unauthorized"
+
     product_id = request['product_id']
     quantity = request['quantity']
     requester_id = request['requester_id']
 
-    # ✅ Check recipient's stock
+    # ✅ Check recipient's inventory
     cur.execute("""
         SELECT quantity FROM user_inventory
         WHERE user_id = %s AND product_id = %s
@@ -399,9 +434,9 @@ def approve_request(request_id, user_id):
     inventory = cur.fetchone()
 
     if not inventory or inventory['quantity'] < quantity:
-        return "insufficient_stock"  # This will trigger the popup in your app.py
+        return "insufficient_stock"
 
-    # ✅ Proceed with transfer
+    # ✅ Approve and transfer stock
     cur.execute("""
         UPDATE stock_requests
         SET status = 'approved'
@@ -415,7 +450,7 @@ def approve_request(request_id, user_id):
         WHERE user_id = %s AND product_id = %s
     """, (quantity, user_id, product_id))
 
-    # Add to requester (insert if doesn't exist)
+    # Add to requester (upsert)
     cur.execute("""
         INSERT INTO user_inventory (user_id, product_id, quantity)
         VALUES (%s, %s, %s)
@@ -423,14 +458,17 @@ def approve_request(request_id, user_id):
         DO UPDATE SET quantity = user_inventory.quantity + %s
     """, (requester_id, product_id, quantity, quantity))
 
-    # Optional: log the distribution
+    # Log transfer
     cur.execute("""
         INSERT INTO distribution_log (product_id, salesperson_id, receiver_id, quantity, status)
         VALUES (%s, %s, %s, %s, 'approved')
     """, (product_id, user_id, requester_id, quantity))
 
     conn.commit()
+    cur.close()
+    conn.close()
     return "approved"
+
 
 def generate_batch_number(salesperson_name, conn):
     initials = ''.join(part[0] for part in salesperson_name.strip().split()).upper()
