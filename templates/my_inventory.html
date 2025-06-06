@@ -112,6 +112,7 @@
     </form>
 
     {% if inventory %}
+    <div class="table-responsive">
     <table class="table" id="inventoryTable">
       <thead>
         <tr>
@@ -136,6 +137,7 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
     
     <div class="pagination-controls" id="pagination-controls" style="text-align: center; margin-top: 20px;"></div>
     {% else %}

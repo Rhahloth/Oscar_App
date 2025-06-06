@@ -83,6 +83,7 @@
       </div>
 
     {% if sales %}
+    <div class="table-responsive">
       <table class="table">
         <thead>
           <tr>
@@ -107,6 +108,7 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
     {% else %}
       <p>No transactions found for the selected period.</p>
     {% endif %}

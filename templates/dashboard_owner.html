@@ -77,35 +77,36 @@
       </div>
 
       <h5>Recent Transactions</h5>
-
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Batch No</th>
-            <th>Sold By</th>
-            <th>Payment Method</th>
-            <th>Total Quantity</th>
-            <th>Total Amount (UGX)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for batch in sales %}
-          <tr>
-            <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td>
-              <a href="/batch_sales/{{ batch.batch_number }}"
-                >{{ batch.batch_number }}</a
-              >
-            </td>
-            <td>{{ batch.salesperson_name }}</td>
-            <td>{{ batch.payment_method }}</td>
-            <td>{{ batch.total_quantity }}</td>
-            <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Batch No</th>
+              <th>Sold By</th>
+              <th>Payment Method</th>
+              <th>Total Quantity</th>
+              <th>Total Amount (UGX)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for batch in sales %}
+            <tr>
+              <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td>
+                <a href="/batch_sales/{{ batch.batch_number }}"
+                  >{{ batch.batch_number }}</a
+                >
+              </td>
+              <td>{{ batch.salesperson_name }}</td>
+              <td>{{ batch.payment_method }}</td>
+              <td>{{ batch.total_quantity }}</td>
+              <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       <div style="margin-top: 20px; text-align: center">
         <a href="/transactions">
           <button

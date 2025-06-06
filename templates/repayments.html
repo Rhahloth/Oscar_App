@@ -109,6 +109,7 @@
     <div class="card">
       <h3>🧾 Customer Credit Summary</h3>
       {% if credit_summary %}
+      <div class="table-responsive">
       <table class="table">
         <thead>
           <tr>
@@ -137,6 +138,7 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
       {% else %}
         <p>No credit data available.</p>
       {% endif %}

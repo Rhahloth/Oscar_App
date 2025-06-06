@@ -159,36 +159,38 @@
         </div>
       </fieldset>
 
-      <table class="table" id="productTable">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Name</th>
-            <th>Buying Price</th>
-            <th>Agent Price</th>
-            <th>Wholesale Price</th>
-            <th>Retail Price</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for product in products %}
-          <tr>
-            <td>{{ product.category }}</td>
-            <td>{{ product.name }}</td>
-            <td>{{ "{:,.0f}".format(product.buying_price or 0) }}</td>
-            <td>{{ "{:,.0f}".format(product.agent_price or 0) }}</td>
-            <td>{{ "{:,.0f}".format(product.wholesale_price or 0) }}</td>
-            <td>{{ "{:,.0f}".format(product.retail_price or 0) }}</td>
-            <td>
-              <a href="/edit_product/{{ product.id }}" class="btn btn-small">
-                Manage
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table" id="productTable">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Name</th>
+              <th>Buying Price</th>
+              <th>Agent Price</th>
+              <th>Wholesale Price</th>
+              <th>Retail Price</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+            <tr>
+              <td>{{ product.category }}</td>
+              <td>{{ product.name }}</td>
+              <td>{{ "{:,.0f}".format(product.buying_price or 0) }}</td>
+              <td>{{ "{:,.0f}".format(product.agent_price or 0) }}</td>
+              <td>{{ "{:,.0f}".format(product.wholesale_price or 0) }}</td>
+              <td>{{ "{:,.0f}".format(product.retail_price or 0) }}</td>
+              <td>
+                <a href="/edit_product/{{ product.id }}" class="btn btn-small">
+                  Manage
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
 
       <div class="pagination-controls" id="pagination-controls"></div>
     </div>

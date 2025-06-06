@@ -94,24 +94,26 @@
 
       <h4>📋 Existing Customers</h4>
       {% if customers %}
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Created</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for c in customers %}
-          <tr>
-            <td>{{ c.name }}</td>
-            <td>{{ c.phone or '—' }}</td>
-            <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in customers %}
+            <tr>
+              <td>{{ c.name }}</td>
+              <td>{{ c.phone or '—' }}</td>
+              <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       {% else %}
       <p>No customers yet.</p>
       {% endif %}

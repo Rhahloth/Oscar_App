@@ -57,36 +57,38 @@
       </div>
 
       <h3>Registered Businesses</h3>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Business Name</th>
-            <th>Type</th>
-            <th>Phone</th>
-            <th>Users</th>
-            <th>Status</th>
-            <th>Toggle</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for b in businesses %}
-          <tr>
-            <td>{{ b.name }}</td>
-            <td>{{ b.type }}</td>
-            <td>{{ b.phone }}</td>
-            <td>{{ b.user_count }}</td>
-            <td>{{ 'Active' if b.is_active else 'Inactive' }}</td>
-            <td>
-              <form action="/toggle_business/{{ b.id }}" method="POST">
-                <button type="submit">
-                  {{ 'Deactivate' if b.is_active else 'Activate' }}
-                </button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Business Name</th>
+              <th>Type</th>
+              <th>Phone</th>
+              <th>Users</th>
+              <th>Status</th>
+              <th>Toggle</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in businesses %}
+            <tr>
+              <td>{{ b.name }}</td>
+              <td>{{ b.type }}</td>
+              <td>{{ b.phone }}</td>
+              <td>{{ b.user_count }}</td>
+              <td>{{ 'Active' if b.is_active else 'Inactive' }}</td>
+              <td>
+                <form action="/toggle_business/{{ b.id }}" method="POST">
+                  <button type="submit">
+                    {{ 'Deactivate' if b.is_active else 'Activate' }}
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </body>
 </html>

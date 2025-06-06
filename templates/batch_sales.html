@@ -61,34 +61,36 @@
 
       <div>
         {% if sales %}
-        <table class="table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Product</th>
-              <th>Qty</th>
-              <th>Price</th>
-              <th>Amount Paid</th>
-              <th>Payment Method</th>
-              <th>Customer</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in sales %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ s.product_name }}</td>
-              <td>{{ s.quantity }}</td>
-              <td>{{ s.price }}</td>
-              <td>{{ s.amount_paid }}</td>
-              <td>{{ s.payment_method }}</td>
-              <td>{{ s.customer_name or '-' }}</td>
-              <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Amount Paid</th>
+                <th>Payment Method</th>
+                <th>Customer</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in sales %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ s.product_name }}</td>
+                <td>{{ s.quantity }}</td>
+                <td>{{ s.price }}</td>
+                <td>{{ s.amount_paid }}</td>
+                <td>{{ s.payment_method }}</td>
+                <td>{{ s.customer_name or '-' }}</td>
+                <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         {% else %}
         <p>No sales found for this batch.</p>
         {% endif %}
