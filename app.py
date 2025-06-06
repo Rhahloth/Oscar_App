@@ -438,7 +438,7 @@ def record_expense():
 
         conn.commit()
         flash("✅ Expense recorded successfully.")
-        return redirect("/record_expense")
+        return redirect("/dashboard")
 
     return render_template("record_expense.html")
 
