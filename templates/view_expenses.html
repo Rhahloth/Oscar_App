@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>View Expenses - RO Solutions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RO Solutions</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button style="background-color: #d9534f; color: white">
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <h3>💰 All Recorded Expenses</h3>
+
+      {% if expenses %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Staff Name</th>
+              <th>Item</th>
+              <th>Amount (UGX)</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for expense in expenses %}
+            <tr>
+              <td>{{ expense.date.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td>{{ expense.staff_name }}</td>
+              <td>{{ expense.item }}</td>
+              <td>{{ "{:,.0f}".format(expense.amount) }}</td>
+              <td>{{ expense.comment }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" style="margin-top: 20px; text-align: center">
+        {% if page > 1 %}
+        <a href="{{ url_for('view_expenses', page=page-1) }}">
+          <button>Previous</button>
+        </a>
+        {% endif %}
+        <span style="margin: 0 10px">Page {{ page }}</span>
+        {% if has_next %}
+        <a href="{{ url_for('view_expenses', page=page+1) }}">
+          <button>Next</button>
+        </a>
+        {% endif %}
+      </div>
+
+      {% else %}
+      <p>No expenses recorded yet.</p>
+      {% endif %}
+    </div>
+  </body>
+</html>

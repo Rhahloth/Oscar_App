@@ -442,6 +442,32 @@ def record_expense():
 
     return render_template("record_expense.html")
 
+@app.route("/view_expenses")
+def view_expenses():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    business_id = session.get("business_id")
+    page = int(request.args.get("page", 1))
+    per_page = 10
+    offset = (page - 1) * per_page
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT * FROM expenses
+        WHERE business_id = %s
+        ORDER BY date DESC
+        LIMIT %s OFFSET %s
+    """, (business_id, per_page, offset))
+    expenses = cur.fetchall()
+
+    cur.execute("SELECT COUNT(*) FROM expenses WHERE business_id = %s", (business_id,))
+    total = cur.fetchone()[0]
+    has_next = (offset + per_page) < total
+
+    return render_template("view_expenses.html", expenses=expenses, page=page, has_next=has_next)
+
 @app.route('/transactions')
 def transactions():
     if 'user_id' not in session:
