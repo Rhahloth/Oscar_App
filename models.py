@@ -27,6 +27,10 @@ def initialize_database():
     # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
+    cur.execute(
+    "DELETE FROM businesses WHERE name IN (%s, %s)",
+    ('DENODO', 'NA')
+)
 
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
