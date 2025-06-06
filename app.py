@@ -1319,7 +1319,7 @@ def report():
     total_expenses = expense_result['total_expenses'] or 0
 
     # 8. Net Balance Calculation
-    net_balance = (summary['total_revenue'] or 0) - total_expenses
+    net_balance = (summary['total_revenue'] or 0) - int(total_expenses or 0)
 
     # 9. Render Template
     return render_template(
