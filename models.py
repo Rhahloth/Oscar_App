@@ -51,6 +51,11 @@ def initialize_database():
             is_active BOOLEAN DEFAULT TRUE
         );
     ''')
+    # Step 3: Then alter businesses to add created_by_user_id
+    cur.execute('''
+        ALTER TABLE businesses
+        ADD COLUMN created_by_user_id INTEGER REFERENCES users(id);
+    ''')
 
     # Products
     cur.execute('''
