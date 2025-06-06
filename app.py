@@ -1594,8 +1594,6 @@ def toggle_business(business_id):
         print("ERROR in toggle_business:", e)
         return redirect('/admin_dashboard')
 
-
-# Delete business
 @app.route('/delete_business/<int:business_id>', methods=['POST'])
 def delete_business(business_id):
     if 'user_id' not in session or session['role'] != 'super_admin':
@@ -1605,24 +1603,67 @@ def delete_business(business_id):
     cur = conn.cursor()
 
     try:
-        # Get business name for feedback
-        cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
-        business = cur.fetchone()
+        # Step 1: Delete user_inventory entries linked to products
+        cur.execute("""
+            DELETE FROM user_inventory
+            WHERE product_id IN (
+                SELECT id FROM products WHERE business_id = %s
+            )
+        """, (business_id,))
 
-        if not business:
-            flash("Business not found.", "error")
-            return redirect('/admin_dashboard')
+        # Step 2: Delete sales linked to products
+        cur.execute("""
+            DELETE FROM sales
+            WHERE product_id IN (
+                SELECT id FROM products WHERE business_id = %s
+            )
+        """, (business_id,))
 
+        # Step 3: Delete credit_repayments
+        cur.execute("""
+            DELETE FROM credit_repayments
+            WHERE credit_sale_id IN (
+                SELECT id FROM credit_sales 
+                WHERE product_id IN (SELECT id FROM products WHERE business_id = %s)
+            )
+        """, (business_id,))
+
+        # Step 4: Delete credit_sales linked to products
+        cur.execute("""
+            DELETE FROM credit_sales
+            WHERE product_id IN (
+                SELECT id FROM products WHERE business_id = %s
+            )
+        """, (business_id,))
+
+        # Step 5: Delete distribution_log
+        cur.execute("""
+            DELETE FROM distribution_log
+            WHERE salesperson_id IN (SELECT id FROM users WHERE business_id = %s)
+               OR receiver_id IN (SELECT id FROM users WHERE business_id = %s)
+        """, (business_id, business_id))
+
+        # Step 6: Delete customers
+        cur.execute("DELETE FROM customers WHERE business_id = %s", (business_id,))
+
+        # Step 7: Delete users
+        cur.execute("DELETE FROM users WHERE business_id = %s", (business_id,))
+
+        # Step 8: Delete products now that all dependencies are removed
+        cur.execute("DELETE FROM products WHERE business_id = %s", (business_id,))
+
+        # Step 9: Finally, delete the business
         cur.execute("DELETE FROM businesses WHERE id = %s", (business_id,))
-        conn.commit()
-        flash(f"{business['name']} has been deleted.", "success")
-        return redirect('/admin_dashboard')
 
+        conn.commit()
+        flash("Business and all related data deleted successfully.", "success")
     except Exception as e:
         conn.rollback()
-        flash("Something went wrong while deleting business.", "error")
+        flash("An error occurred while deleting the business.", "error")
         print("ERROR in delete_business:", e)
-        return redirect('/admin_dashboard')
+
+    return redirect('/admin_dashboard')
+
 
 
 @app.route('/logout')
