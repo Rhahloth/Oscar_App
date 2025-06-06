@@ -313,6 +313,11 @@ def submit_sale():
             quantity = int(item['quantity'])
             price = float(item['price'])
 
+            # 🔐 SAFETY CHECK: Product must belong to logged-in user's business
+            cur.execute("SELECT id FROM products WHERE id = %s AND business_id = %s", (product_id, business_id))
+            if not cur.fetchone():
+                raise ValueError("❌ Product not authorized for this business")
+
             cur.execute("""
                 UPDATE user_inventory
                 SET quantity = quantity - %s
@@ -383,6 +388,9 @@ def batch_sales(batch_no):
     conn = get_db()
     cur = conn.cursor()
 
+    # Get business_id from session
+    business_id = session.get('business_id')
+
     cur.execute("""
         SELECT s.*, 
                p.name AS product_name,
@@ -390,9 +398,9 @@ def batch_sales(batch_no):
         FROM sales s
         JOIN products p ON s.product_id = p.id
         LEFT JOIN customers c ON s.customer_id = c.id
-        WHERE s.batch_no = %s
+        WHERE s.batch_no = %s AND s.business_id = %s
         ORDER BY s.date
-    """, (batch_no,))
+    """, (batch_no, business_id))
     sales = cur.fetchall()
 
     cur.close()
@@ -731,6 +739,8 @@ def edit_product(id):
     conn = get_db()
     cur = conn.cursor()
 
+    business_id = session['business_id']
+
     if request.method == 'POST':
         category = request.form['category']
         name = request.form['name']
@@ -743,16 +753,16 @@ def edit_product(id):
             UPDATE products
             SET category = %s, name = %s, buying_price = %s,
                 agent_price = %s, wholesale_price = %s, retail_price = %s
-            WHERE id = %s
+            WHERE id = %s AND business_id = %s
         ''', (category, name, buying_price,
-              agent_price, wholesale_price, retail_price, id))
+              agent_price, wholesale_price, retail_price, id, business_id))
         conn.commit()
         return redirect('/products')
 
-    cur.execute("SELECT * FROM products WHERE id = %s", (id,))
+    cur.execute("SELECT * FROM products WHERE id = %s AND business_id = %s", (id, business_id))
     product = cur.fetchone()
     if not product:
-        return "Product not found", 404
+        return "Product not found or access denied", 404
 
     return render_template('edit_product.html', product=product)
 
@@ -761,10 +771,17 @@ def restock_product(id):
     if 'user_id' not in session or session['role'] != 'owner':
         return redirect('/login')
 
-    restock_qty = int(request.form['restock_qty'])
-
     conn = get_db()
     cur = conn.cursor()
+
+    # Validate ownership
+    cur.execute("SELECT id FROM products WHERE id = %s AND business_id = %s", (id, session['business_id']))
+    product = cur.fetchone()
+    if not product:
+        return "Unauthorized or product not found", 403
+
+    restock_qty = int(request.form['restock_qty'])
+
     cur.execute('''
         UPDATE products
         SET quantity_available = quantity_available + %s
@@ -781,6 +798,13 @@ def delete_product(id):
 
     conn = get_db()
     cur = conn.cursor()
+
+    # Verify ownership
+    cur.execute("SELECT id FROM products WHERE id = %s AND business_id = %s", (id, session['business_id']))
+    product = cur.fetchone()
+    if not product:
+        return "Unauthorized or product not found", 403
+
     cur.execute("DELETE FROM products WHERE id = %s", (id,))
     conn.commit()
     return redirect('/products')
@@ -1350,7 +1374,7 @@ def sales_upload_inventory():
         return redirect('/dashboard')
 
     # === Render form on GET ===
-    cur.execute("SELECT name, category FROM products ORDER BY name")
+    cur.execute("SELECT name, category FROM products WHERE business_id = %s ORDER BY name", (session['business_id'],))
     products = cur.fetchall()
     product_names = [row['name'] for row in products]
     product_categories = {row['name']: row['category'] for row in products}

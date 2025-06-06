@@ -481,6 +481,16 @@ def get_all_categories(business_id):
 def get_pending_requests_for_user(user_id):
     conn = get_db()
     cur = conn.cursor()
+
+    # First, get business_id of the recipient
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    result = cur.fetchone()
+    if not result or not result['business_id']:
+        return []
+
+    business_id = result['business_id']
+
+    # Now fetch requests only for that business
     cur.execute("""
         SELECT sr.*, 
                p.name AS product_name, 
@@ -491,7 +501,10 @@ def get_pending_requests_for_user(user_id):
         JOIN users u ON sr.requester_id = u.id
         LEFT JOIN user_inventory inv 
             ON inv.user_id = sr.recipient_id AND inv.product_id = sr.product_id
-        WHERE sr.recipient_id = %s AND sr.status = 'pending'
+        WHERE sr.recipient_id = %s
+          AND sr.status = 'pending'
+          AND p.business_id = %s
         ORDER BY sr.id DESC
-    """, (user_id,))
+    """, (user_id, business_id))
+
     return cur.fetchall()
