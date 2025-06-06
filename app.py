@@ -454,6 +454,8 @@ def view_expenses():
 
     conn = get_db()
     cur = conn.cursor()
+
+    # Fetch paginated expenses
     cur.execute("""
         SELECT * FROM expenses
         WHERE business_id = %s
@@ -462,11 +464,15 @@ def view_expenses():
     """, (business_id, per_page, offset))
     expenses = cur.fetchall()
 
-    cur.execute("SELECT COUNT(*) FROM expenses WHERE business_id = %s", (business_id,))
-    total = cur.fetchone()[0]
+    # Fetch total expense count
+    cur.execute("SELECT COUNT(*) AS count FROM expenses WHERE business_id = %s", (business_id,))
+    row = cur.fetchone()
+    total = row["count"] if row and row["count"] is not None else 0
+
     has_next = (offset + per_page) < total
 
     return render_template("view_expenses.html", expenses=expenses, page=page, has_next=has_next)
+
 
 @app.route('/transactions')
 def transactions():
@@ -1168,12 +1174,11 @@ def report():
     if 'user_id' not in session or session['role'] != 'owner':
         return redirect('/login')
 
-    business_id = session['business_id']  # ✅ Define this early
-
+    business_id = session['business_id']
     conn = get_db()
     cur = conn.cursor()
 
-    # 1. Salespeople Dropdown (exclude owners)
+    # 1. Salespeople Dropdown
     cur.execute("SELECT username FROM users WHERE business_id = %s AND role != 'owner'", (business_id,))
     salespeople = [r['username'] for r in cur.fetchall()]
 
@@ -1295,13 +1300,37 @@ def report():
     ''', (business_id,))
     distribution_log = cur.fetchall()
 
+    # 7. Total Expenses
+    expense_query = '''
+        SELECT SUM(amount) AS total_expenses
+        FROM expenses
+        WHERE business_id = %s
+    '''
+    expense_params = [business_id]
+    if start_date:
+        expense_query += ' AND date(date) >= date(%s)'
+        expense_params.append(start_date)
+    if end_date:
+        expense_query += ' AND date(date) <= date(%s)'
+        expense_params.append(end_date)
+
+    cur.execute(expense_query, expense_params)
+    expense_result = cur.fetchone()
+    total_expenses = expense_result['total_expenses'] or 0
+
+    # 8. Net Balance Calculation
+    net_balance = (summary['total_revenue'] or 0) - total_expenses
+
+    # 9. Render Template
     return render_template(
         'report.html',
         report=report_data,
         salespeople=salespeople,
         summary=summary,
         top_salesperson=top_salesperson,
-        distribution_log=distribution_log
+        distribution_log=distribution_log,
+        total_expenses=total_expenses,
+        net_balance=net_balance
     )
 
 @app.route('/export_report', methods=['POST'])
