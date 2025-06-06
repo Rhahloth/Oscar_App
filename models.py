@@ -25,7 +25,7 @@ def initialize_database():
     # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
-    # cur.execute('DROP TABLE IF EXISTS users CASCADE;')
+    cur.execute('DROP TABLE IF EXISTS users CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS businesses CASCADE;')
 
     # Step 1: Create businesses FIRST without created_by_user_id
