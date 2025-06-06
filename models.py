@@ -16,10 +16,10 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-     # Drop the old expenses table
-    cur.execute('''
-        DROP TABLE IF EXISTS expenses;
-    ''')
+    #  # Drop the old expenses table
+    # cur.execute('''
+    #     DROP TABLE IF EXISTS expenses;
+    # ''')
     
     # cur.execute("""
     #     TRUNCATE TABLE
