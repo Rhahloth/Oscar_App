@@ -1563,7 +1563,7 @@ def admin_dashboard():
         businesses=businesses
     )
 
-
+# Toggle business active/inactive
 @app.route('/toggle_business/<int:business_id>', methods=['POST'])
 def toggle_business(business_id):
     if 'user_id' not in session or session['role'] != 'super_admin':
@@ -1592,6 +1592,36 @@ def toggle_business(business_id):
         conn.rollback()
         flash("Something went wrong while updating business status.", "error")
         print("ERROR in toggle_business:", e)
+        return redirect('/admin_dashboard')
+
+
+# Delete business
+@app.route('/delete_business/<int:business_id>', methods=['POST'])
+def delete_business(business_id):
+    if 'user_id' not in session or session['role'] != 'super_admin':
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        # Get business name for feedback
+        cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
+        business = cur.fetchone()
+
+        if not business:
+            flash("Business not found.", "error")
+            return redirect('/admin_dashboard')
+
+        cur.execute("DELETE FROM businesses WHERE id = %s", (business_id,))
+        conn.commit()
+        flash(f"{business['name']} has been deleted.", "success")
+        return redirect('/admin_dashboard')
+
+    except Exception as e:
+        conn.rollback()
+        flash("Something went wrong while deleting business.", "error")
+        print("ERROR in delete_business:", e)
         return redirect('/admin_dashboard')
 
 

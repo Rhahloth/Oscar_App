@@ -78,11 +78,43 @@
               <td>{{ b.user_count }}</td>
               <td>{{ 'Active' if b.is_active else 'Inactive' }}</td>
               <td>
-                <form action="/toggle_business/{{ b.id }}" method="POST">
-                  <button type="submit">
-                    {{ 'Deactivate' if b.is_active else 'Activate' }}
-                  </button>
-                </form>
+                <div style="display: flex; gap: 10px">
+                  <!-- Activate/Deactivate Button -->
+                  <form action="/toggle_business/{{ b.id }}" method="POST">
+                    <button
+                      type="submit"
+                      style="
+                        background-color: #034078;
+                        color: white;
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                      "
+                    >
+                      {{ 'Deactivate' if b.is_active else 'Activate' }}
+                    </button>
+                  </form>
+
+                  <!-- Delete Button -->
+                  <form
+                    action="/delete_business/{{ b.name }}"
+                    method="POST"
+                    onsubmit="return confirm('Are you sure you want to delete {{ b.name }}?');"
+                  >
+                    <button
+                      type="submit"
+                      style="
+                        background-color: red;
+                        color: white;
+                        border: none;
+                        padding: 5px 10px;
+                        border-radius: 4px;
+                      "
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
             {% endfor %}
