@@ -16,10 +16,10 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
 
-    #  # Drop the old expenses table
-    # cur.execute('''
-    #     DROP TABLE IF EXISTS expenses;
-    # ''')
+     # Drop the old expenses table
+    cur.execute('''
+        DROP TABLE IF EXISTS expenses;
+    ''')
     
     # cur.execute("""
     #     TRUNCATE TABLE
@@ -174,17 +174,19 @@ def initialize_database():
 
     # Create the new expenses table
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS expenses (
+        CREATE TABLE expenses (
             id SERIAL PRIMARY KEY,
             business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE,
             staff_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            staff_name TEXT NOT NULL,
             item TEXT NOT NULL,
             amount NUMERIC NOT NULL,
             comment TEXT,
+            username TEXT,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    ''')
 
+    ''')
 
 
     conn.commit()
