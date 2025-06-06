@@ -15,6 +15,11 @@ def get_db():
 def initialize_database():
     conn = get_db()
     cur = conn.cursor()
+
+    #  # Drop the old expenses table
+    # cur.execute('''
+    #     DROP TABLE IF EXISTS expenses;
+    # ''')
     
     # cur.execute("""
     #     TRUNCATE TABLE
@@ -165,11 +170,6 @@ def initialize_database():
             rejection_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    ''')
-
-    # Drop the old expenses table
-    cur.execute('''
-        DROP TABLE IF EXISTS expenses;
     ''')
 
     # Create the new expenses table

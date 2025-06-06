@@ -1178,17 +1178,17 @@ def report():
     conn = get_db()
     cur = conn.cursor()
 
-    # 1. Salespeople for filter dropdown
+    # Salespeople for dropdown
     cur.execute("SELECT username FROM users WHERE business_id = %s AND role != 'owner'", (business_id,))
     salespeople = [r['username'] for r in cur.fetchall()]
 
-    # 2. Get filters
+    # Filters
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
     salesperson = request.form.get('salesperson')
     payment_method = request.form.get('payment_method')
 
-    # 3. Sales report
+    # Report data
     report_query = '''
         SELECT u.username AS salesperson,
                s.payment_method,
@@ -1203,6 +1203,7 @@ def report():
         WHERE p.business_id = %s
     '''
     report_params = [business_id]
+
     if start_date:
         report_query += ' AND date(s.date) >= date(%s)'
         report_params.append(start_date)
@@ -1215,27 +1216,35 @@ def report():
     if payment_method:
         report_query += ' AND s.payment_method = %s'
         report_params.append(payment_method)
+
     report_query += ' GROUP BY u.username, s.payment_method ORDER BY total_selling_price DESC'
     cur.execute(report_query, report_params)
     report_data = cur.fetchall()
 
-    # 4. Expenses (filtered)
-    expense_query = "SELECT SUM(amount) AS total FROM expenses WHERE business_id = %s"
+    # Total expenses (filtered by branch)
+    expense_query = '''
+        SELECT SUM(e.amount) AS total_expense
+        FROM expenses e
+        LEFT JOIN users u ON e.staff_id = u.id
+        WHERE e.business_id = %s
+    '''
     expense_params = [business_id]
+
+    if salesperson:
+        expense_query += ' AND u.username = %s'
+        expense_params.append(salesperson)
     if start_date:
-        expense_query += " AND date(date) >= date(%s)"
+        expense_query += ' AND date(e.date) >= date(%s)'
         expense_params.append(start_date)
     if end_date:
-        expense_query += " AND date(date) <= date(%s)"
+        expense_query += ' AND date(e.date) <= date(%s)'
         expense_params.append(end_date)
-    if salesperson:
-        expense_query += " AND staff_name = %s"
-        expense_params.append(salesperson)
+
     cur.execute(expense_query, expense_params)
     expense_result = cur.fetchone()
-    total_expenses = int(expense_result["total"]) if expense_result and expense_result["total"] is not None else 0
+    total_expenses = int(expense_result['total_expense']) if expense_result and expense_result['total_expense'] is not None else 0
 
-    # 5. Summary
+    # Summary
     summary_query = '''
         SELECT 
             COUNT(*) AS total_transactions,
@@ -1260,23 +1269,21 @@ def report():
     if payment_method:
         summary_query += ' AND s.payment_method = %s'
         summary_params.append(payment_method)
+
     cur.execute(summary_query, summary_params)
     result = cur.fetchone()
     summary = {}
     if result:
+        summary['total_transactions'] = result['total_transactions'] or 0
+        summary['total_quantity'] = result['total_quantity'] or 0
+        summary['total_cost_price'] = int(result['total_cost_price'] or 0)
         raw_revenue = int(result['raw_revenue'] or 0)
-        cost_price = int(result['total_cost_price'] or 0)
-        summary = {
-            'total_transactions': result['total_transactions'] or 0,
-            'total_quantity': result['total_quantity'] or 0,
-            'total_revenue': raw_revenue - total_expenses,
-            'total_cost_price': cost_price,
-            'total_profit': (raw_revenue - total_expenses) - cost_price
-        }
+        summary['total_revenue'] = raw_revenue - total_expenses
+        summary['total_profit'] = summary['total_revenue'] - summary['total_cost_price']
 
     net_balance = summary['total_revenue'] - summary['total_cost_price']
 
-    # 6. Top salesperson
+    # Top Salesperson
     top_query = '''
         SELECT u.username AS top_salesperson,
                SUM(s.quantity * s.price) AS total
@@ -1298,11 +1305,12 @@ def report():
     if payment_method:
         top_query += ' AND s.payment_method = %s'
         top_params.append(payment_method)
+
     top_query += ' GROUP BY s.salesperson_id, u.username ORDER BY total DESC LIMIT 1'
     cur.execute(top_query, top_params)
     top_salesperson = cur.fetchone()
 
-    # 7. Distribution log
+    # Distribution log
     cur.execute('''
         SELECT dl.timestamp, dl.quantity, dl.status,
                p.name AS product_name,
@@ -1328,6 +1336,7 @@ def report():
         top_salesperson=top_salesperson,
         distribution_log=distribution_log
     )
+
 
 @app.route('/export_report', methods=['POST'])
 def export_report():
