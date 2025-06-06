@@ -22,7 +22,7 @@ def initialize_database():
     # cur.execute('DROP TABLE IF EXISTS stock_requests CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS user_inventory CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS distribution_log CASCADE;')
-    cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
+    # cur.execute('DROP TABLE IF EXISTS sales CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS customers CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS products CASCADE;')
     # cur.execute('DROP TABLE IF EXISTS users CASCADE;')

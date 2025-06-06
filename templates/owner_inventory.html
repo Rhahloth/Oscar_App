@@ -115,11 +115,11 @@
           <tr>
             <td>{{ product }}</td>
             {% for branch in branches %}
-            <td>{{ branches_data.get(branch, 0) }}</td>
+              <td>{{ branches_data[branch] if branch in branches_data else 0 }}</td>
             {% endfor %}
             <td><strong>{{ totals[product] }}</strong></td>
           </tr>
-          {% endfor %}
+          {% endfor %}          
         </tbody>
       </table>
     </div>
