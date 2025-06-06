@@ -167,17 +167,24 @@ def initialize_database():
         );
     ''')
 
+    # Drop the old expenses table
     cur.execute('''
-        CREATE TABLE IF NOT EXISTS expenses (
+        DROP TABLE IF EXISTS expenses;
+    ''')
+
+    # Create the new expenses table
+    cur.execute('''
+        CREATE TABLE expenses (
             id SERIAL PRIMARY KEY,
             business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE,
-            staff_name TEXT NOT NULL,
+            staff_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
             item TEXT NOT NULL,
             amount NUMERIC NOT NULL,
             comment TEXT,
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
+
 
 
     conn.commit()
