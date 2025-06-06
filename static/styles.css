@@ -532,3 +532,16 @@ button:hover {
         padding: 25px;
     }
 }
+
+@media (max-width: 768px) {
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive .table {
+        min-width: 600px;
+        display: block;
+    }
+}
