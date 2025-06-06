@@ -448,3 +448,87 @@ button:hover {
     flex: 1;
     min-width: 300px;
 }
+
+/* Mobile phones (up to 600px) */
+@media (max-width: 600px) {
+    .navbar-inner {
+        flex-direction: column;
+        padding: 15px 20px;
+        text-align: center;
+    }
+
+    .navbar-left,
+    .navbar-right {
+        max-width: 100%;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .container {
+        margin: 100px auto 50px auto;
+        padding: 20px;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .summary-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cart-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .flex .card {
+        min-width: 100%;
+    }
+
+    .login-card {
+        padding: 20px;
+        max-width: 90%;
+    }
+}
+
+/* Tablets (601px - 992px) */
+@media (min-width: 601px) and (max-width: 992px) {
+
+    .navbar-left,
+    .navbar-right {
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    .container {
+        margin: 120px auto 60px auto;
+        padding: 30px;
+    }
+
+    .filter-row {
+        gap: 15px;
+    }
+
+    .summary-container {
+        gap: 1rem;
+    }
+
+    .cart-actions {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .login-card {
+        padding: 25px;
+    }
+}
