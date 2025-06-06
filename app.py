@@ -1337,7 +1337,6 @@ def report():
         distribution_log=distribution_log
     )
 
-
 @app.route('/export_report', methods=['POST'])
 def export_report():
     if 'user_id' not in session or session['role'] != 'owner':
