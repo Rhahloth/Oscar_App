@@ -1188,7 +1188,7 @@ def report():
     salesperson = request.form.get('salesperson')
     payment_method = request.form.get('payment_method')
 
-    # 3. Build filter-based report query
+    # 3. Sales report
     report_query = '''
         SELECT u.username AS salesperson,
                s.payment_method,
@@ -1203,7 +1203,6 @@ def report():
         WHERE p.business_id = %s
     '''
     report_params = [business_id]
-
     if start_date:
         report_query += ' AND date(s.date) >= date(%s)'
         report_params.append(start_date)
@@ -1216,29 +1215,33 @@ def report():
     if payment_method:
         report_query += ' AND s.payment_method = %s'
         report_params.append(payment_method)
-
     report_query += ' GROUP BY u.username, s.payment_method ORDER BY total_selling_price DESC'
     cur.execute(report_query, report_params)
     report_data = cur.fetchall()
 
-    # 4. Get total expenses for business
-    cur.execute("SELECT SUM(amount) AS total FROM expenses WHERE business_id = %s", (business_id,))
+    # 4. Expenses (filtered)
+    expense_query = "SELECT SUM(amount) AS total FROM expenses WHERE business_id = %s"
+    expense_params = [business_id]
+    if start_date:
+        expense_query += " AND date(date) >= date(%s)"
+        expense_params.append(start_date)
+    if end_date:
+        expense_query += " AND date(date) <= date(%s)"
+        expense_params.append(end_date)
+    if salesperson:
+        expense_query += " AND staff_name = %s"
+        expense_params.append(salesperson)
+    cur.execute(expense_query, expense_params)
     expense_result = cur.fetchone()
+    total_expenses = int(expense_result["total"]) if expense_result and expense_result["total"] is not None else 0
 
-    if expense_result and expense_result["total"] is not None:
-        total_expenses = int(expense_result["total"])
-    else:
-        total_expenses = 0
-
-
-    # 5. Summary metrics (calculate raw revenue then subtract expenses)
+    # 5. Summary
     summary_query = '''
         SELECT 
             COUNT(*) AS total_transactions,
             SUM(s.quantity) AS total_quantity,
             SUM(s.quantity * s.price) AS raw_revenue,
-            SUM(s.quantity * p.buying_price) AS total_cost_price,
-            SUM((s.quantity * s.price) - (s.quantity * p.buying_price)) AS total_profit
+            SUM(s.quantity * p.buying_price) AS total_cost_price
         FROM sales s
         JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
@@ -1257,18 +1260,19 @@ def report():
     if payment_method:
         summary_query += ' AND s.payment_method = %s'
         summary_params.append(payment_method)
-
     cur.execute(summary_query, summary_params)
     result = cur.fetchone()
     summary = {}
     if result:
-        summary['total_transactions'] = result['total_transactions'] or 0
-        summary['total_quantity'] = result['total_quantity'] or 0
-        summary['total_cost_price'] = int(result['total_cost_price'] or 0)
         raw_revenue = int(result['raw_revenue'] or 0)
-        summary['total_revenue'] = raw_revenue - total_expenses
-        summary['total_profit'] = summary['total_revenue'] - summary['total_cost_price']
-
+        cost_price = int(result['total_cost_price'] or 0)
+        summary = {
+            'total_transactions': result['total_transactions'] or 0,
+            'total_quantity': result['total_quantity'] or 0,
+            'total_revenue': raw_revenue - total_expenses,
+            'total_cost_price': cost_price,
+            'total_profit': (raw_revenue - total_expenses) - cost_price
+        }
 
     net_balance = summary['total_revenue'] - summary['total_cost_price']
 
@@ -1294,12 +1298,11 @@ def report():
     if payment_method:
         top_query += ' AND s.payment_method = %s'
         top_params.append(payment_method)
-
     top_query += ' GROUP BY s.salesperson_id, u.username ORDER BY total DESC LIMIT 1'
     cur.execute(top_query, top_params)
     top_salesperson = cur.fetchone()
 
-    # 7. Stock distribution log
+    # 7. Distribution log
     cur.execute('''
         SELECT dl.timestamp, dl.quantity, dl.status,
                p.name AS product_name,
