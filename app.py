@@ -1224,7 +1224,11 @@ def report():
     # 4. Get total expenses for business
     cur.execute("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE business_id = %s", (business_id,))
     expense_result = cur.fetchone()
-    total_expenses = int(expense_result[0]) if expense_result and expense_result[0] else 0
+    if expense_result and expense_result[0] is not None:
+        total_expenses = int(expense_result[0])
+    else:
+        total_expenses = 0
+
 
 
     # 5. Summary metrics (calculate raw revenue then subtract expenses)
