@@ -1222,13 +1222,14 @@ def report():
     report_data = cur.fetchall()
 
     # 4. Get total expenses for business
-    cur.execute("SELECT SUM(amount) FROM expenses WHERE business_id = %s", (business_id,))
+    cur.execute("SELECT SUM(amount) AS total FROM expenses WHERE business_id = %s", (business_id,))
     expense_result = cur.fetchone()
 
-    if expense_result and expense_result[0] is not None:
-        total_expenses = int(expense_result[0])
+    if expense_result and expense_result["total"] is not None:
+        total_expenses = int(expense_result["total"])
     else:
         total_expenses = 0
+
 
     # 5. Summary metrics (calculate raw revenue then subtract expenses)
     summary_query = '''
