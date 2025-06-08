@@ -1073,10 +1073,18 @@ def request_stock():
         return redirect('/login')
 
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     current_user_id = session['user_id']
 
-    # Include buying_price in the SELECT to support JS total calculation
+    # ✅ Get business_id of logged-in user
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (current_user_id,))
+    biz_result = cur.fetchone()
+    if not biz_result or not biz_result['business_id']:
+        flash("❌ Your account is not linked to a business.", "danger")
+        return redirect('/dashboard')
+    business_id = biz_result['business_id']
+
+    # ✅ Fetch logged-in salesperson's inventory
     cur.execute('''
         SELECT ui.product_id, ui.quantity, p.name AS product_name, p.buying_price
         FROM user_inventory ui
@@ -1085,10 +1093,14 @@ def request_stock():
     ''', (current_user_id,))
     inventory = cur.fetchall()
 
-    # Get list of other salespersons (recipients)
-    cur.execute("SELECT id, username FROM users WHERE role = 'salesperson' AND id != %s", (current_user_id,))
+    # ✅ Get other salespersons in the same business (excluding self)
+    cur.execute('''
+        SELECT id, username FROM users
+        WHERE role = 'salesperson' AND id != %s AND business_id = %s
+    ''', (current_user_id, business_id))
     recipients = cur.fetchall()
 
+    # 🔁 Handle stock request form submission
     if request.method == 'POST':
         requester_name = request.form.get('requester_name')
         recipient_id = int(request.form.get('recipient_id'))
@@ -1097,35 +1109,39 @@ def request_stock():
         try:
             cart = json.loads(cart_data)
         except Exception as e:
-            return f"Invalid cart data: {e}", 400
+            flash(f"❌ Invalid cart data: {e}", "danger")
+            return redirect('/request_stock')
 
         for item in cart:
             product_name = item['name']
             quantity = int(item['quantity'])
 
-            cur.execute("SELECT id, buying_price FROM products WHERE name = %s", (product_name,))
+            cur.execute("SELECT id, buying_price FROM products WHERE name = %s AND business_id = %s",
+                        (product_name, business_id))
             result = cur.fetchone()
             if not result:
-                continue
+                continue  # Skip items not found
+
             product_id = result['id']
             buying_price = result['buying_price']
             total_value = quantity * buying_price
 
-            # Insert into stock_requests
+            # Insert into stock_requests table
             cur.execute('''
                 INSERT INTO stock_requests (
                     product_id, requester_id, recipient_id, quantity, requester_name, status
                 ) VALUES (%s, %s, %s, %s, %s, 'pending')
             ''', (product_id, current_user_id, recipient_id, quantity, requester_name))
 
-            # Insert into distribution_log
+            # Insert into distribution_log table
             cur.execute('''
                 INSERT INTO distribution_log (
                     product_id, salesperson_id, receiver_id, quantity, status, total
-                ) VALUES (%s, %s, %s, %s, %s, %s)
-            ''', (product_id, current_user_id, recipient_id, quantity, 'pending', total_value))
+                ) VALUES (%s, %s, %s, %s, 'pending', %s)
+            ''', (product_id, current_user_id, recipient_id, quantity, total_value))
 
         conn.commit()
+        flash("✅ Stock request submitted successfully.", "success")
         return redirect('/dashboard')
 
     return render_template('request_stock.html',
