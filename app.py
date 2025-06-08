@@ -1428,6 +1428,9 @@ def export_report():
 
     return Response(si.getvalue(), mimetype="text/csv", headers=headers)
 
+from flask import flash, request, redirect, render_template, session
+import json, csv
+
 @app.route('/sales_upload_inventory', methods=['GET', 'POST'])
 def sales_upload_inventory():
     if 'user_id' not in session or session['role'] != 'salesperson':
@@ -1443,45 +1446,50 @@ def sales_upload_inventory():
         if form_type == 'csv_upload':
             file = request.files.get('file')
             if not file or not file.filename.endswith('.csv'):
-                return "Please upload a valid CSV file", 400
-
-            import csv
-            reader = csv.DictReader(file.read().decode('utf-8').splitlines())
-            inventory_rows = []
-
-            for row in reader:
-                try:
-                    product_name = row['Product Name'].strip()
-                    quantity = int(row['Quantity'])
-                    category = row['Category'].strip()
-                    inventory_rows.append((product_name, quantity, category))
-                except Exception as e:
-                    return f"Error in row: {row} — {str(e)}", 400
+                flash("❌ Please upload a valid CSV file.", "danger")
+                return redirect(request.referrer or '/sales_upload_inventory')
 
             try:
-                add_salesperson_stock_bulk(session['user_id'], inventory_rows)
-            except Exception as e:
-                return f"Upload failed: {str(e)}", 500
+                reader = csv.DictReader(file.read().decode('utf-8').splitlines())
+                inventory_rows = []
 
-            return redirect('/dashboard')
+                for row in reader:
+                    try:
+                        product_name = row['Product Name'].strip()
+                        quantity = int(row['Quantity'])
+                        category = row['Category'].strip()
+                        inventory_rows.append((product_name, quantity, category))
+                    except Exception as e:
+                        flash(f"❌ Error in row {row}: {str(e)}", "danger")
+                        return redirect(request.referrer or '/sales_upload_inventory')
+
+                add_salesperson_stock_bulk(session['user_id'], inventory_rows)
+                flash("✅ Inventory uploaded successfully from CSV.", "success")
+                return redirect('/dashboard')
+
+            except Exception as e:
+                flash(f"❌ Upload failed: {str(e)}", "danger")
+                return redirect(request.referrer or '/sales_upload_inventory')
 
         # === Handle Manual Cart Upload ===
         cart_data = request.form.get('cart_data')
         if not cart_data:
-            return "Error: No stock data submitted.", 400
+            flash("❌ Error: No stock data submitted.", "danger")
+            return redirect(request.referrer or '/sales_upload_inventory')
 
         try:
-            import json
             items = json.loads(cart_data)
             inventory_rows = [
                 (item['product_name'], int(item['quantity']), item['category'].strip())
                 for item in items
             ]
             add_salesperson_stock_bulk(session['user_id'], inventory_rows)
-        except Exception as e:
-            return f"Error processing cart: {str(e)}", 400
+            flash("✅ Inventory uploaded successfully from manual entry.", "success")
+            return redirect('/dashboard')
 
-        return redirect('/dashboard')
+        except Exception as e:
+            flash(f"❌ Error processing cart: {str(e)}", "danger")
+            return redirect(request.referrer or '/sales_upload_inventory')
 
     # === Render form on GET ===
     cur.execute("SELECT name, category FROM products WHERE business_id = %s ORDER BY name", (session['business_id'],))
@@ -1494,6 +1502,7 @@ def sales_upload_inventory():
         product_names=product_names,
         product_categories=product_categories
     )
+
 @app.route('/repayments', methods=['GET', 'POST'])
 def repayments():
     if 'user_id' not in session or session['role'] != 'salesperson':
