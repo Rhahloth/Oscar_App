@@ -67,6 +67,15 @@
     </div>
 
     <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+
       <h3>➕ Add New Customer</h3>
       <form method="POST">
         <label for="name"><strong>Customer Name:</strong></label

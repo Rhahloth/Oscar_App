@@ -1632,13 +1632,15 @@ def repayments():
         credit_summary=credit_summary
     )
 
+from flask import request, session, redirect, render_template, flash
+
 @app.route('/add_customer', methods=['GET', 'POST'])
 def add_customer():
     if 'user_id' not in session or session['role'] != 'owner':
         return redirect('/login')
 
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     user_id = session['user_id']
 
@@ -1646,19 +1648,31 @@ def add_customer():
     cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
     business = cur.fetchone()
     if not business:
-        return "Business not found", 400
+        flash("❌ Business not found.", "danger")
+        return redirect('/dashboard')
     business_id = business['business_id']
 
-    # Handle POST (new customer)
     if request.method == 'POST':
-        name = request.form.get('name')
-        phone = request.form.get('phone')
+        name = request.form.get('name').strip()
+        phone = request.form.get('phone').strip() or None
 
+        # ✅ Check if a customer with the same name exists in the business
         cur.execute("""
-            INSERT INTO customers (name, phone, business_id)
-            VALUES (%s, %s, %s)
-        """, (name, phone, business_id))
-        conn.commit()
+            SELECT id FROM customers 
+            WHERE LOWER(name) = LOWER(%s) AND business_id = %s
+        """, (name, business_id))
+        existing = cur.fetchone()
+
+        if existing:
+            flash("⚠️ A customer with this name already exists.", "warning")
+        else:
+            cur.execute("""
+                INSERT INTO customers (name, phone, business_id)
+                VALUES (%s, %s, %s)
+            """, (name, phone, business_id))
+            conn.commit()
+            flash("✅ Customer added successfully.", "success")
+
         return redirect('/add_customer')
 
     # Fetch all customers
