@@ -1477,9 +1477,9 @@ def sales_upload_inventory():
     conn = get_db()
     cur = conn.cursor()
 
-    # === Get owner products for validation ===
+    # === Load allowed product names for this business ===
     cur.execute("SELECT name FROM products WHERE business_id = %s", (session['business_id'],))
-    allowed_products = set([row['name'].strip().lower() for row in cur.fetchall()])
+    allowed_products = set(row['name'].strip().lower() for row in cur.fetchall())
 
     if request.method == 'POST':
         form_type = request.form.get('form_type')
@@ -1497,7 +1497,7 @@ def sales_upload_inventory():
                     flash("❌ The uploaded file is empty.", "danger")
                     return redirect(request.referrer or '/sales_upload_inventory')
 
-                # Auto-detect delimiter
+                # Auto-detect CSV/TSV delimiter
                 try:
                     dialect = csv.Sniffer().sniff('\n'.join(content[:2]), delimiters=',\t')
                 except Exception:
@@ -1510,34 +1510,34 @@ def sales_upload_inventory():
                 row_number = 1
 
                 for raw_row in reader:
-                    row = {k.strip().lower(): v.strip() for k, v in raw_row.items() if k}
                     row_number += 1
+                    row = {k.strip().lower(): v.strip() for k, v in raw_row.items() if k}
 
                     try:
                         product_name = row['product name']
-                        quantity = float(row['quantity'])  # allow zero
+                        quantity = float(row['quantity'])  # allow 0
                         category = row['category']
 
                         if product_name.strip().lower() not in allowed_products:
                             skipped_products += 1
-                            print(f"⚠️ Skipped: Product '{product_name}' not in business inventory.")
+                            print(f"⚠️ Skipped row {row_number}: Unknown product '{product_name}' not in business inventory.")
                             continue
 
                         inventory_rows.append((product_name, quantity, category))
 
                     except Exception as e:
                         error_count += 1
-                        print(f"⚠️ Skipped row {row_number}: {raw_row} — {str(e)}")
+                        print(f"⚠️ Skipped row {row_number} due to error: {raw_row} — {str(e)}")
                         continue
 
                 if not inventory_rows:
-                    flash("❌ Upload failed. All rows had errors or were skipped.", "danger")
+                    flash("❌ Upload failed. All rows had errors or unknown products.", "danger")
                     return redirect(request.referrer or '/sales_upload_inventory')
 
                 add_salesperson_stock_bulk(session['user_id'], inventory_rows)
                 flash(
-                    f"✅ Uploaded {len(inventory_rows)} product(s). Skipped {error_count} invalid row(s), "
-                    f"{skipped_products} unknown product(s).",
+                    f"✅ Uploaded {len(inventory_rows)} product(s). "
+                    f"Skipped {error_count} invalid row(s), {skipped_products} unknown product(s).",
                     "success"
                 )
                 return redirect('/dashboard')
@@ -1561,29 +1561,29 @@ def sales_upload_inventory():
             for i, item in enumerate(items, start=1):
                 try:
                     product_name = item['product_name'].strip()
-                    quantity = float(item['quantity'])
+                    quantity = float(item['quantity'])  # allow 0
                     category = item['category'].strip()
 
                     if product_name.lower() not in allowed_products:
                         skipped_products += 1
-                        print(f"⚠️ Skipped manual item {i}: '{product_name}' not in business inventory.")
+                        print(f"⚠️ Skipped manual item {i}: Unknown product '{product_name}' not in business inventory.")
                         continue
 
                     inventory_rows.append((product_name, quantity, category))
 
                 except Exception as e:
                     error_count += 1
-                    print(f"⚠️ Skipped manual item {i}: {item} — {str(e)}")
+                    print(f"⚠️ Skipped manual item {i} due to error: {item} — {str(e)}")
                     continue
 
             if not inventory_rows:
-                flash("❌ Upload failed. All items had errors or were skipped.", "danger")
+                flash("❌ Upload failed. All items had errors or unknown products.", "danger")
                 return redirect(request.referrer or '/sales_upload_inventory')
 
             add_salesperson_stock_bulk(session['user_id'], inventory_rows)
             flash(
-                f"✅ Uploaded {len(inventory_rows)} product(s) from manual entry. Skipped {error_count} invalid item(s), "
-                f"{skipped_products} unknown product(s).",
+                f"✅ Uploaded {len(inventory_rows)} product(s) from manual entry. "
+                f"Skipped {error_count} invalid item(s), {skipped_products} unknown product(s).",
                 "success"
             )
             return redirect('/dashboard')
@@ -1592,7 +1592,7 @@ def sales_upload_inventory():
             flash(f"❌ Error processing cart: {str(e)}", "danger")
             return redirect(request.referrer or '/sales_upload_inventory')
 
-    # === GET: Render form ===
+    # === GET: Render Form ===
     cur.execute("SELECT name, category FROM products WHERE business_id = %s ORDER BY name", (session['business_id'],))
     products = cur.fetchall()
     product_names = [row['name'] for row in products]
