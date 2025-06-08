@@ -8,21 +8,6 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
     />
-    <style>
-      .match-pill {
-        background-color: #034078;
-        color: white;
-        padding: 6px 12px;
-        margin: 4px;
-        border-radius: 6px;
-        cursor: pointer;
-        gap: 5px;
-        display: inline-block;
-      }
-      .match-pill:hover {
-        background-color: #012d5a;
-      }
-    </style>
   </head>
   <body>
     <div class="navbar-wrapper">
@@ -68,25 +53,18 @@
     </div>
 
     <div class="container">
-      <h4>POINT OF SALES</h4>
+      <h4>Point of Sale</h4>
+
       {% if not products %}
       <p style="color: red; font-weight: bold">
         You don't have any inventory assigned. Contact your manager.
       </p>
-      <a href="/sales_upload_inventory">
-        <button
-          style="
-            background-color: #034078;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-          "
-        >
+      <a href="/sales_upload_inventory"
+        ><button style="background-color: #034078; color: white">
           + Add Stocks
-        </button>
-      </a>
-      <br />
+        </button></a
+      >
+      <br /><br />
       {% endif %}
 
       <form
@@ -95,72 +73,65 @@
         action="/submit_sale"
         onsubmit="submitSale(event)"
       >
-        <div class="section-box filter-section">
-          <label for="productSearch">Search Product</label>
-          <input
-            id="productSearch"
-            placeholder="Type to search..."
-            oninput="handleProductInput()"
-            autocomplete="off"
-          />
-        </div>
+        <div class="flex-row">
+          <!-- Left: Product Search -->
+          <div class="half">
+            <div class="section-box">
+              <label for="productSearch">Search Product</label>
+              <input
+                id="productSearch"
+                placeholder="Type to search..."
+                oninput="handleProductInput()"
+                autocomplete="off"
+              />
+              <div id="matchResults"></div>
+            </div>
 
-        <div class="section-box">
-          <h5>Matching Products</h5>
-          <div id="matchResults"></div>
-        </div>
+            <div class="section-box" id="creditOptions" style="display: none">
+              <label for="customerSelect">Customer</label>
+              <select name="customer_id" id="customerSelect">
+                <option value="">-- Select Customer --</option>
+                {% for customer in customers %}
+                <option value="{{ customer.id }}">{{ customer.name }}</option>
+                {% endfor %}
+              </select>
 
-        <div class="section-box">
-          <h5>Sale Items</h5>
-          <div
-            class="cart-table"
-            style="
-              max-height: 250px;
-              overflow-y: auto;
-              background: #f9f9f9;
-              padding: 10px;
-            "
-          >
-            <table class="table" id="cartTable">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Subtotal</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+              <label for="dueDate">Due Date</label>
+              <input type="date" name="due_date" id="dueDate" />
+            </div>
           </div>
-          <h5>Summary</h5>
-          <p>Total Quantity: <span id="total_qty">0</span></p>
-          <p>Total Amount: UGX <span id="total_amount">0</span></p>
-        </div>
 
-        <div class="section-box" id="creditOptions" style="display: none">
-          <label for="customerSelect">Select Customer (for Credit Sale):</label>
-          <select name="customer_id" id="customerSelect" required>
-            <option value="">-- Select a Customer --</option>
-            {% for customer in customers %}
-            <option value="{{ customer.id }}">{{ customer.name }}</option>
-            {% endfor %}
-          </select>
+          <!-- Right: Cart -->
+          <div class="half">
+            <div class="section-box cart-table">
+              <table id="cartTable">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
 
-          <label for="dueDate">Due Date:</label>
-          <input type="date" name="due_date" id="dueDate" required />
-        </div>
-
-        <div class="section-box">
-          <input type="hidden" name="payment_method" id="payment_method" />
-          <input type="hidden" name="cart_data" id="cart_data" />
-          <div class="cart-actions" style="text-align: right">
-            <button type="button" onclick="finalizeSale('Credit')">
-              Credit
-            </button>
-            <button type="button" onclick="finalizeSale('Cash')">Cash</button>
+            <div class="section-box">
+              <p>Total Qty: <span id="total_qty">0</span></p>
+              <p>Total Amount: UGX <span id="total_amount">0</span></p>
+            </div>
           </div>
+        </div>
+
+        <!-- Hidden Inputs -->
+        <input type="hidden" name="payment_method" id="payment_method" />
+        <input type="hidden" name="cart_data" id="cart_data" />
+
+        <div class="sticky-footer cart-actions">
+          <button type="button" onclick="finalizeSale('Credit')">Credit</button>
+          <button type="button" onclick="finalizeSale('Cash')">Cash</button>
         </div>
       </form>
     </div>
