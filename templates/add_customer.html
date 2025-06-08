@@ -2,13 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Manage Customers - RO Solutions</title>
+    <title>Manage Customers & Credit Summary - RO Solutions</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
     />
     <style>
+      .flex-container {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+      .flex-child {
+        flex: 1;
+        min-width: 300px;
+      }
       .status.paid {
         color: green;
         font-weight: bold;
@@ -20,27 +30,6 @@
       .status.unpaid {
         color: red;
         font-weight: bold;
-      }
-      .btn-deactivate {
-        background-color: #d9534f;
-        color: white;
-        border: none;
-        padding: 5px 10px;
-        cursor: pointer;
-        border-radius: 3px;
-      }
-      .alert {
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 5px;
-      }
-      .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-      }
-      .alert-warning {
-        background-color: #fff3cd;
-        color: #856404;
       }
     </style>
   </head>
@@ -59,22 +48,28 @@
           </div>
           <div>
             {% if session.username %}
-            <div>OWNER: {{ session.username }}</div>
+            <div>BRANCH: {{ session.username }}</div>
             {% endif %}
           </div>
           <div>
-            <a href="/dashboard"><button>Back to Dashboard</button></a>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
           </div>
           <div
             class="navbar-right"
             style="display: flex; align-items: center; gap: 10px"
           >
             {% if session.username %}
-            <a href="/logout"
-              ><button style="background-color: #d9534f; color: white">
+            <a href="/logout">
+              <button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
                 Logout
-              </button></a
-            >
+              </button>
+            </a>
             {% endif %}
           </div>
         </div>
@@ -82,90 +77,88 @@
     </div>
 
     <div class="container">
-      <h3>➕ Add New Customer</h3>
-
-      <form method="POST">
-        <label for="name"><strong>Customer Name:</strong></label
-        ><br />
-        <input
-          type="text"
-          name="name"
-          required
-          style="width: 300px"
-        /><br /><br />
-
-        <label for="phone"><strong>Phone Number:</strong></label
-        ><br />
-        <input
-          type="text"
-          name="phone"
-          placeholder="Optional"
-          style="width: 300px"
-        /><br /><br />
-
-        <button type="submit">➕ Add Customer</button>
-      </form>
+      <h2>👥 Manage Customers</h2>
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %} {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %} {% endif %} {% endwith %}
-      <br />
+      messages %}
+      <ul>
+        {% for category, message in messages %}
+        <li style="color: {{ 'green' if category == 'success' else 'red' }}">
+          {{ message }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %} {% endwith %}
 
-      <h4>📋 Active Customers</h4>
-      {% if customers %}
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Created</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for c in customers %}
-            <tr>
-              <td>{{ c.name }}</td>
-              <td>{{ c.phone or '—' }}</td>
-              <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-              <td>
-                <form
-                  method="POST"
-                  action="/toggle_customer_status"
-                  style="display: inline"
-                >
-                  <input type="hidden" name="customer_id" value="{{ c.id }}" />
-                  {% if c.is_active %}
-                  <button
-                    type="submit"
-                    class="btn-deactivate"
-                    onclick="return confirm('Deactivate this customer?')"
+      <div class="flex-container">
+        <!-- ✅ Left: Customer List -->
+        <div class="flex-child">
+          <h4>📋 Active Customers</h4>
+          {% if customers %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Created</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in customers %}
+              <tr>
+                <td>{{ c.name }}</td>
+                <td>{{ c.phone or '—' }}</td>
+                <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                  <form
+                    action="/toggle_customer_status/{{ c.id }}"
+                    method="post"
+                    style="display: inline"
                   >
-                    ❌ Deactivate
-                  </button>
-                  {% else %}
-                  <button
-                    type="submit"
-                    class="btn-activate"
-                    onclick="return confirm('Activate this customer?')"
-                  >
-                    ✅ Activate
-                  </button>
-                  {% endif %}
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                    <button type="submit">
+                      {{ 'Deactivate' if c.is_active else 'Activate' }}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p>No customers yet.</p>
+          {% endif %}
+        </div>
+
+        <!-- ✅ Right: Add New Customer -->
+        <div class="flex-child">
+          <h4>➕ Add New Customer</h4>
+          <form method="POST">
+            <label for="name"><strong>Customer Name:</strong></label
+            ><br />
+            <input
+              type="text"
+              name="name"
+              required
+              style="width: 100%"
+            /><br /><br />
+
+            <label for="phone"><strong>Phone Number:</strong></label
+            ><br />
+            <input
+              type="text"
+              name="phone"
+              placeholder="Optional"
+              style="width: 100%"
+            /><br /><br />
+
+            <button type="submit">➕ Add Customer</button>
+          </form>
+        </div>
       </div>
-      {% else %}
-      <p>No active customers yet.</p>
-      {% endif %}
 
       <hr />
 
+      <!-- ✅ Credit Summary -->
       <h4>💳 Credit Summary by Batch</h4>
       {% if credit_summary %}
       <table class="table">
