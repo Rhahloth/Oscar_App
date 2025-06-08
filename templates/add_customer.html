@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Manage Customers & Credit Summary - RO Solutions</title>
+    <title>Manage Customers - RO Solutions</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       rel="stylesheet"
@@ -20,6 +20,27 @@
       .status.unpaid {
         color: red;
         font-weight: bold;
+      }
+      .btn-deactivate {
+        background-color: #d9534f;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 3px;
+      }
+      .alert {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+      }
+      .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .alert-warning {
+        background-color: #fff3cd;
+        color: #856404;
       }
     </style>
   </head>
@@ -49,17 +70,11 @@
             style="display: flex; align-items: center; gap: 10px"
           >
             {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
+            <a href="/logout"
+              ><button style="background-color: #d9534f; color: white">
                 Logout
-              </button>
-            </a>
+              </button></a
+            >
             {% endif %}
           </div>
         </div>
@@ -67,16 +82,8 @@
     </div>
 
     <div class="container">
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div class="flash-messages">
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-      {% endif %} {% endwith %}
-
       <h3>➕ Add New Customer</h3>
+
       <form method="POST">
         <label for="name"><strong>Customer Name:</strong></label
         ><br />
@@ -98,10 +105,13 @@
 
         <button type="submit">➕ Add Customer</button>
       </form>
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+      <br />
 
-      <hr />
-
-      <h4>📋 Existing Customers</h4>
+      <h4>📋 Active Customers</h4>
       {% if customers %}
       <div class="table-responsive">
         <table class="table">
@@ -110,6 +120,7 @@
               <th>Name</th>
               <th>Phone</th>
               <th>Created</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -118,13 +129,29 @@
               <td>{{ c.name }}</td>
               <td>{{ c.phone or '—' }}</td>
               <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              <td>
+                <form
+                  method="POST"
+                  action="/deactivate_customer"
+                  style="display: inline"
+                >
+                  <input type="hidden" name="customer_id" value="{{ c.id }}" />
+                  <button
+                    type="submit"
+                    class="btn-deactivate"
+                    onclick="return confirm('Are you sure you want to deactivate this customer?')"
+                  >
+                    ❌ Deactivate
+                  </button>
+                </form>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       {% else %}
-      <p>No customers yet.</p>
+      <p>No active customers yet.</p>
       {% endif %}
 
       <hr />

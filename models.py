@@ -78,6 +78,11 @@ def initialize_database():
         );
     ''')
 
+    cur.execute('''
+        ALTER TABLE customers 
+        ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+    ''')
+
     # Customers
     cur.execute('''
         CREATE TABLE IF NOT EXISTS customers (
@@ -85,9 +90,11 @@ def initialize_database():
             business_id INTEGER REFERENCES businesses(id) ON DELETE CASCADE,
             name TEXT NOT NULL,
             phone TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_active BOOLEAN DEFAULT TRUE
         );
     ''')
+
    
     # Sales
     cur.execute('''
