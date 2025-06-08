@@ -1750,7 +1750,6 @@ def add_customer():
                            customers=customers,
                            credit_summary=credit_summary)
 
-
 @app.route('/toggle_customer_status', methods=['POST'])
 def toggle_customer_status():
     if 'user_id' not in session or session['role'] != 'owner':
