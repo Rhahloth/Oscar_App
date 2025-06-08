@@ -1670,39 +1670,66 @@ def add_customer():
     business_id = business['business_id']
 
     if request.method == 'POST':
-        name = request.form.get('name').strip()
-        phone = request.form.get('phone').strip() or None
+        action = request.form.get('action')
 
-        # ✅ Check if a customer with the same name exists in the business
-        cur.execute("""
-            SELECT id FROM customers 
-            WHERE LOWER(name) = LOWER(%s) AND business_id = %s
-        """, (name, business_id))
-        existing = cur.fetchone()
+        if action == 'add_customer':
+            name = request.form.get('name', '').strip()
+            phone = request.form.get('phone', '').strip() or None
 
-        if existing:
-            flash("⚠️ A customer with this name already exists.", "warning")
-        else:
+            if not name:
+                flash("❌ Customer name is required.", "danger")
+                return redirect('/add_customer')
+
             cur.execute("""
-                INSERT INTO customers (name, phone, business_id)
-                VALUES (%s, %s, %s)
-            """, (name, phone, business_id))
-            conn.commit()
-            flash("✅ Customer added successfully.", "success")
+                SELECT id FROM customers 
+                WHERE LOWER(name) = LOWER(%s) AND business_id = %s
+            """, (name, business_id))
+            existing = cur.fetchone()
 
-        return redirect('/add_customer')
+            if existing:
+                flash("⚠️ A customer with this name already exists.", "warning")
+            else:
+                cur.execute("""
+                    INSERT INTO customers (name, phone, business_id)
+                    VALUES (%s, %s, %s)
+                """, (name, phone, business_id))
+                conn.commit()
+                flash("✅ Customer added successfully.", "success")
 
-    # Fetch all customers
+            return redirect('/add_customer')
+
+        elif action == 'toggle_status':
+            customer_id = request.form.get('customer_id')
+            if not customer_id:
+                flash("❌ No customer selected.", "danger")
+                return redirect('/add_customer')
+
+            # Verify customer belongs to business
+            cur.execute("""
+                SELECT id, is_active FROM customers 
+                WHERE id = %s AND business_id = %s
+            """, (customer_id, business_id))
+            customer = cur.fetchone()
+
+            if not customer:
+                flash("⚠️ Customer not found or not part of your business.", "warning")
+            else:
+                new_status = not customer['is_active']
+                cur.execute("UPDATE customers SET is_active = %s WHERE id = %s", (new_status, customer_id))
+                conn.commit()
+                flash(f"✅ Customer {'activated' if new_status else 'deactivated'} successfully.", "success")
+
+            return redirect('/add_customer')
+
+    # === GET: Fetch customers and credit summary ===
     cur.execute("""
         SELECT c.id, c.name, c.phone, c.created_at, c.is_active
         FROM customers c
         WHERE c.business_id = %s
         ORDER BY c.created_at DESC
     """, (business_id,))
-
     customers = cur.fetchall()
 
-    # Fetch credit sales summary grouped by batch
     cur.execute("""
         SELECT 
             c.name AS customer_name,
@@ -1722,6 +1749,7 @@ def add_customer():
     return render_template('add_customer.html',
                            customers=customers,
                            credit_summary=credit_summary)
+
 
 @app.route('/toggle_customer_status', methods=['POST'])
 def toggle_customer_status():

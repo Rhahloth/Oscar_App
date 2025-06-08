@@ -90,10 +90,11 @@
       {% endif %} {% endwith %}
 
       <div class="flex-container">
-        <!-- ✅ Left: Add New Customer -->
+        <!-- Left: Add New Customer -->
         <div class="flex-child">
           <h4>➕ Add New Customer</h4>
           <form method="POST">
+            <input type="hidden" name="action" value="add_customer" />
             <label for="name"><strong>Customer Name:</strong></label
             ><br />
             <input
@@ -115,7 +116,8 @@
             <button type="submit">➕ Add Customer</button>
           </form>
         </div>
-        <!-- ✅ Right: Customer List -->
+
+        <!-- Right: Active Customers -->
         <div class="flex-child">
           <h4>📋 Active Customers</h4>
           {% if customers %}
@@ -135,22 +137,18 @@
                 <td>{{ c.phone or '—' }}</td>
                 <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>
-                  <form
-                    method="POST"
-                    action="/toggle_customer_status"
-                    style="display: inline"
-                  >
+                  <form method="POST" style="display: inline">
+                    <input type="hidden" name="action" value="toggle_status" />
                     <input
                       type="hidden"
                       name="customer_id"
-                      value="{{ customer.id }}"
+                      value="{{ c.id }}"
                     />
                     <button
                       type="submit"
-                      class="{{ 'btn-activate' if not customer.is_active else 'btn-deactivate' }}"
+                      class="{{ 'btn-activate' if not c.is_active else 'btn-deactivate' }}"
                     >
-                      {{ 'Activate' if not customer.is_active else 'Deactivate'
-                      }}
+                      {{ 'Activate' if not c.is_active else 'Deactivate' }}
                     </button>
                   </form>
                 </td>
