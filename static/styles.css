@@ -464,6 +464,43 @@ button:hover {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+.btn-deactivate {
+    background-color: #d9534f;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: none;
+}
+
+.btn-activate {
+    background-color: #28a745;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    border: none;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    border-radius: 5px;
+}
+
 /* Mobile phones (up to 600px) */
 @media (max-width: 600px) {
     .navbar-inner {
