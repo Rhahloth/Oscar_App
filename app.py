@@ -1493,7 +1493,7 @@ def sales_upload_inventory():
                 for row in reader:
                     try:
                         product_name = row['Product Name'].strip()
-                        quantity = int(row['Quantity'])
+                        quantity = float(row['Quantity'])
                         category = row['Category'].strip()
                         inventory_rows.append((product_name, quantity, category))
                     except Exception as e:
