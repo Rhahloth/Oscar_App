@@ -75,19 +75,18 @@
         </div>
       </div>
     </div>
-
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <ul>
+      {% for category, message in messages %}
+      <li style="color: {{ 'green' if category == 'success' else 'red' }}">
+        {{ message }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %} {% endwith %}
     <div class="container">
       <h2>👥 Manage Customers</h2>
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <ul>
-        {% for category, message in messages %}
-        <li style="color: {{ 'green' if category == 'success' else 'red' }}">
-          {{ message }}
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %} {% endwith %}
 
       <div class="flex-container">
         <!-- Left: Add New Customer -->
