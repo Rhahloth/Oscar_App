@@ -55,7 +55,7 @@
       >
         <div class="flex-row">
           <!-- LEFT SIDE: Search & Credit -->
-          <div class="half">
+          <div class="flex-left-narrow">
             <div class="section-box filter-section">
               <label for="productSearch">Search Product</label>
               <input
@@ -64,7 +64,6 @@
                 oninput="handleProductInput()"
                 autocomplete="off"
               />
-              <!-- Match Results: Clearly placed below -->
               <div
                 id="matchResults"
                 style="margin-top: 10px; max-height: 150px; overflow-y: auto"
@@ -86,7 +85,7 @@
           </div>
 
           <!-- RIGHT SIDE: Cart Table and Summary -->
-          <div class="half">
+          <div class="flex-right-wide">
             <div class="section-box cart-table">
               <table class="table" id="cartTable">
                 <thead>

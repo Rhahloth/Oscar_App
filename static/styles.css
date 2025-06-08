@@ -526,6 +526,23 @@ button:hover {
     background-color: #022f5b;
 }
 
+.flex-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.flex-left-narrow {
+    flex: 1;
+    min-width: 250px;
+    max-width: 35%;
+}
+
+.flex-right-wide {
+    flex: 2;
+    min-width: 300px;
+}
+
 /* Mobile phones (up to 600px) */
 @media (max-width: 600px) {
     .navbar-inner {
