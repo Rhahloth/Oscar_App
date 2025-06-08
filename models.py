@@ -78,11 +78,6 @@ def initialize_database():
         );
     ''')
 
-    cur.execute('''
-        ALTER TABLE customers 
-        ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
-    ''')
-
     # Customers
     cur.execute('''
         CREATE TABLE IF NOT EXISTS customers (
