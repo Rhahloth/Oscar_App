@@ -248,29 +248,46 @@ def record_sale():
         return redirect('/login')
 
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    user_id = session['user_id']
 
     # Get the salesperson's inventory
-    inventory = get_user_inventory(session['user_id'])
+    inventory = get_user_inventory(user_id)
 
-    # Get distinct categories (if needed elsewhere in the template)
-    cur.execute("SELECT DISTINCT category FROM products WHERE category IS NOT NULL ORDER BY category")
+    # Get distinct categories (if needed for product filtering)
+    cur.execute("""
+        SELECT DISTINCT category 
+        FROM products 
+        WHERE category IS NOT NULL 
+        ORDER BY category
+    """)
     categories = [row['category'] for row in cur.fetchall()]
 
-    # 🔁 Get customers belonging to the salesperson's business
-    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    # Get the salesperson's business ID
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
     result = cur.fetchone()
     business_id = result['business_id'] if result else None
 
+    # ✅ Only fetch active customers from the same business
     customers = []
     if business_id:
-        cur.execute("SELECT id, name FROM customers WHERE business_id = %s ORDER BY name", (business_id,))
+        cur.execute("""
+            SELECT id, name 
+            FROM customers 
+            WHERE business_id = %s AND is_active = TRUE 
+            ORDER BY name
+        """, (business_id,))
         customers = cur.fetchall()
 
     cur.close()
     conn.close()
 
-    return render_template("record_sale.html", products=inventory, categories=categories, customers=customers)
+    return render_template("record_sale.html", 
+                           products=inventory, 
+                           categories=categories, 
+                           customers=customers)
+
 
 @app.route('/submit_sale', methods=['POST'])
 def submit_sale():
@@ -1704,6 +1721,46 @@ def add_customer():
     return render_template('add_customer.html',
                            customers=customers,
                            credit_summary=credit_summary)
+
+@app.route('/toggle_customer_status', methods=['POST'])
+def toggle_customer_status():
+    if 'user_id' not in session or session['role'] != 'owner':
+        return redirect('/login')
+
+    customer_id = request.form.get('customer_id')
+    user_id = session['user_id']
+
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # Get business ID of current user
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+    biz = cur.fetchone()
+    if not biz:
+        flash("❌ Business not found.", "danger")
+        return redirect('/add_customer')
+    business_id = biz['business_id']
+
+    # Verify customer belongs to business
+    cur.execute("""
+        SELECT is_active FROM customers
+        WHERE id = %s AND business_id = %s
+    """, (customer_id, business_id))
+    customer = cur.fetchone()
+
+    if not customer:
+        flash("⚠️ Customer not found.", "warning")
+        return redirect('/add_customer')
+
+    # Toggle is_active
+    new_status = not customer['is_active']
+    cur.execute("UPDATE customers SET is_active = %s WHERE id = %s", (new_status, customer_id))
+    conn.commit()
+
+    action = "activated" if new_status else "deactivated"
+    flash(f"✅ Customer {action} successfully.", "success")
+    return redirect('/add_customer')
+
 
 @app.route('/admin_dashboard')
 def admin_dashboard():
