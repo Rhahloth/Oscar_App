@@ -317,6 +317,12 @@ button:hover {
     overflow-x: auto;
 }
 
+.cart-actions {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 30px;
+}
+
 .cart-actions button {
     padding: 12px 24px;
     font-size: 16px;
@@ -494,6 +500,7 @@ button:hover {
     padding: 10px;
     border-radius: 5px;
 }
+
 #matchResults {
     display: flex;
     flex-wrap: wrap;
@@ -574,6 +581,11 @@ button:hover {
         align-items: center;
     }
 
+    .cart-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
     .flex .card {
         min-width: 100%;
     }
@@ -610,7 +622,7 @@ button:hover {
 
     .cart-actions {
         flex-direction: row;
-        justify-content: space-evenly;
+        justify-content: space-between;
     }
 
     .login-card {
