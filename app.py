@@ -1694,11 +1694,12 @@ def add_customer():
 
     # Fetch all customers
     cur.execute("""
-        SELECT c.id, c.name, c.phone, c.created_at
+        SELECT c.id, c.name, c.phone, c.created_at, c.is_active
         FROM customers c
         WHERE c.business_id = %s
         ORDER BY c.created_at DESC
     """, (business_id,))
+
     customers = cur.fetchall()
 
     # Fetch credit sales summary grouped by batch
@@ -1728,39 +1729,50 @@ def toggle_customer_status():
         return redirect('/login')
 
     customer_id = request.form.get('customer_id')
-    user_id = session['user_id']
+    if not customer_id:
+        flash("❌ No customer selected.", "danger")
+        return redirect('/add_customer')
 
+    user_id = session['user_id']
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    # Get business ID of current user
-    cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
-    biz = cur.fetchone()
-    if not biz:
-        flash("❌ Business not found.", "danger")
+    try:
+        # Get business ID for logged-in user
+        cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+        biz = cur.fetchone()
+        if not biz:
+            flash("❌ Business not found.", "danger")
+            return redirect('/add_customer')
+        business_id = biz['business_id']
+
+        # Fetch the customer
+        cur.execute("""
+            SELECT id, is_active FROM customers 
+            WHERE id = %s AND business_id = %s
+        """, (customer_id, business_id))
+        customer = cur.fetchone()
+
+        if not customer:
+            flash("⚠️ Customer not found or not part of your business.", "warning")
+            return redirect('/add_customer')
+
+        # Toggle is_active status
+        new_status = not customer['is_active']
+        cur.execute("UPDATE customers SET is_active = %s WHERE id = %s", (new_status, customer_id))
+        conn.commit()
+
+        flash(f"✅ Customer {'activated' if new_status else 'deactivated'} successfully.", "success")
         return redirect('/add_customer')
-    business_id = biz['business_id']
 
-    # Verify customer belongs to business
-    cur.execute("""
-        SELECT is_active FROM customers
-        WHERE id = %s AND business_id = %s
-    """, (customer_id, business_id))
-    customer = cur.fetchone()
-
-    if not customer:
-        flash("⚠️ Customer not found.", "warning")
+    except Exception as e:
+        print("Error toggling customer status:", e)
+        flash("❌ An unexpected error occurred.", "danger")
         return redirect('/add_customer')
 
-    # Toggle is_active
-    new_status = not customer['is_active']
-    cur.execute("UPDATE customers SET is_active = %s WHERE id = %s", (new_status, customer_id))
-    conn.commit()
-
-    action = "activated" if new_status else "deactivated"
-    flash(f"✅ Customer {action} successfully.", "success")
-    return redirect('/add_customer')
-
+    finally:
+        cur.close()
+        conn.close()
 
 @app.route('/admin_dashboard')
 def admin_dashboard():
