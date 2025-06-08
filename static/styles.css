@@ -500,6 +500,31 @@ button:hover {
     padding: 10px;
     border-radius: 5px;
 }
+#matchResults {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 5px;
+    background-color: #fff;
+    border: 1px dashed #ccc;
+    border-radius: 6px;
+}
+
+.match-pill {
+    background-color: #034078;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.match-pill:hover {
+    background-color: #022f5b;
+}
 
 /* Mobile phones (up to 600px) */
 @media (max-width: 600px) {
