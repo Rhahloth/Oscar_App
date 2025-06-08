@@ -1488,7 +1488,6 @@ def sales_upload_inventory():
             return redirect(request.referrer or '/sales_upload_inventory')
 
         try:
-            # FIXED: Use utf-8-sig to strip BOM
             reader = csv.DictReader(file.read().decode('utf-8-sig').splitlines())
             inventory_rows = []
 
@@ -1505,10 +1504,6 @@ def sales_upload_inventory():
             add_salesperson_stock_bulk(session['user_id'], inventory_rows)
             flash("✅ Inventory uploaded successfully from CSV.", "success")
             return redirect('/dashboard')
-
-        except Exception as e:
-            flash(f"❌ Upload failed: {str(e)}", "danger")
-            return redirect(request.referrer or '/sales_upload_inventory')
 
 
         # === Handle Manual Cart Upload ===
