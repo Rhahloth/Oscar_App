@@ -1480,33 +1480,35 @@ def sales_upload_inventory():
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
-    # === Handle CSV Upload ===
-    if form_type == 'csv_upload':
-        file = request.files.get('file')
-        if not file or not file.filename.endswith('.csv'):
-            flash("❌ Please upload a valid CSV file.", "danger")
-            return redirect(request.referrer or '/sales_upload_inventory')
+        if form_type == 'csv_upload':
+            file = request.files.get('file')
+            if not file or not file.filename.endswith('.csv'):
+                flash("❌ Please upload a valid CSV file.", "danger")
+                return redirect(request.referrer or '/sales_upload_inventory')
 
-        try:
-            reader = csv.DictReader(file.read().decode('utf-8-sig').splitlines())
-            inventory_rows = []
+            try:
+                reader = csv.DictReader(file.read().decode('utf-8-sig').splitlines())
+                inventory_rows = []
 
-            for row in reader:
-                try:
-                    product_name = row['Product Name'].strip()
-                    quantity = int(row['Quantity'])
-                    category = row['Category'].strip()
-                    inventory_rows.append((product_name, quantity, category))
-                except Exception as e:
-                    flash(f"❌ Error in row {row}: {str(e)}", "danger")
-                    return redirect(request.referrer or '/sales_upload_inventory')
+                for row in reader:
+                    try:
+                        product_name = row['Product Name'].strip()
+                        quantity = int(row['Quantity'])
+                        category = row['Category'].strip()
+                        inventory_rows.append((product_name, quantity, category))
+                    except Exception as e:
+                        flash(f"❌ Error in row {row}: {str(e)}", "danger")
+                        return redirect(request.referrer or '/sales_upload_inventory')
 
-            add_salesperson_stock_bulk(session['user_id'], inventory_rows)
-            flash("✅ Inventory uploaded successfully from CSV.", "success")
-            return redirect('/dashboard')
+                add_salesperson_stock_bulk(session['user_id'], inventory_rows)
+                flash("✅ Inventory uploaded successfully from CSV.", "success")
+                return redirect('/dashboard')
 
+            except Exception as e:
+                flash(f"❌ Upload failed: {str(e)}", "danger")
+                return redirect(request.referrer or '/sales_upload_inventory')
 
-        # === Handle Manual Cart Upload ===
+        # Handle manual cart submission
         cart_data = request.form.get('cart_data')
         if not cart_data:
             flash("❌ Error: No stock data submitted.", "danger")
@@ -1526,7 +1528,7 @@ def sales_upload_inventory():
             flash(f"❌ Error processing cart: {str(e)}", "danger")
             return redirect(request.referrer or '/sales_upload_inventory')
 
-    # === Render form on GET ===
+    # Render GET view
     cur.execute("SELECT name, category FROM products WHERE business_id = %s ORDER BY name", (session['business_id'],))
     products = cur.fetchall()
     product_names = [row['name'] for row in products]
