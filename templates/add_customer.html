@@ -137,19 +137,20 @@
                 <td>
                   <form
                     method="POST"
-                    action="/add_customer"
+                    action="/toggle_customer_status"
                     style="display: inline"
                   >
                     <input
                       type="hidden"
-                      name="toggle_customer_id"
-                      value="{{ c.id }}"
+                      name="customer_id"
+                      value="{{ customer.id }}"
                     />
                     <button
                       type="submit"
-                      class="{{ 'btn-deactivate' if c.is_active else 'btn-activate' }}"
+                      class="{{ 'btn-activate' if not customer.is_active else 'btn-deactivate' }}"
                     >
-                      {{ 'Deactivate' if c.is_active else 'Activate' }}
+                      {{ 'Activate' if not customer.is_active else 'Deactivate'
+                      }}
                     </button>
                   </form>
                 </td>

@@ -1738,7 +1738,7 @@ def toggle_customer_status():
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     try:
-        # Get business ID for logged-in user
+        # Get business ID
         cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
         biz = cur.fetchone()
         if not biz:
@@ -1746,7 +1746,7 @@ def toggle_customer_status():
             return redirect('/add_customer')
         business_id = biz['business_id']
 
-        # Fetch the customer
+        # Check if customer belongs to the business
         cur.execute("""
             SELECT id, is_active FROM customers 
             WHERE id = %s AND business_id = %s
@@ -1757,9 +1757,11 @@ def toggle_customer_status():
             flash("⚠️ Customer not found or not part of your business.", "warning")
             return redirect('/add_customer')
 
-        # Toggle is_active status
+        # Toggle status
         new_status = not customer['is_active']
-        cur.execute("UPDATE customers SET is_active = %s WHERE id = %s", (new_status, customer_id))
+        cur.execute("""
+            UPDATE customers SET is_active = %s WHERE id = %s
+        """, (new_status, customer_id))
         conn.commit()
 
         flash(f"✅ Customer {'activated' if new_status else 'deactivated'} successfully.", "success")
