@@ -10,30 +10,39 @@
     />
   </head>
   <body>
-    <div class="navbar">
-      <div class="navbar-left">
-        <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-        <div class="company-details-inline">
-          <strong>RO Solutions</strong><br />
-          <em>Your sales are guaranteed</em><br />
-          Tel: +256 778 412 136<br />
-          Email: raysokello@gmail.com
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RO Solutions</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>BRANCH: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button style="background-color: #d9534f; color: white">
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
         </div>
-      </div>
-      <div>
-        {% if session.username %}
-        <div>BRANCH: {{ session.username }}</div>
-        {% endif %}
-      </div>
-      <div>
-        <a href="/dashboard"><button>Dashboard</button></a>
-        {% if session.username %}
-        <a href="/logout"
-          ><button style="background-color: #d9534f; color: white">
-            Logout
-          </button></a
-        >
-        {% endif %}
       </div>
     </div>
 
