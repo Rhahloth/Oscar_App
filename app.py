@@ -1728,6 +1728,95 @@ def toggle_business(business_id):
         print("ERROR in toggle_business:", e)
         return redirect('/admin_dashboard')
 
+@app.route('/return_product', methods=['POST'])
+def return_product():
+    if 'user_id' not in session or session['role'] != 'salesperson':
+        return redirect('/login')
+
+    sale_id = request.form.get('sale_id')
+    return_quantity = int(request.form.get('return_quantity'))
+
+    if return_quantity <= 0:
+        flash("❌ Return quantity must be greater than zero.", "danger")
+        return redirect(request.referrer or "/transactions")
+
+
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    # Fetch the original sale record
+    cur.execute("SELECT * FROM sales WHERE id = %s", (sale_id,))
+    sale = cur.fetchone()
+
+    if not sale:
+        flash("❌ Sale not found. Please try again.", "danger")
+        cur.close()
+        conn.close()
+        return redirect("/transactions")  # Or a safe fallback page
+
+    # 🔐 Ensure salesperson can only return their own sales
+    if sale['salesperson_id'] != session['user_id']:
+        flash("⚠️ You are not authorized to return this sale.", "warning")
+        cur.close()
+        conn.close()
+        return redirect(f"/batch_sales/{sale['batch_no']}")
+
+    # Quantity exceeds original sale
+    if return_quantity > sale['quantity']:
+        flash("❌ Return quantity cannot exceed original sale quantity.", "danger")
+        cur.close()
+        conn.close()
+        return redirect(f"/batch_sales/{sale['batch_no']}")
+
+
+    # Insert return record with negative quantity and amount
+    cur.execute("""
+        INSERT INTO sales (
+            product_id,
+            quantity,
+            price,
+            payment_method,
+            date,
+            salesperson_id,
+            business_id,
+            amount_paid,
+            payment_status,
+            customer_id,
+            batch_no,
+            is_return,
+            return_reference_id
+        ) VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s, TRUE, %s)
+    """, (
+        sale['product_id'],
+        -return_quantity,
+        sale['price'],
+        sale['payment_method'],
+        session['user_id'],
+        sale['business_id'],
+        -(sale['price'] * return_quantity),
+        sale['payment_status'],
+        sale['customer_id'],
+        sale['batch_no'],
+        sale['id']  # Link to original sale
+    ))
+
+    # Update inventory: add returned quantity back to salesperson's stock
+    cur.execute("""
+        UPDATE user_inventory
+        SET quantity = quantity + %s
+        WHERE user_id = %s AND product_id = %s
+    """, (
+        return_quantity,
+        session['user_id'],
+        sale['product_id']
+    ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return redirect(f"/batch_sales/{sale['batch_no']}")
+
 @app.route('/logout')
 def logout():
     session.clear()

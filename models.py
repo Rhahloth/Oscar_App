@@ -88,8 +88,7 @@ def initialize_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
-    cur.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS is_return BOOLEAN DEFAULT FALSE;")
-    cur.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS return_reference_id INTEGER REFERENCES sales(id);")
+   
     # Sales
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
@@ -104,7 +103,9 @@ def initialize_database():
             amount_paid FLOAT DEFAULT 0,
             payment_status TEXT DEFAULT 'unpaid',
             customer_id INTEGER REFERENCES customers(id),
-            batch_no VARCHAR(50)
+            batch_no VARCHAR(50),
+            is_return BOOLEAN DEFAULT FALSE,
+            return_reference_id INTEGER REFERENCES sales(id)
         );
     ''')
 

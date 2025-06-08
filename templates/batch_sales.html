@@ -10,6 +10,15 @@
     />
   </head>
   <body>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
     <div class="navbar-wrapper">
       <div class="navbar-inner">
         <div class="navbar">
@@ -73,11 +82,12 @@
                 <th>Payment Method</th>
                 <th>Customer</th>
                 <th>Date</th>
+                <th>Return</th>
               </tr>
             </thead>
             <tbody>
               {% for s in sales %}
-              <tr>
+              <tr {% if s.is_return %}style="color: red;" {% endif %}>
                 <td>{{ loop.index }}</td>
                 <td>{{ s.product_name }}</td>
                 <td>{{ s.quantity }}</td>
@@ -86,6 +96,29 @@
                 <td>{{ s.payment_method }}</td>
                 <td>{{ s.customer_name or '-' }}</td>
                 <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                  {% if not s.is_return %}
+                  <form
+                    action="/return_product"
+                    method="POST"
+                    style="display: flex; gap: 5px"
+                  >
+                    <input type="hidden" name="sale_id" value="{{ s.id }}" />
+                    <input
+                      type="number"
+                      name="return_quantity"
+                      min="1"
+                      max="{{ s.quantity }}"
+                      placeholder="Qty"
+                      required
+                      style="width: 60px"
+                    />
+                    <button type="submit" style="background-color: orange">
+                      Return
+                    </button>
+                  </form>
+                  {% else %} Returned {% endif %}
+                </td>
               </tr>
               {% endfor %}
             </tbody>
