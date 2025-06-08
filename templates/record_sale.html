@@ -8,47 +8,165 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
     />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0 10px;
+        background-color: #f4f6f8;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: auto;
+        padding-top: 20px;
+      }
+
+      .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 10px;
+        background-color: #034078;
+        color: white;
+      }
+
+      .navbar-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .logo {
+        height: 50px;
+      }
+
+      .company-details-inline {
+        font-size: 12px;
+      }
+
+      .navbar button {
+        background-color: #fff;
+        color: #034078;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .navbar button:hover {
+        background-color: #e0e0e0;
+      }
+
+      .match-pill {
+        background-color: #034078;
+        color: white;
+        padding: 5px 10px;
+        margin: 3px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-block;
+        font-size: 13px;
+      }
+
+      .match-pill:hover {
+        background-color: #012d5a;
+      }
+
+      .flex-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .half {
+        flex: 1;
+        min-width: 300px;
+      }
+
+      .section-box {
+        background: #fff;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin-bottom: 12px;
+      }
+
+      .cart-table {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .cart-table table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+
+      .cart-table th,
+      .cart-table td {
+        padding: 6px;
+        border-bottom: 1px solid #ccc;
+      }
+
+      input,
+      select,
+      button {
+        font-size: 14px;
+        padding: 6px;
+        margin-top: 6px;
+        width: 100%;
+      }
+
+      .sticky-footer {
+        position: sticky;
+        bottom: 0;
+        background: #ffffff;
+        padding: 10px;
+        border-top: 1px solid #ccc;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      @media (max-width: 768px) {
+        .sticky-footer {
+          flex-direction: column;
+        }
+
+        .cart-table th,
+        .cart-table td {
+          font-size: 12px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
+    <div class="navbar">
+      <div class="navbar-left">
+        <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+        <div class="company-details-inline">
+          <strong>RO Solutions</strong><br />
+          <em>Your sales are guaranteed</em><br />
+          Tel: +256 778 412 136<br />
+          Email: raysokello@gmail.com
         </div>
+      </div>
+      <div>
+        {% if session.username %}
+        <div>BRANCH: {{ session.username }}</div>
+        {% endif %}
+      </div>
+      <div>
+        <a href="/dashboard"><button>Dashboard</button></a>
+        {% if session.username %}
+        <a href="/logout"
+          ><button style="background-color: #d9534f; color: white">
+            Logout
+          </button></a
+        >
+        {% endif %}
       </div>
     </div>
 
@@ -59,12 +177,7 @@
       <p style="color: red; font-weight: bold">
         You don't have any inventory assigned. Contact your manager.
       </p>
-      <a href="/sales_upload_inventory"
-        ><button style="background-color: #034078; color: white">
-          + Add Stocks
-        </button></a
-      >
-      <br /><br />
+      <a href="/sales_upload_inventory"><button>+ Add Stocks</button></a>
       {% endif %}
 
       <form
@@ -74,7 +187,6 @@
         onsubmit="submitSale(event)"
       >
         <div class="flex-row">
-          <!-- Left: Product Search -->
           <div class="half">
             <div class="section-box">
               <label for="productSearch">Search Product</label>
@@ -88,20 +200,18 @@
             </div>
 
             <div class="section-box" id="creditOptions" style="display: none">
-              <label for="customerSelect">Customer</label>
+              <label for="customerSelect">Customer (for Credit Sale):</label>
               <select name="customer_id" id="customerSelect">
-                <option value="">-- Select Customer --</option>
+                <option value="">-- Select --</option>
                 {% for customer in customers %}
                 <option value="{{ customer.id }}">{{ customer.name }}</option>
                 {% endfor %}
               </select>
-
               <label for="dueDate">Due Date</label>
               <input type="date" name="due_date" id="dueDate" />
             </div>
           </div>
 
-          <!-- Right: Cart -->
           <div class="half">
             <div class="section-box cart-table">
               <table id="cartTable">
@@ -125,11 +235,10 @@
           </div>
         </div>
 
-        <!-- Hidden Inputs -->
         <input type="hidden" name="payment_method" id="payment_method" />
         <input type="hidden" name="cart_data" id="cart_data" />
 
-        <div class="sticky-footer cart-actions">
+        <div class="sticky-footer">
           <button type="button" onclick="finalizeSale('Credit')">Credit</button>
           <button type="button" onclick="finalizeSale('Cash')">Cash</button>
         </div>
@@ -191,12 +300,9 @@
           totalAmount += item.subtotal;
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>
-              ${item.productName}
-              <span style="color:gray; font-size: 0.9em;">(Available: ${getProductStock(item.productId)})</span>
-            </td>
-            <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" style="width: 60px;" /></td>
-            <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" style="width: 80px;" /></td>
+            <td>${item.productName}<br /><small>(Available: ${getProductStock(item.productId)})</small></td>
+            <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" /></td>
+            <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" /></td>
             <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
             <td><button type="button" onclick="removeItem(${i})">X</button></td>
           `;
@@ -216,7 +322,7 @@
       function updatePrice(index, value) {
         const newPrice = parseFloat(value) || 0;
         if (newPrice < parseFloat(cart[index].cost)) {
-          alert("⚠️ Check the price and try again");
+          alert("⚠️ Price too low. Check and try again.");
           renderCart();
           return;
         }
@@ -243,7 +349,7 @@
           const customerId = document.getElementById("customerSelect").value;
           const dueDate = document.getElementById("dueDate").value;
           if (!customerId || !dueDate) {
-            alert("❌ For credit sales, please select a customer and due date.");
+            alert("❌ Please select customer and due date.");
             return;
           }
         }
