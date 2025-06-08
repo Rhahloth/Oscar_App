@@ -88,7 +88,8 @@ def initialize_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     ''')
-
+    cur.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS is_return BOOLEAN DEFAULT FALSE;")
+    cur.execute("ALTER TABLE sales ADD COLUMN IF NOT EXISTS return_reference_id INTEGER REFERENCES sales(id);")
     # Sales
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
