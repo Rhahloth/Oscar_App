@@ -1480,35 +1480,59 @@ def sales_upload_inventory():
     if request.method == 'POST':
         form_type = request.form.get('form_type')
 
+        # === Handle CSV/TSV Upload ===
         if form_type == 'csv_upload':
             file = request.files.get('file')
-            if not file or not file.filename.endswith('.csv'):
-                flash("❌ Please upload a valid CSV file.", "danger")
+            if not file:
+                flash("❌ Please upload a file.", "danger")
                 return redirect(request.referrer or '/sales_upload_inventory')
 
             try:
-                reader = csv.DictReader(file.read().decode('utf-8-sig').splitlines())
+                content = file.read().decode('utf-8-sig').splitlines()
+                if not content:
+                    flash("❌ The uploaded file is empty.", "danger")
+                    return redirect(request.referrer or '/sales_upload_inventory')
+
+                # Auto-detect CSV/TSV
+                try:
+                    dialect = csv.Sniffer().sniff('\n'.join(content[:2]), delimiters=',\t')
+                except Exception:
+                    dialect = csv.excel  # fallback to comma
+
+                reader = csv.DictReader(content, dialect=dialect)
                 inventory_rows = []
 
-                for row in reader:
+                for raw_row in reader:
+                    # Normalize: lowercase, strip keys & values
+                    row = {k.strip().lower(): v.strip() for k, v in raw_row.items() if k}
+
                     try:
-                        product_name = row['Product Name'].strip()
-                        quantity = float(row['Quantity'])
-                        category = row['Category'].strip()
+                        product_name = row['product name']
+                        quantity = float(row['quantity'])
+                        category = row['category']
+
+                        if quantity <= 0:
+                            raise ValueError("Quantity must be greater than 0")
+
                         inventory_rows.append((product_name, quantity, category))
+
+                    except KeyError as missing_field:
+                        flash(f"❌ Missing field: {missing_field} in row: {raw_row}", "danger")
+                        return redirect(request.referrer or '/sales_upload_inventory')
+
                     except Exception as e:
-                        flash(f"❌ Error in row {row}: {str(e)}", "danger")
+                        flash(f"❌ Error in row: {raw_row} — {str(e)}", "danger")
                         return redirect(request.referrer or '/sales_upload_inventory')
 
                 add_salesperson_stock_bulk(session['user_id'], inventory_rows)
-                flash("✅ Inventory uploaded successfully from CSV.", "success")
+                flash("✅ Inventory uploaded successfully.", "success")
                 return redirect('/dashboard')
 
             except Exception as e:
                 flash(f"❌ Upload failed: {str(e)}", "danger")
                 return redirect(request.referrer or '/sales_upload_inventory')
 
-        # Handle manual cart submission
+        # === Handle Manual Cart Upload ===
         cart_data = request.form.get('cart_data')
         if not cart_data:
             flash("❌ Error: No stock data submitted.", "danger")
@@ -1517,9 +1541,14 @@ def sales_upload_inventory():
         try:
             items = json.loads(cart_data)
             inventory_rows = [
-                (item['product_name'], int(item['quantity']), item['category'].strip())
+                (
+                    item['product_name'].strip(),
+                    float(item['quantity']),
+                    item['category'].strip()
+                )
                 for item in items
             ]
+
             add_salesperson_stock_bulk(session['user_id'], inventory_rows)
             flash("✅ Inventory uploaded successfully from manual entry.", "success")
             return redirect('/dashboard')
@@ -1528,7 +1557,7 @@ def sales_upload_inventory():
             flash(f"❌ Error processing cart: {str(e)}", "danger")
             return redirect(request.referrer or '/sales_upload_inventory')
 
-    # Render GET view
+    # === GET: Render form ===
     cur.execute("SELECT name, category FROM products WHERE business_id = %s ORDER BY name", (session['business_id'],))
     products = cur.fetchall()
     product_names = [row['name'] for row in products]
