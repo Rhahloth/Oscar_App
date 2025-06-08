@@ -16,19 +16,19 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
     
-    # cur.execute("""
-    #     TRUNCATE TABLE
-    #         credit_repayments,
-    #         credit_sales,
-    #         stock_requests,
-    #         distribution_log,
-    #         user_inventory,
-    #         sales,
-    #         customers,
-    #         products,
-    #         expenses
-    #     RESTART IDENTITY CASCADE;
-    # """)
+    cur.execute("""
+        TRUNCATE TABLE
+            credit_repayments,
+            credit_sales,
+            stock_requests,
+            distribution_log,
+            user_inventory,
+            sales,
+            customers,
+            products,
+            expenses
+        RESTART IDENTITY CASCADE;
+    """)
 
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
