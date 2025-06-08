@@ -135,21 +135,6 @@
         </div>
       </div>
 
-      <h3 style="color: brown">Upload Product File</h3>
-      <form method="POST" action="/products" enctype="multipart/form-data">
-        <input type="hidden" name="form_type" value="csv_upload" />
-        <label>Select a CSV file with these headers:</label>
-        <p>
-          <code>
-            category, product name, buying price, agent price, wholesale price,
-            retail price
-          </code>
-        </p>
-        <input type="file" name="file" accept=".csv" required />
-        <br /><br />
-        <button type="submit">Upload</button>
-      </form>
-
       <div
         style="
           margin-top: 30px;
