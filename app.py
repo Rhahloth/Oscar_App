@@ -415,18 +415,22 @@ def record_expense():
 
     user_id = session["user_id"]
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     # Get business_id of logged-in user
     cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
     result = cur.fetchone()
     if not result:
-        return "User not associated with a business", 400
+        flash("❌ User not associated with a business.", "danger")
+        return redirect("/record_expense")
 
     business_id = result["business_id"]
 
-    # Fetch users under the same business for dropdown
-    cur.execute("SELECT username FROM users WHERE business_id = %s", (business_id,))
+    # ✅ Only fetch salespersons under the same business
+    cur.execute("""
+        SELECT username FROM users 
+        WHERE business_id = %s AND role = 'salesperson'
+    """, (business_id,))
     staff_list = [row["username"] for row in cur.fetchall()]
 
     if request.method == "POST":
@@ -436,15 +440,17 @@ def record_expense():
         comment = request.form["comment"]
 
         # Get staff_id from username
-        cur.execute("SELECT id FROM users WHERE username = %s AND business_id = %s", (staff_name, business_id))
+        cur.execute("""
+            SELECT id FROM users 
+            WHERE username = %s AND business_id = %s AND role = 'salesperson'
+        """, (staff_name, business_id))
         staff_result = cur.fetchone()
+
         if not staff_result:
-            flash("❌ Staff member not found.")
+            flash("❌ Staff member not found or not authorized.", "danger")
             return redirect("/record_expense")
 
         staff_id = staff_result["id"]
-
-        # Logged-in user's username (the one submitting)
         submitted_by = session.get("username")
 
         cur.execute("""
@@ -453,11 +459,10 @@ def record_expense():
         """, (business_id, staff_id, staff_name, item, amount, comment, submitted_by))
 
         conn.commit()
-        flash("✅ Expense recorded successfully.")
+        flash("✅ Expense recorded successfully.", "success")
         return redirect("/dashboard")
 
     return render_template("record_expense.html", staff_list=staff_list)
-
 
 @app.route("/view_expenses")
 def view_expenses():
