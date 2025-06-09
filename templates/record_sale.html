@@ -131,7 +131,13 @@
       let cart = [];
       const fullProductList = [
         {% for p in products %}
-          { name: "{{ p.product_name }} ({{ p.quantity }} available)", id: "{{ p.product_id }}", retail: "{{ p.retail_price }}", cost: "{{ p.agent_price }}", quantity: {{ p.quantity }} },
+          {
+            name: "{{ p.product_name }} ({{ p.quantity }} available)",
+            id: "{{ p.product_id }}",
+            retail: "{{ p.retail_price }}",
+            cost: "{{ p.buying_price }}",
+            quantity: {{ p.quantity }}
+          },
         {% endfor %}
       ];
 
