@@ -10,6 +10,7 @@ initialize_database()
 
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import random
 import string
 import csv
@@ -170,7 +171,6 @@ def setup_superadmin():
 
     return render_template('setup_superadmin.html')
 
-
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -209,6 +209,11 @@ def dashboard():
         """, (business_id,))
         sales = cur.fetchall()
 
+        # Convert date to Africa/Kampala time
+        for sale in sales:
+            if sale['date']:
+                sale['date'] = sale['date'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
+
         return render_template('dashboard_owner.html', sales=sales)
 
     else:  # salesperson
@@ -228,6 +233,11 @@ def dashboard():
             LIMIT 10
         """, (user_id,))
         sales = cur.fetchall()
+
+        # Convert date to Africa/Kampala time
+        for sale in sales:
+            if sale['date']:
+                sale['date'] = sale['date'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
 
         # Fetch user inventory
         cur.execute('''
