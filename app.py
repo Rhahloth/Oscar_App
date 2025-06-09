@@ -1247,11 +1247,24 @@ def report():
     cur.execute("SELECT username FROM users WHERE business_id = %s AND role != 'owner'", (business_id,))
     salespeople = [r['username'] for r in cur.fetchall()]
 
-    # Filters
-    start_date = request.form.get('start_date')
-    end_date = request.form.get('end_date')
-    salesperson = request.form.get('salesperson')
-    payment_method = request.form.get('payment_method')
+    # Pagination setup
+    page = int(request.args.get('page', 1))
+    per_page = 10
+    offset = (page - 1) * per_page
+    current_page = page
+    total_pages = 1
+
+    # Filters from POST or GET to persist state
+    if request.method == 'POST':
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+        salesperson = request.form.get('salesperson')
+        payment_method = request.form.get('payment_method')
+    else:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        salesperson = request.args.get('salesperson')
+        payment_method = request.args.get('payment_method')
 
     # Base report query
     report_query = '''
@@ -1373,7 +1386,16 @@ def report():
     cur.execute(top_query, top_params)
     top_salesperson = cur.fetchone()
 
-    # Distribution log with Uganda time conversion
+    # Count distribution logs for pagination
+    cur.execute('''
+        SELECT COUNT(*) FROM distribution_log dl
+        JOIN products p ON dl.product_id = p.id
+        WHERE p.business_id = %s
+    ''', (business_id,))
+    total_logs = cur.fetchone()['count']
+    total_pages = ceil(total_logs / per_page)
+
+    # Distribution log with pagination
     cur.execute('''
         SELECT dl.timestamp, dl.quantity, dl.status,
                p.name AS product_name,
@@ -1386,10 +1408,10 @@ def report():
         JOIN users u2 ON dl.receiver_id = u2.id
         WHERE p.business_id = %s
         ORDER BY dl.timestamp DESC
-    ''', (business_id,))
+        LIMIT %s OFFSET %s
+    ''', (business_id, per_page, offset))
     distribution_log = cur.fetchall()
 
-    # Convert timestamps to local time
     for log in distribution_log:
         if log['timestamp']:
             log['timestamp'] = log['timestamp'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
@@ -1402,7 +1424,13 @@ def report():
         total_expenses=total_expenses,
         net_balance=net_balance,
         top_salesperson=top_salesperson,
-        distribution_log=distribution_log
+        distribution_log=distribution_log,
+        current_page=current_page,
+        total_pages=total_pages,
+        start_date=start_date,
+        end_date=end_date,
+        salesperson=salesperson,
+        payment_method=payment_method
     )
 
 @app.route('/export_report', methods=['POST'])
