@@ -851,44 +851,28 @@ def owner_inventory():
     )
 
 # EDIT SALES PERSON STOCKS IN THEIR INVENTORY
-@app.route('/owner_inventory/edit', methods=['POST'])
-def edit_inventory_quantity():
+@app.route('/owner_inventory/edit/<int:inventory_id>', methods=['GET', 'POST'])
+def edit_inventory_page(inventory_id):
     if 'user_id' not in session or session['role'] != 'owner':
         return redirect('/login')
-
-    inventory_id = request.form.get('inventory_id')
-    new_quantity = request.form.get('new_quantity')
-
-    if not inventory_id or not new_quantity:
-        flash("Missing inventory ID or quantity", "danger")
-        return redirect('/owner_inventory')
-
-    try:
-        new_quantity = int(new_quantity)
-        if new_quantity < 0:
-            flash("Quantity must be non-negative", "warning")
-            return redirect('/owner_inventory')
-    except ValueError:
-        flash("Invalid quantity format", "warning")
-        return redirect('/owner_inventory')
 
     conn = get_db()
     cur = conn.cursor()
 
-    # Get business_id of logged-in owner
+    # Get business ID of the owner
     cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
-    owner_data = cur.fetchone()
-    if not owner_data:
-        conn.close()
+    owner = cur.fetchone()
+    if not owner:
         flash("Owner not found", "danger")
-        return redirect('/owner_inventory')
+        return redirect(url_for('owner_inventory'))
 
-    business_id = owner_data['business_id']
+    business_id = owner['business_id']
 
-    # Verify that this inventory item belongs to this business
+    # Check inventory record and ensure it's part of owner's business
     cur.execute("""
-        SELECT ui.id
+        SELECT ui.id, ui.quantity, p.name AS product_name, p.category, u.username AS branch
         FROM user_inventory ui
+        JOIN users u ON ui.user_id = u.id
         JOIN products p ON ui.product_id = p.id
         WHERE ui.id = %s AND p.business_id = %s
     """, (inventory_id, business_id))
@@ -896,15 +880,26 @@ def edit_inventory_quantity():
 
     if not record:
         conn.close()
-        flash("Unauthorized or invalid inventory access", "danger")
-        return redirect('/owner_inventory')
+        flash("Inventory record not found or unauthorized", "danger")
+        return redirect(url_for('owner_inventory'))
 
-    # Perform update
-    cur.execute("UPDATE user_inventory SET quantity = %s WHERE id = %s", (new_quantity, inventory_id))
-    conn.commit()
+    # On POST, update quantity
+    if request.method == 'POST':
+        try:
+            new_qty = int(request.form['new_quantity'])
+            if new_qty < 0:
+                flash("Quantity must be non-negative", "warning")
+                return render_template('edit_inventory.html', inventory=record)
+
+            cur.execute("UPDATE user_inventory SET quantity = %s WHERE id = %s", (new_qty, inventory_id))
+            conn.commit()
+            flash("Inventory quantity updated successfully", "success")
+            return redirect(url_for('owner_inventory'))
+        except ValueError:
+            flash("Invalid quantity format", "warning")
+
     conn.close()
-    flash("Inventory updated successfully", "success")
-    return redirect('/owner_inventory')
+    return render_template('edit_inventory.html', inventory=record)
 
 # OWNERS EDIT THE PRODUCT TABLE AT OWNERS LEVEL
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])

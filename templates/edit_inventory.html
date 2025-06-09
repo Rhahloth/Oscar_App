@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Edit Inventory</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RO Solutions</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>OWNER: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <h2>Edit Inventory</h2>
+      <p>
+        <strong>Product:</strong> {{ inventory['category'] }} - {{
+        inventory['product_name'] }}
+      </p>
+      <p><strong>Branch:</strong> {{ inventory['branch'] }}</p>
+
+      <form method="POST">
+        <label for="new_quantity">New Quantity:</label>
+        <input
+          type="number"
+          name="new_quantity"
+          value="{{ inventory['quantity'] }}"
+          min="0"
+          required
+        />
+        <br /><br />
+        <button type="submit">Update</button>
+        <a href="{{ url_for('owner_inventory') }}"
+          ><button type="button">Cancel</button></a
+        >
+      </form>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="alert {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+    </div>
+  </body>
+</html>
