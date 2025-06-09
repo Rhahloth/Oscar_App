@@ -140,21 +140,20 @@
               {% for branch in branches %}
               <td>
                 <div class="inventory-cell">
-                  <span class="qty-display">{{ branches_data.get(branch, 0) }}</span>
                   {% if inventory_ids[product, branch] is defined %}
-                  <form method="POST" action="/owner_inventory/edit" class="edit-form">
-                    <input type="hidden" name="inventory_id" value="{{ inventory_ids[product, branch] }}">
-                    <input type="number" name="new_quantity" min="0" class="edit-input" required>
-                    <button type="submit" class="save-btn">✓</button>
-                  </form>
+                    <a href="{{ url_for('edit_inventory_page', inventory_id=inventory_ids[product, branch]) }}" class="qty-display">
+                      {{ branches_data.get(branch, 0) }}
+                    </a>
+                  {% else %}
+                    <span class="qty-display">{{ branches_data.get(branch, 0) }}</span>
                   {% endif %}
                 </div>
-              </td>              
+              </td>
               {% endfor %}
               <td><strong>{{ totals[product] }}</strong></td>
             </tr>
             {% endfor %}
-          </tbody>
+          </tbody>          
         </table>
       </div>
       <div class="pagination-controls" id="pagination-controls"></div>

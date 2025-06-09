@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Edit Inventory</title>
+    <title>Edit Inventory - RO Solutions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
@@ -50,29 +51,15 @@
         </div>
       </div>
     </div>
-    <div class="container">
-      <h2>Edit Inventory</h2>
-      <p>
-        <strong>Product:</strong> {{ inventory['category'] }} - {{
-        inventory['product_name'] }}
-      </p>
-      <p><strong>Branch:</strong> {{ inventory['branch'] }}</p>
 
-      <form method="POST">
-        <label for="new_quantity">New Quantity:</label>
-        <input
-          type="number"
-          name="new_quantity"
-          value="{{ inventory['quantity'] }}"
-          min="0"
-          required
-        />
-        <br /><br />
-        <button type="submit">Update</button>
-        <a href="{{ url_for('owner_inventory') }}"
-          ><button type="button">Cancel</button></a
+    <div class="container">
+      <h4 style="margin-bottom: 20px">
+        Update Inventory for: <br />
+        <span style="color: #034078"
+          >{{ inventory.category }} / {{ inventory.product_name }} ({{
+          inventory.branch }})</span
         >
-      </form>
+      </h4>
 
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %}
@@ -82,6 +69,31 @@
         {% endfor %}
       </div>
       {% endif %} {% endwith %}
+
+      <form method="POST">
+        <div class="form-group" style="max-width: 400px">
+          <label
+            >Current Quantity: <strong>{{ inventory.quantity }}</strong></label
+          >
+          <input
+            type="number"
+            name="new_quantity"
+            placeholder="Enter new quantity"
+            min="0"
+            required
+            style="width: 100%; padding: 8px"
+          />
+        </div>
+
+        <div style="margin-top: 20px">
+          <button type="submit" style="padding: 8px 20px">
+            Update Quantity
+          </button>
+          <a href="{{ url_for('owner_inventory') }}" style="margin-left: 10px"
+            >Cancel</a
+          >
+        </div>
+      </form>
     </div>
   </body>
 </html>
