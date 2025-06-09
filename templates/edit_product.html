@@ -125,15 +125,6 @@
         <button type="submit">Update Product</button>
       </form>
 
-      <h4 style="margin-top: 30px">Restock Product</h4>
-      <form method="POST" action="/restock_product/{{ product.id }}">
-        <div class="form-group">
-          <label>Add Quantity</label>
-          <input type="number" name="restock_qty" min="1" required />
-        </div>
-        <button type="submit">Restock</button>
-      </form>
-
       <h4 style="margin-top: 30px">Danger Zone</h4>
       <form
         method="POST"
