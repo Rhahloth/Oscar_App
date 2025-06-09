@@ -1,7 +1,8 @@
+<!-- report.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Report Dashboard - RO Solutions</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
@@ -13,11 +14,11 @@
     <div class="navbar-inner">
       <div class="navbar">
         <div class="navbar-left">
-          <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+          <img src="/static/logo.png" alt="RO Solutions Logo" class="logo">
           <div class="company-details-inline">
-            <strong>RO Solutions</strong><br />
-            <em>Your sales are guaranteed</em><br />
-            Tel: +256 778 412 136 <br>
+            <strong>RO Solutions</strong><br>
+            <em>Your sales are guaranteed</em><br>
+            Tel: +256 778 412 136<br>
             Email: raysokello@gmail.com
           </div>
         </div>
@@ -40,8 +41,8 @@
       <fieldset>
         <legend>Filter Sales Report</legend>
         <div class="filter-row">
-          <div class="filter-item"><label>Start Date</label><input type="date" name="start_date" value="{{ request.form.start_date or '' }}" /></div>
-          <div class="filter-item"><label>End Date</label><input type="date" name="end_date" value="{{ request.form.end_date or '' }}" /></div>
+          <div class="filter-item"><label>Start Date</label><input type="date" name="start_date" value="{{ request.form.start_date or '' }}"></div>
+          <div class="filter-item"><label>End Date</label><input type="date" name="end_date" value="{{ request.form.end_date or '' }}"></div>
           <div class="filter-item">
             <label>Salesperson</label>
             <select name="salesperson">
@@ -67,34 +68,20 @@
     </form>
 
     {% if request.form.salesperson %}
-    <div style="margin: 10px 0; font-weight: bold; text-align: center; font-size: 22px;">📍 <span style="color: #034078;">REPORT FOR {{ request.form.salesperson }}</span></div>
+    <div style="margin: 10px 0; font-weight: bold; text-align: center; font-size: 22px;">
+      📍 <span style="color: #034078;">REPORT FOR {{ request.form.salesperson }}</span>
+    </div>
     {% endif %}
 
     <!-- Summary Cards -->
     <div class="summary-container">
       <div class="summary-card"><h4>Total Quantity Sold</h4><p>{{ summary.total_quantity or 0 }}</p></div>
-
-      <div class="summary-card"><h4>Total Revenue (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p>
-      </div>
-
-      <div class="summary-card"><h4>Total Cost Price (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(summary.total_cost_price or 0) }}</p>
-      </div>
-
-      <div class="summary-card"><h4>Total Expenses (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(total_expenses or 0) }}</p>
-      </div>
-
-      <div class="summary-card"><h4>Net Profit (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(net_balance or 0) }}</p>
-      </div>
-
-      <div class="summary-card"><h4>Top Salesperson</h4>
-        <p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p>
-      </div>
+      <div class="summary-card"><h4>Total Revenue (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p></div>
+      <div class="summary-card"><h4>Total Cost Price (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_cost_price or 0) }}</p></div>
+      <div class="summary-card"><h4>Total Expenses (UGX)</h4><p>UGX {{ "{:,.0f}".format(total_expenses or 0) }}</p></div>
+      <div class="summary-card"><h4>Net Profit (UGX)</h4><p>UGX {{ "{:,.0f}".format(net_balance or 0) }}</p></div>
+      <div class="summary-card"><h4>Top Salesperson</h4><p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p></div>
     </div>
-
 
     <!-- Sales Table -->
     <h3>Sales Performance Summary</h3>
@@ -141,33 +128,44 @@
     <!-- Distribution Log Table -->
     <h3 style="margin-top: 40px;">Stock Distribution Log</h3>
     <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Product</th>
-          <th>From (Salesperson)</th>
-          <th>To (Salesperson)</th>
-          <th>Quantity</th>
-          <th>Status</th>
-          <th>Total Value (UGX)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for dist in distribution_log %}
-        <tr>
-          <td>{{ dist.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td>{{ dist.product_name }}</td>
-          <td>{{ dist.from_salesperson }}</td>
-          <td>{{ dist.to_salesperson }}</td>
-          <td>{{ dist.quantity }}</td>
-          <td>{{ dist.status }}</td>
-          <td>{{ "{:,.0f}".format(dist.value_ugx or 0) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Product</th>
+            <th>From (Salesperson)</th>
+            <th>To (Salesperson)</th>
+            <th>Quantity</th>
+            <th>Status</th>
+            <th>Total Value (UGX)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dist in distribution_log %}
+          <tr>
+            <td>{{ dist.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ dist.product_name }}</td>
+            <td>{{ dist.from_salesperson }}</td>
+            <td>{{ dist.to_salesperson }}</td>
+            <td>{{ dist.quantity }}</td>
+            <td>{{ dist.status }}</td>
+            <td>{{ "{:,.0f}".format(dist.value_ugx or 0) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div style="margin-top: 20px; text-align: center;">
+      {% if current_page > 1 %}
+        <a href="{{ url_for('report', page=current_page - 1) }}"><button>&laquo; Prev</button></a>
+      {% endif %}
+      Page {{ current_page }} of {{ total_pages }}
+      {% if current_page < total_pages %}
+        <a href="{{ url_for('report', page=current_page + 1) }}"><button>Next &raquo;</button></a>
+      {% endif %}
+    </div>
   </div>
 
   <!-- Chart Script -->

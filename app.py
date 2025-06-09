@@ -1243,7 +1243,7 @@ def report():
     conn = get_db()
     cur = conn.cursor()
 
-    # Salespeople for dropdown
+    # Get list of salespeople for dropdown
     cur.execute("SELECT username FROM users WHERE business_id = %s AND role != 'owner'", (business_id,))
     salespeople = [r['username'] for r in cur.fetchall()]
 
@@ -1253,7 +1253,7 @@ def report():
     salesperson = request.form.get('salesperson')
     payment_method = request.form.get('payment_method')
 
-    # Report data
+    # Base report query
     report_query = '''
         SELECT u.username AS salesperson,
                s.payment_method,
@@ -1286,7 +1286,7 @@ def report():
     cur.execute(report_query, report_params)
     report_data = cur.fetchall()
 
-    # Total expenses (filtered by branch)
+    # Total expenses
     expense_query = '''
         SELECT SUM(e.amount) AS total_expense
         FROM expenses e
@@ -1294,7 +1294,6 @@ def report():
         WHERE e.business_id = %s
     '''
     expense_params = [business_id]
-
     if salesperson:
         expense_query += ' AND u.username = %s'
         expense_params.append(salesperson)
@@ -1307,15 +1306,14 @@ def report():
 
     cur.execute(expense_query, expense_params)
     expense_result = cur.fetchone()
-    total_expenses = int(expense_result['total_expense']) if expense_result and expense_result['total_expense'] is not None else 0
+    total_expenses = int(expense_result['total_expense']) if expense_result and expense_result['total_expense'] else 0
 
-    # Summary
+    # Summary query
     summary_query = '''
-        SELECT 
-            COUNT(*) AS total_transactions,
-            SUM(s.quantity) AS total_quantity,
-            SUM(s.quantity * s.price) AS raw_revenue,
-            SUM(s.quantity * p.buying_price) AS total_cost_price
+        SELECT COUNT(*) AS total_transactions,
+               SUM(s.quantity) AS total_quantity,
+               SUM(s.quantity * s.price) AS raw_revenue,
+               SUM(s.quantity * p.buying_price) AS total_cost_price
         FROM sales s
         JOIN users u ON s.salesperson_id = u.id
         JOIN products p ON s.product_id = p.id
@@ -1348,7 +1346,7 @@ def report():
 
     net_balance = summary['total_revenue'] - summary['total_cost_price']
 
-    # Top Salesperson
+    # Top salesperson
     top_query = '''
         SELECT u.username AS top_salesperson,
                SUM(s.quantity * s.price) AS total
@@ -1375,7 +1373,7 @@ def report():
     cur.execute(top_query, top_params)
     top_salesperson = cur.fetchone()
 
-    # Distribution log
+    # Distribution log with Uganda time conversion
     cur.execute('''
         SELECT dl.timestamp, dl.quantity, dl.status,
                p.name AS product_name,
@@ -1390,6 +1388,11 @@ def report():
         ORDER BY dl.timestamp DESC
     ''', (business_id,))
     distribution_log = cur.fetchall()
+
+    # Convert timestamps to local time
+    for log in distribution_log:
+        if log['timestamp']:
+            log['timestamp'] = log['timestamp'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
 
     return render_template(
         'report.html',
