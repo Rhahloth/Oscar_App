@@ -42,21 +42,10 @@
           <div>
             <a href="/dashboard"><button>Back to Main Dashboard</button></a>
           </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
+          <div class="navbar-right" style="display: flex; align-items: center; gap: 10px">
             {% if session.username %}
             <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
+              <button style="background-color: #d9534f; color: white; margin-left: 12px;">Logout</button>
             </a>
             {% endif %}
           </div>
@@ -96,33 +85,41 @@
           <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
         </div>
       </div>
-      
 
       {% if table %}
       <div class="table-responsive">
-      <table class="table" id="ownerInventoryTable">
-        <thead>
-          <tr>
-            <th>Category - Product</th>
-            {% for branch in branches %}
-            <th>{{ branch }}</th>
+        <table class="table" id="ownerInventoryTable">
+          <thead>
+            <tr>
+              <th>Category - Product</th>
+              {% for branch in branches %}
+              <th>{{ branch }}</th>
+              {% endfor %}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product, branches_data in table.items() %}
+            <tr>
+              <td>{{ product }}</td>
+              {% for branch in branches %}
+              <td>
+                {{ branches_data.get(branch, 0) }}
+                {% if inventory_ids[product, branch] is defined %}
+                <form method="POST" action="/owner_inventory/edit" style="display: inline;">
+                  <input type="hidden" name="inventory_id" value="{{ inventory_ids[product, branch] }}">
+                  <input type="number" name="new_quantity" min="0" placeholder="Qty" style="width: 60px;" required>
+                  <button type="submit" style="margin-left: 4px;">✓</button>
+                </form>
+                {% endif %}
+              </td>
+              {% endfor %}
+              <td><strong>{{ totals[product] }}</strong></td>
+            </tr>
             {% endfor %}
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for product, branches_data in table.items() %}
-          <tr>
-            <td>{{ product }}</td>
-            {% for branch in branches %}
-            <td>{{ branches_data.get(branch, 0) }}</td>
-            {% endfor %}
-            <td><strong>{{ totals[product] }}</strong></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+          </tbody>
+        </table>
+      </div>
       <div class="pagination-controls" id="pagination-controls"></div>
       {% else %}
       <p>No inventory data available.</p>
