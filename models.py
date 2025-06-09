@@ -339,11 +339,14 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
         raise ValueError("❌ Salesperson has no associated business.")
     business_id = user['business_id']
 
+    added_count = 0
+    skipped_count = 0
+
     for product_name, quantity, category in inventory_rows:
         product_name = product_name.strip()
         category = category.strip()
 
-        # 🔐 Match product ONLY within the salesperson's business
+        # Match product ONLY within the salesperson's business
         cur.execute("""
             SELECT id FROM products
             WHERE LOWER(name) = LOWER(%s) AND LOWER(category) = LOWER(%s)
@@ -352,9 +355,9 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
         product = cur.fetchone()
 
         if not product:
-            raise ValueError(
-                f"❌ Product not found or unauthorized: '{product_name}' in category '{category}'."
-            )
+            skipped_count += 1
+            print(f"⚠️ Skipped: '{product_name}' in category '{category}' — not found for business {business_id}")
+            continue  # Skip unknown products instead of raising
 
         product_id = product['id']
 
@@ -378,9 +381,13 @@ def add_salesperson_stock_bulk(user_id, inventory_rows):
                 VALUES (%s, %s, %s)
             """, (user_id, product_id, quantity))
 
+        added_count += 1
+
     conn.commit()
     cur.close()
     conn.close()
+
+    return added_count, skipped_count
 
 def initialize_salesperson_inventory(user_id):
     conn = get_db()

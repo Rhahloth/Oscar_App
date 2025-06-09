@@ -1580,10 +1580,10 @@ def sales_upload_inventory():
                 flash("❌ Upload failed. All items had errors or unknown products.", "danger")
                 return redirect(request.referrer or '/sales_upload_inventory')
 
-            add_salesperson_stock_bulk(session['user_id'], inventory_rows)
+            added, skipped = add_salesperson_stock_bulk(session['user_id'], inventory_rows)
             flash(
-                f"✅ Uploaded {len(inventory_rows)} product(s) from manual entry. "
-                f"Skipped {error_count} invalid item(s), {skipped_products} unknown product(s).",
+                f"✅ Uploaded {added} product(s). "
+                f"Skipped {error_count} invalid row(s), {skipped + skipped_products} unknown product(s).",
                 "success"
             )
             return redirect('/dashboard')
