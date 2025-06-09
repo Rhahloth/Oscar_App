@@ -1,138 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Owner Dashboard - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
+{% extends "layout.html" %} {% block title %}Owner Dashboard - RO Solutions{%
+endblock %} {% block content %}
+<div class="dashboard-welcome">
+  <strong>Welcome, {{ session.username }}</strong><br />
+  You have full access to manage sales, products, and reports.
+</div>
+
+<div class="form-group action-buttons">
+  <a href="/products">
+    <button>📦 Manage Products</button>
+  </a>
+  <a href="/users">
+    <button>🧑‍💼 Manage Salespersons</button>
+  </a>
+  <a href="/report">
+    <button>📊 View Sales Reports</button>
+  </a>
+  <a href="/owner_inventory">
+    <button>🏬 View Inventory</button>
+  </a>
+  <a href="/add_customer">
+    <button>➕ Manage Customers</button>
+  </a>
+  <a href="/view_expenses">
+    <button>💰 View Expenses</button>
+  </a>
+</div>
+
+<h5>Recent Transactions</h5>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Batch No</th>
+        <th>Sold By</th>
+        <th>Payment Method</th>
+        <th>Total Quantity</th>
+        <th>Total Amount (UGX)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for batch in sales %}
+      <tr>
+        <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>
+          <a href="/batch_sales/{{ batch.batch_number }}"
+            >{{ batch.batch_number }}</a
           >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="container">
-      <div class="dashboard-welcome">
-        <strong>Welcome, {{ session.username }}</strong><br />
-        You have full access to manage sales, products, and reports.
-      </div>
-
-      <div class="form-group action-buttons">
-        <a href="/products">
-          <button>📦 Manage Products</button>
-        </a>
-        <a href="/users">
-          <button>🧑‍💼 Manage Salespersons</button>
-        </a>
-        <a href="/report">
-          <button>📊 View Sales Reports</button>
-        </a>
-        <a href="/owner_inventory">
-          <button>🏬 View Inventory</button>
-        </a>
-        <a href="/add_customer">
-          <button>➕ Manage Customers</button>
-        </a>
-        <a href="/view_expenses">
-          <button>💰 View Expenses</button>
-        </a>
-      </div>
-
-      <h5>Recent Transactions</h5>
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Batch No</th>
-              <th>Sold By</th>
-              <th>Payment Method</th>
-              <th>Total Quantity</th>
-              <th>Total Amount (UGX)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for batch in sales %}
-            <tr>
-              <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
-              <td>
-                <a href="/batch_sales/{{ batch.batch_number }}"
-                  >{{ batch.batch_number }}</a
-                >
-              </td>
-              <td>{{ batch.salesperson_name }}</td>
-              <td>{{ batch.payment_method }}</td>
-              <td>{{ batch.total_quantity }}</td>
-              <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top: 20px; text-align: center">
-        <a href="/transactions">
-          <button
-            style="
-              background-color: #034078;
-              color: white;
-              padding: 8px 16px;
-              border: none;
-              border-radius: 5px;
-              font-weight: bold;
-            "
-          >
-            📜 View Full Transaction History
-          </button>
-        </a>
-      </div>
-    </div>
-    {% with messages = get_flashed_messages() %} {% if messages %}
-    <div class="flash-messages">
-      {% for message in messages %}
-      <div class="alert">{{ message }}</div>
+        </td>
+        <td>{{ batch.salesperson_name }}</td>
+        <td>{{ batch.payment_method }}</td>
+        <td>{{ batch.total_quantity }}</td>
+        <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
+      </tr>
       {% endfor %}
-    </div>
-    {% endif %} {% endwith %}
-  </body>
-</html>
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top: 20px; text-align: center">
+  <a href="/transactions">
+    <button
+      style="
+        background-color: #034078;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+      "
+    >
+      📜 View Full Transaction History
+    </button>
+  </a>
+</div>
+
+{% with messages = get_flashed_messages() %} {% if messages %}
+<div class="flash-messages">
+  {% for message in messages %}
+  <div class="alert">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %} {% endwith %} {% endblock %}

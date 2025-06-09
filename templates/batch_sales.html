@@ -1,133 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Batch Sales - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-  </head>
-  <body>
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %}
-    <div class="flash-messages">
-      {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    </div>
-    {% endif %} {% endwith %}
+{% extends "layout.html" %} {% block title %}Batch Sales - RO Solutions{%
+endblock %} {% block content %}
+<div class="form-group action-buttons">
+  <div>
+    <h2>
+      Sales for Batch:
+      <span style="color: green">{{ batch_number }}</span>
+    </h2>
+  </div>
+  <div>
+    <a href="/record_sale"><button>POS</button></a>
+  </div>
+</div>
 
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button style="background-color: #d9534f; color: white">
-                Logout
+<div>
+  {% if sales %}
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Amount Paid</th>
+          <th>Payment Method</th>
+          <th>Customer</th>
+          <th>Date</th>
+          <th>Return</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales %}
+        <tr {% if s.is_return %}style="color: red;" {% endif %}>
+          <td>{{ loop.index }}</td>
+          <td>{{ s.product_name }}</td>
+          <td>{{ s.quantity }}</td>
+          <td>{{ s.price }}</td>
+          <td>{{ s.amount_paid }}</td>
+          <td>{{ s.payment_method }}</td>
+          <td>{{ s.customer_name or '-' }}</td>
+          <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>
+            {% if not s.is_return %}
+            <form
+              action="/return_product"
+              method="POST"
+              style="display: flex; gap: 5px"
+            >
+              <input type="hidden" name="sale_id" value="{{ s.id }}" />
+              <input
+                type="number"
+                name="return_quantity"
+                min="1"
+                max="{{ s.quantity }}"
+                placeholder="Qty"
+                required
+                style="width: 60px"
+              />
+              <button type="submit" style="background-color: orange">
+                Return
               </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="container">
-      <div class="form-group action-buttons">
-        <div>
-          <h2>
-            Sales for Batch:
-            <span style="color: green">{{ batch_number }}</span>
-          </h2>
-        </div>
-        <div>
-          <a href="/record_sale"><button>POS</button></a>
-        </div>
-      </div>
-
-      <div>
-        {% if sales %}
-        <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th>Amount Paid</th>
-                <th>Payment Method</th>
-                <th>Customer</th>
-                <th>Date</th>
-                <th>Return</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for s in sales %}
-              <tr {% if s.is_return %}style="color: red;" {% endif %}>
-                <td>{{ loop.index }}</td>
-                <td>{{ s.product_name }}</td>
-                <td>{{ s.quantity }}</td>
-                <td>{{ s.price }}</td>
-                <td>{{ s.amount_paid }}</td>
-                <td>{{ s.payment_method }}</td>
-                <td>{{ s.customer_name or '-' }}</td>
-                <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                  {% if not s.is_return %}
-                  <form
-                    action="/return_product"
-                    method="POST"
-                    style="display: flex; gap: 5px"
-                  >
-                    <input type="hidden" name="sale_id" value="{{ s.id }}" />
-                    <input
-                      type="number"
-                      name="return_quantity"
-                      min="1"
-                      max="{{ s.quantity }}"
-                      placeholder="Qty"
-                      required
-                      style="width: 60px"
-                    />
-                    <button type="submit" style="background-color: orange">
-                      Return
-                    </button>
-                  </form>
-                  {% else %} Returned {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p>No sales found for this batch.</p>
-        {% endif %}
-      </div>
-    </div>
-  </body>
-</html>
+            </form>
+            {% else %} Returned {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>No sales found for this batch.</p>
+  {% endif %}
+</div>
+{% endblock %}

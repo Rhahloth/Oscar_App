@@ -1,106 +1,65 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Admin Dashboard - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>ADMIN DASHBOARD - OKELLO RAYMOND</div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
+{% extends "layout.html" %} {% block title %}Admin Dashboard - RO Solutions{%
+endblock %} {% block content %}
+<h3 style="margin-top: 20px">System Overview</h3>
+<div class="summary-container">
+  <div class="summary-card">
+    <h4>Total Businesses</h4>
+    <p>{{ total_businesses }}</p>
+  </div>
+  <div class="summary-card">
+    <h4>Total Owners</h4>
+    <p>{{ total_owners }}</p>
+  </div>
+  <div class="summary-card">
+    <h4>Total Salespeople</h4>
+    <p>{{ total_salespeople }}</p>
+  </div>
+</div>
+
+<h3>Registered Businesses</h3>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Business Name</th>
+        <th>Type</th>
+        <th>Phone</th>
+        <th>Users</th>
+        <th>Status</th>
+        <th>Toggle</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in businesses %}
+      <tr>
+        <td>{{ b.name }}</td>
+        <td>{{ b.type }}</td>
+        <td>{{ b.phone }}</td>
+        <td>{{ b.user_count }}</td>
+        <td>{{ 'Active' if b.is_active else 'Inactive' }}</td>
+        <td>
+          <form
+            action="/toggle_business/{{ b.id }}"
+            method="POST"
+            style="display: flex; gap: 10px"
           >
-            {% if session.username %}
-            <a href="/logout">
-              <button style="background-color: #d9534f; color: white">
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="container">
-      <h3 style="margin-top: 20px">System Overview</h3>
-      <div class="summary-container">
-        <div class="summary-card">
-          <h4>Total Businesses</h4>
-          <p>{{ total_businesses }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Owners</h4>
-          <p>{{ total_owners }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Salespeople</h4>
-          <p>{{ total_salespeople }}</p>
-        </div>
-      </div>
-
-      <h3>Registered Businesses</h3>
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Business Name</th>
-              <th>Type</th>
-              <th>Phone</th>
-              <th>Users</th>
-              <th>Status</th>
-              <th>Toggle</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for b in businesses %}
-            <tr>
-              <td>{{ b.name }}</td>
-              <td>{{ b.type }}</td>
-              <td>{{ b.phone }}</td>
-              <td>{{ b.user_count }}</td>
-              <td>{{ 'Active' if b.is_active else 'Inactive' }}</td>
-              <td>
-                <div style="display: flex; gap: 10px">
-                  <!-- Activate/Deactivate Button -->
-                  <form action="/toggle_business/{{ b.id }}" method="POST">
-                    <button
-                      type="submit"
-                      style="
-                        background-color: #034078;
-                        color: white;
-                        border: none;
-                        padding: 5px 10px;
-                        border-radius: 4px;
-                      "
-                    >
-                      {{ 'Deactivate' if b.is_active else 'Activate' }}
-                    </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </body>
-</html>
+            <button
+              type="submit"
+              style="
+                background-color: #034078;
+                color: white;
+                border: none;
+                padding: 5px 10px;
+                border-radius: 4px;
+              "
+            >
+              {{ 'Deactivate' if b.is_active else 'Activate' }}
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

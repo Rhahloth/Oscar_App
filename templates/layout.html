@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}RO Solutions{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <link
+      rel="manifest"
+      href="{{ url_for('static', filename='manifest.json') }}"
+    />
+    <meta name="theme-color" content="#034078" />
+
+    <!-- Offline icon -->
+    <link
+      rel="icon"
+      sizes="192x192"
+      href="{{ url_for('static', filename='icons/icon-192.png') }}"
+    />
+  </head>
+  <body>
+    <div class="navbar-wrapper">
+      <div class="navbar-inner">
+        <div class="navbar">
+          <div class="navbar-left">
+            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
+            <div class="company-details-inline">
+              <strong>RO Solutions</strong><br />
+              <em>Your sales are guaranteed</em><br />
+              Tel: +256 778 412 136 <br />
+              Email: raysokello@gmail.com
+            </div>
+          </div>
+          <div>
+            {% if session.username %}
+            <div>{{ session.role|upper }}: {{ session.username }}</div>
+            {% endif %}
+          </div>
+          <div>
+            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
+          </div>
+          <div
+            class="navbar-right"
+            style="display: flex; align-items: center; gap: 10px"
+          >
+            {% if session.username %}
+            <a href="/logout">
+              <button
+                style="
+                  background-color: #d9534f;
+                  color: white;
+                  margin-left: 12px;
+                "
+              >
+                Logout
+              </button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">{% block content %}{% endblock %}</div>
+
+    <!-- ✅ PWA & IndexedDB Setup -->
+    <script src="{{ url_for('static', filename='js/db.js') }}"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker
+            .register("/static/js/sw.js")
+            .then(() => console.log("Service Worker registered"));
+        }
+        if (typeof initIndexedDB === "function") {
+          initIndexedDB();
+        }
+      });
+    </script>
+  </body>
+</html>

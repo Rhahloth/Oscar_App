@@ -1,208 +1,145 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Manage Customers & Credit Summary - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-    <style>
-      .flex-container {
-        display: flex;
-        gap: 30px;
-        flex-wrap: wrap;
-        margin-top: 20px;
-      }
-      .flex-child {
-        flex: 1;
-        min-width: 300px;
-      }
-      .status.paid {
-        color: green;
-        font-weight: bold;
-      }
-      .status.partial {
-        color: orange;
-        font-weight: bold;
-      }
-      .status.unpaid {
-        color: red;
-        font-weight: bold;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
+{% extends "layout.html" %} {% block title %}Manage Customers & Credit Summary -
+RO Solutions{% endblock %} {% block content %}
+<h2>👥 Manage Customers</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<ul>
+  {% for category, message in messages %}
+  <li style="color: {{ 'green' if category == 'success' else 'red' }}">
+    {{ message }}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %} {% endwith %}
+
+<div class="flex-container">
+  <!-- Left: Add New Customer -->
+  <div class="flex-child">
+    <h4>➕ Add New Customer</h4>
+    <form method="POST">
+      <input type="hidden" name="action" value="add_customer" />
+      <label><strong>Customer Name:</strong></label
+      ><br />
+      <input type="text" name="name" required style="width: 100%" /><br /><br />
+
+      <label><strong>Phone Number:</strong></label
+      ><br />
+      <input
+        type="text"
+        name="phone"
+        placeholder="Optional"
+        style="width: 100%"
+      /><br /><br />
+
+      <button type="submit">➕ Add Customer</button>
+    </form>
+  </div>
+
+  <!-- Right: Active Customers -->
+  <div class="flex-child">
+    <h4>📋 Active Customers</h4>
+    {% if customers %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Created</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.phone or '—' }}</td>
+          <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>
+            <form method="POST" style="display: inline">
+              <input type="hidden" name="action" value="toggle_status" />
+              <input type="hidden" name="customer_id" value="{{ c.id }}" />
               <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
+                type="submit"
+                class="{{ 'btn-activate' if not c.is_active else 'btn-deactivate' }}"
               >
-                Logout
+                {{ 'Activate' if not c.is_active else 'Deactivate' }}
               </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="container">
-      <h2>👥 Manage Customers</h2>
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <ul>
-        {% for category, message in messages %}
-        <li style="color: {{ 'green' if category == 'success' else 'red' }}">
-          {{ message }}
-        </li>
+            </form>
+          </td>
+        </tr>
         {% endfor %}
-      </ul>
-      {% endif %} {% endwith %}
-      <div class="flex-container">
-        <!-- Left: Add New Customer -->
-        <div class="flex-child">
-          <h4>➕ Add New Customer</h4>
-          <form method="POST">
-            <input type="hidden" name="action" value="add_customer" />
-            <label for="name"><strong>Customer Name:</strong></label
-            ><br />
-            <input
-              type="text"
-              name="name"
-              required
-              style="width: 100%"
-            /><br /><br />
+      </tbody>
+    </table>
+    {% else %}
+    <p>No customers yet.</p>
+    {% endif %}
+  </div>
+</div>
 
-            <label for="phone"><strong>Phone Number:</strong></label
-            ><br />
-            <input
-              type="text"
-              name="phone"
-              placeholder="Optional"
-              style="width: 100%"
-            /><br /><br />
+<hr />
 
-            <button type="submit">➕ Add Customer</button>
-          </form>
-        </div>
+<!-- ✅ Credit Summary -->
+<h4>💳 Credit Summary by Batch</h4>
+{% if credit_summary %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Batch No</th>
+      <th>Customer</th>
+      <th>Total Credit (UGX)</th>
+      <th>Balance (UGX)</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in credit_summary %}
+    <tr>
+      <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+      <td><a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a></td>
+      <td>{{ row.customer_name }}</td>
+      <td>{{ "{:,.0f}".format(row.amount) }}</td>
+      <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
+      <td>
+        {% if row.balance == 0 %}
+        <span class="status paid">✅ Paid</span>
+        {% elif row.balance < row.amount %}
+        <span class="status partial">🟡 Partial</span>
+        {% else %}
+        <span class="status unpaid">❌ Unpaid</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No credit summary available.</p>
+{% endif %}
 
-        <!-- Right: Active Customers -->
-        <div class="flex-child">
-          <h4>📋 Active Customers</h4>
-          {% if customers %}
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Created</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for c in customers %}
-              <tr>
-                <td>{{ c.name }}</td>
-                <td>{{ c.phone or '—' }}</td>
-                <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                  <form method="POST" style="display: inline">
-                    <input type="hidden" name="action" value="toggle_status" />
-                    <input
-                      type="hidden"
-                      name="customer_id"
-                      value="{{ c.id }}"
-                    />
-                    <button
-                      type="submit"
-                      class="{{ 'btn-activate' if not c.is_active else 'btn-deactivate' }}"
-                    >
-                      {{ 'Activate' if not c.is_active else 'Deactivate' }}
-                    </button>
-                  </form>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-          {% else %}
-          <p>No customers yet.</p>
-          {% endif %}
-        </div>
-      </div>
-
-      <hr />
-
-      <!-- ✅ Credit Summary -->
-      <h4>💳 Credit Summary by Batch</h4>
-      {% if credit_summary %}
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Batch No</th>
-            <th>Customer</th>
-            <th>Total Credit (UGX)</th>
-            <th>Balance (UGX)</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in credit_summary %}
-          <tr>
-            <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
-            <td>
-              <a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a>
-            </td>
-            <td>{{ row.customer_name }}</td>
-            <td>{{ "{:,.0f}".format(row.amount) }}</td>
-            <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
-            <td>
-              {% if row.balance == 0 %}
-              <span class="status paid">✅ Paid</span>
-              {% elif row.balance < row.amount %}
-              <span class="status partial">🟡 Partial</span>
-              {% else %}
-              <span class="status unpaid">❌ Unpaid</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>No credit summary available.</p>
-      {% endif %}
-    </div>
-  </body>
-</html>
+<style>
+  .flex-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .flex-child {
+    flex: 1;
+    min-width: 300px;
+  }
+  .status.paid {
+    color: green;
+    font-weight: bold;
+  }
+  .status.partial {
+    color: orange;
+    font-weight: bold;
+  }
+  .status.unpaid {
+    color: red;
+    font-weight: bold;
+  }
+</style>
+{% endblock %}
