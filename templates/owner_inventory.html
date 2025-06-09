@@ -85,6 +85,16 @@
           <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
         </div>
       </div>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+              <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
 
       {% if table %}
       <div class="table-responsive">

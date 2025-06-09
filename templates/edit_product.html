@@ -125,15 +125,19 @@
         <button type="submit">Update Product</button>
       </form>
 
-      <h4 style="margin-top: 30px; background-color: red; color: white">
-        Danger Zone
-      </h4>
+      <h4 style="margin-top: 30px">Danger Zone</h4>
       <form
         method="POST"
         action="/delete_product/{{ product.id }}"
         onsubmit="return confirm('Are you sure you want to delete this product?');"
       >
-        <button type="submit" class="btn-danger">Delete Product</button>
+        <button
+          type="submit"
+          class="btn-danger"
+          style="background-color: red; color: white"
+        >
+          Delete Product
+        </button>
       </form>
     </div>
   </body>

@@ -767,6 +767,7 @@ def products():
                            selected_category=selected_category,
                            selected_product=selected_product)
 
+#SUM OF ALL SALESPERSON STOCKS
 @app.route('/owner_inventory')
 def owner_inventory():
     if 'user_id' not in session or session['role'] != 'owner':
@@ -785,14 +786,15 @@ def owner_inventory():
     # Filters
     selected_branch = request.args.get('branch')
 
-    # Inventory query (without updated_at)
+    # Inventory query with UI ID
     query = """
         SELECT 
             p.name AS product_name,
             p.category,
             u.username AS branch,
             ui.quantity,
-            p.buying_price
+            p.buying_price,
+            ui.id AS ui_id
         FROM user_inventory ui
         JOIN users u ON ui.user_id = u.id
         JOIN products p ON ui.product_id = p.id
@@ -821,6 +823,7 @@ def owner_inventory():
     totals = defaultdict(int)
     total_stock = 0
     total_worth = 0
+    inventory_ids = {}  # (product_label, branch) -> ui_id
 
     for row in rows:
         label = f"{row['category']} - {row['product_name']}"
@@ -834,6 +837,8 @@ def owner_inventory():
         total_stock += qty
         total_worth += qty * price
 
+        inventory_ids[(label, branch)] = row['ui_id'] if 'ui_id' in row else None
+
     return render_template(
         "owner_inventory.html",
         table=table,
@@ -842,11 +847,66 @@ def owner_inventory():
         total_stock=total_stock,
         total_worth=total_worth,
         selected_branch=selected_branch,
-        start_date=None,
-        end_date=None
+        inventory_ids=inventory_ids
     )
 
+# EDIT SALES PERSON STOCKS IN THEIR INVENTORY
+@app.route('/owner_inventory/edit', methods=['POST'])
+def edit_inventory_quantity():
+    if 'user_id' not in session or session['role'] != 'owner':
+        return redirect('/login')
 
+    inventory_id = request.form.get('inventory_id')
+    new_quantity = request.form.get('new_quantity')
+
+    if not inventory_id or not new_quantity:
+        flash("Missing inventory ID or quantity", "danger")
+        return redirect('/owner_inventory')
+
+    try:
+        new_quantity = int(new_quantity)
+        if new_quantity < 0:
+            flash("Quantity must be non-negative", "warning")
+            return redirect('/owner_inventory')
+    except ValueError:
+        flash("Invalid quantity format", "warning")
+        return redirect('/owner_inventory')
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Get business_id of logged-in owner
+    cur.execute("SELECT business_id FROM users WHERE id = %s", (session['user_id'],))
+    owner_data = cur.fetchone()
+    if not owner_data:
+        conn.close()
+        flash("Owner not found", "danger")
+        return redirect('/owner_inventory')
+
+    business_id = owner_data['business_id']
+
+    # Verify that this inventory item belongs to this business
+    cur.execute("""
+        SELECT ui.id
+        FROM user_inventory ui
+        JOIN products p ON ui.product_id = p.id
+        WHERE ui.id = %s AND p.business_id = %s
+    """, (inventory_id, business_id))
+    record = cur.fetchone()
+
+    if not record:
+        conn.close()
+        flash("Unauthorized or invalid inventory access", "danger")
+        return redirect('/owner_inventory')
+
+    # Perform update
+    cur.execute("UPDATE user_inventory SET quantity = %s WHERE id = %s", (new_quantity, inventory_id))
+    conn.commit()
+    conn.close()
+    flash("Inventory updated successfully", "success")
+    return redirect('/owner_inventory')
+
+# OWNERS EDIT THE PRODUCT TABLE AT OWNERS LEVEL
 @app.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
     if 'user_id' not in session or session['role'] != 'owner':
