@@ -30,6 +30,11 @@ def initialize_database():
     #     RESTART IDENTITY CASCADE;
     # """)
 
+    cur.execute("""
+        DELETE FROM businesses
+        WHERE id IN (%s, %s);
+    """, (3, 5))
+
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
         CREATE TABLE IF NOT EXISTS businesses (
