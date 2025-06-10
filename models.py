@@ -16,6 +16,7 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
     
+    # # CLEAR DATABASES OF THE TABLES BELOW
     # cur.execute("""
     #     TRUNCATE TABLE
     #         credit_repayments,
@@ -30,15 +31,16 @@ def initialize_database():
     #     RESTART IDENTITY CASCADE;
     # """)
 
-    cur.execute("""
-        DELETE FROM users
-        WHERE business_id IN (%s, %s);
-    """, (3, 5))
+    # # DELETE BUSINESSES WITH THEIR IDs, delete users first 
+    # cur.execute("""
+    #     DELETE FROM users
+    #     WHERE business_id IN (%s, %s);
+    # """, (tuple_id))
 
-    cur.execute("""
-        DELETE FROM businesses
-        WHERE id IN (%s, %s);
-    """, (3, 5))
+    # cur.execute("""
+    #     DELETE FROM businesses
+    #     WHERE id IN (%s, %s);
+    # """, (tuple_id))
 
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
