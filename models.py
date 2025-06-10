@@ -31,6 +31,11 @@ def initialize_database():
     # """)
 
     cur.execute("""
+        DELETE FROM users
+        WHERE business_id IN (%s, %s);
+    """, (3, 5))
+
+    cur.execute("""
         DELETE FROM businesses
         WHERE id IN (%s, %s);
     """, (3, 5))
