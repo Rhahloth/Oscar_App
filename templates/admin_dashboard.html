@@ -21,6 +21,7 @@ endblock %} {% block content %}
   <table class="table">
     <thead>
       <tr>
+        <th>#Id</th>
         <th>Business Name</th>
         <th>Type</th>
         <th>Phone</th>
@@ -32,6 +33,7 @@ endblock %} {% block content %}
     <tbody>
       {% for b in businesses %}
       <tr>
+        <td>{{b.id}}</td>
         <td>{{ b.name }}</td>
         <td>{{ b.type }}</td>
         <td>{{ b.phone }}</td>
