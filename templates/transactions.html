@@ -97,7 +97,7 @@
         <tbody>
           {% for batch in sales %}
           <tr>
-            <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ batch.date.strftime('%Y-%m-%d') }}</td>
             <td>
               <a href="/batch_sales/{{ batch.batch_number }}">{{ batch.batch_number }}</a>
             </td>
