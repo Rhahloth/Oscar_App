@@ -41,7 +41,7 @@
   </div>
 
   <div class="container">
-    <div class="form-group action-buttons" style="text-align: left;">    
+    <div class="form-group action-buttons" style="text-align: left; justify-content: center;">    
       <div style="margin-bottom: 20px;">
         <a href="/sales_upload_inventory">
           <button>
@@ -51,19 +51,6 @@
       </div>
     </div>
     <h4>My Current Inventory</h4>
-    <!-- 🔍 Inventory and Sales Summary -->
-    <div class="summary-container">
-      <div class="summary-card">
-        <h4>Total Stock Quantity</h4>
-        <p>{{ total_stock or 0 }}</p>
-      </div>
-
-      <div class="summary-card">
-        <h4>Total Inventory Worth (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
-      </div>
-      
-    </div>
 
     <form method="GET" action="/my_inventory" class="report-filters">
       <fieldset>
@@ -90,6 +77,19 @@
         </div>
       </fieldset>
     </form>
+
+    <div class="summary-container">
+      <div class="summary-card">
+        <h4>Total Stock Quantity</h4>
+        <p>{{ total_stock or 0 }}</p>
+      </div>
+
+      <div class="summary-card">
+        <h4>Total Inventory Worth (UGX)</h4>
+        <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
+      </div>
+      
+    </div>
 
     {% if inventory %}
     <div class="table-responsive">
