@@ -1,307 +1,244 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Manage Products - AgriShop</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-    <style>
-      .pagination-controls {
-        text-align: center;
-        margin-top: 20px;
-      }
-      .pagination-controls button {
-        margin: 0 3px;
-        padding: 5px 10px;
-        cursor: pointer;
-      }
-      .pagination-controls button.disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
+{% extends "layout.html" %} {% block title %}Manage Products - AgriShop{%
+endblock %} {% block styles %}
+<style>
+  .pagination-controls {
+    text-align: center;
+    margin-top: 20px;
+  }
+  .pagination-controls button {
+    margin: 0 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .pagination-controls button.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="form-group action-buttons" style="justify-content: center">
+  <a href="/owner_inventory">
+    <button>VIEW BRANCH INVENTORY</button>
+  </a>
+</div>
+
+<h3 style="color: brown">➕ Add Products</h3>
+<div
+  class="flex-container"
+  style="gap: 30px; margin-bottom: 30px; flex-wrap: wrap"
+>
+  <!-- Manual Entry -->
+  <div class="flex-child" style="flex: 1; min-width: 320px">
+    <form method="POST" action="/products">
+      <input type="hidden" name="form_type" value="manual_entry" />
+      <div class="form-group" style="display: flex; gap: 10px">
+        <div style="flex: 1">
+          <label>Category</label>
+          <input type="text" name="category" required />
+        </div>
+        <div style="flex: 1">
+          <label>Product Name</label>
+          <input type="text" name="name" required />
+        </div>
+      </div>
+      <div class="form-group" style="display: flex; gap: 10px; flex-wrap: wrap">
+        <div style="flex: 1">
+          <label>Buying Price</label>
+          <input type="number" step="0.01" name="buying_price" required />
+        </div>
+        <div style="flex: 1">
+          <label>Agent Price</label>
+          <input type="number" step="0.01" name="agent_price" required />
+        </div>
+        <div style="flex: 1">
+          <label>Wholesale Price</label>
+          <input type="number" step="0.01" name="wholesale_price" required />
+        </div>
+        <div style="flex: 1">
+          <label>Retail Price</label>
+          <input type="number" step="0.01" name="retail_price" required />
+        </div>
+      </div>
+      <button type="submit">Add Product</button>
+    </form>
+  </div>
+
+  <!-- CSV Upload -->
+  <div class="flex-child" style="flex: 1; min-width: 320px">
+    <form method="POST" action="/products" enctype="multipart/form-data">
+      <input type="hidden" name="form_type" value="csv_upload" />
+      <label>Select a CSV file with these headers:</label>
+      <p>
+        <code>
+          category, product name, buying price, agent price, wholesale price,
+          retail price
+        </code>
+      </p>
+      <input type="file" name="file" accept=".csv" required />
+      <br /><br />
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+</div>
+
+<div
+  style="
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  "
+>
+  <h3 style="color: brown">Available Products</h3>
+  <a href="/export_products" class="btn">Download CSV</a>
+</div>
+
+<fieldset>
+  <legend>Filter Products</legend>
+  <div
+    class="filter-row"
+    style="display: flex; gap: 10px; align-items: flex-end"
+  >
+    <div>
+      <label>Category</label>
+      <select id="categoryFilter">
+        <option value="">-- All Categories --</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}">{{ cat }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Product</label>
+      <select id="productFilter">
+        <option value="">-- All Products --</option>
+        {% for product in products %}
+        <option value="{{ product.name }}">{{ product.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+</fieldset>
+
+<div class="table-responsive">
+  <table class="table" id="productTable">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Name</th>
+        <th>Buying Price</th>
+        <th>Agent Price</th>
+        <th>Wholesale Price</th>
+        <th>Retail Price</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product in products %}
+      <tr>
+        <td>{{ product.category }}</td>
+        <td>{{ product.name }}</td>
+        <td>{{ "{:,.0f}".format(product.buying_price or 0) }}</td>
+        <td>{{ "{:,.0f}".format(product.agent_price or 0) }}</td>
+        <td>{{ "{:,.0f}".format(product.wholesale_price or 0) }}</td>
+        <td>{{ "{:,.0f}".format(product.retail_price or 0) }}</td>
+        <td>
+          <a href="/edit_product/{{ product.id }}" class="btn btn-small"
+            >Manage</a
           >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-    <div class="container">
-      <div class="form-group action-buttons" style="justify-content: center">
-        <a href="/owner_inventory">
-          <button>VIEW BRANCH INVENTORY</button>
-        </a>
-      </div>
-      <h3 style="color: brown">➕ Add Products</h3>
-      <div
-        class="flex-container"
-        style="gap: 30px; margin-bottom: 30px; flex-wrap: wrap"
-      >
-        <!-- Manual Entry Form -->
-        <div class="flex-child" style="flex: 1; min-width: 320px">
-          <form method="POST" action="/products">
-            <input type="hidden" name="form_type" value="manual_entry" />
-            <div class="form-group" style="display: flex; gap: 10px">
-              <div style="flex: 1">
-                <label>Category</label>
-                <input type="text" name="category" required />
-              </div>
-              <div style="flex: 1">
-                <label>Product Name</label>
-                <input type="text" name="name" required />
-              </div>
-            </div>
-            <div
-              class="form-group"
-              style="display: flex; gap: 10px; flex-wrap: wrap"
-            >
-              <div style="flex: 1">
-                <label>Buying Price</label>
-                <input type="number" step="0.01" name="buying_price" required />
-              </div>
-              <div style="flex: 1">
-                <label>Agent Price</label>
-                <input type="number" step="0.01" name="agent_price" required />
-              </div>
-              <div style="flex: 1">
-                <label>Wholesale Price</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="wholesale_price"
-                  required
-                />
-              </div>
-              <div style="flex: 1">
-                <label>Retail Price</label>
-                <input type="number" step="0.01" name="retail_price" required />
-              </div>
-            </div>
-            <button type="submit">Add Product</button>
-          </form>
-        </div>
+<div class="pagination-controls" id="pagination-controls"></div>
+{% endblock %} {% block scripts %}
+<script>
+  const rowsPerPage = 10;
+  let currentPage = 1;
+  let filteredRows = [];
 
-        <!-- CSV Upload Form -->
-        <div class="flex-child" style="flex: 1; min-width: 320px">
-          <form method="POST" action="/products" enctype="multipart/form-data">
-            <input type="hidden" name="form_type" value="csv_upload" />
-            <label>Select a CSV file with these headers:</label>
-            <p>
-              <code>
-                category, product name, buying price, agent price, wholesale
-                price, retail price
-              </code>
-            </p>
-            <input type="file" name="file" accept=".csv" required />
-            <br /><br />
-            <button type="submit">Upload</button>
-          </form>
-        </div>
-      </div>
+  function paginateTable() {
+    const allRows = Array.from(
+      document.querySelectorAll("#productTable tbody tr")
+    );
+    const rows = filteredRows.length ? filteredRows : allRows;
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
 
-      <div
-        style="
-          margin-top: 30px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        "
-      >
-        <h3 style="color: brown">Available Products</h3>
-        <a href="/export_products" class="btn">Download CSV</a>
-      </div>
+    allRows.forEach((row) => (row.style.display = "none"));
 
-      <fieldset>
-        <legend>Filter Products</legend>
-        <div
-          class="filter-row"
-          style="display: flex; gap: 10px; align-items: flex-end"
-        >
-          <div>
-            <label>Category</label>
-            <select id="categoryFilter">
-              <option value="">-- All Categories --</option>
-              {% for cat in categories %}
-              <option value="{{ cat }}">{{ cat }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div>
-            <label>Product</label>
-            <select id="productFilter">
-              <option value="">-- All Products --</option>
-              {% for product in products %}
-              <option value="{{ product.name }}">{{ product.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-      </fieldset>
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    rows.slice(start, end).forEach((row) => (row.style.display = ""));
 
-      <div class="table-responsive">
-        <table class="table" id="productTable">
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Name</th>
-              <th>Buying Price</th>
-              <th>Agent Price</th>
-              <th>Wholesale Price</th>
-              <th>Retail Price</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for product in products %}
-            <tr>
-              <td>{{ product.category }}</td>
-              <td>{{ product.name }}</td>
-              <td>{{ "{:,.0f}".format(product.buying_price or 0) }}</td>
-              <td>{{ "{:,.0f}".format(product.agent_price or 0) }}</td>
-              <td>{{ "{:,.0f}".format(product.wholesale_price or 0) }}</td>
-              <td>{{ "{:,.0f}".format(product.retail_price or 0) }}</td>
-              <td>
-                <a href="/edit_product/{{ product.id }}" class="btn btn-small">
-                  Manage
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    const controls = document.getElementById("pagination-controls");
+    controls.innerHTML = "";
 
-      <div class="pagination-controls" id="pagination-controls"></div>
-    </div>
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "Previous";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.className = currentPage === 1 ? "disabled" : "";
+    prevBtn.onclick = () => {
+      currentPage--;
+      paginateTable();
+    };
+    controls.appendChild(prevBtn);
 
-    <script>
-      const rowsPerPage = 10;
-      let currentPage = 1;
-      let filteredRows = [];
-
-      function paginateTable() {
-        const allRows = Array.from(
-          document.querySelectorAll("#productTable tbody tr")
-        );
-        const rows = filteredRows.length ? filteredRows : allRows;
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
-
-        allRows.forEach((row) => (row.style.display = "none"));
-
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        rows.slice(start, end).forEach((row) => (row.style.display = ""));
-
-        const controls = document.getElementById("pagination-controls");
-        controls.innerHTML = "";
-
-        const prevBtn = document.createElement("button");
-        prevBtn.textContent = "Previous";
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.className = currentPage === 1 ? "disabled" : "";
-        prevBtn.onclick = () => {
-          currentPage--;
-          paginateTable();
-        };
-        controls.appendChild(prevBtn);
-
-        for (let i = 1; i <= totalPages; i++) {
-          const pageBtn = document.createElement("button");
-          pageBtn.textContent = i;
-          if (i === currentPage) {
-            pageBtn.disabled = true;
-            pageBtn.className = "disabled";
-          }
-          pageBtn.onclick = () => {
-            currentPage = i;
-            paginateTable();
-          };
-          controls.appendChild(pageBtn);
-        }
-
-        const nextBtn = document.createElement("button");
-        nextBtn.textContent = "Next";
-        nextBtn.disabled = currentPage === totalPages;
-        nextBtn.className = currentPage === totalPages ? "disabled" : "";
-        nextBtn.onclick = () => {
-          currentPage++;
-          paginateTable();
-        };
-        controls.appendChild(nextBtn);
+    for (let i = 1; i <= totalPages; i++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.textContent = i;
+      if (i === currentPage) {
+        pageBtn.disabled = true;
+        pageBtn.className = "disabled";
       }
-
-      function filterTable() {
-        const selectedCat = document.getElementById("categoryFilter").value;
-        const selectedProd = document.getElementById("productFilter").value;
-        const allRows = Array.from(
-          document.querySelectorAll("#productTable tbody tr")
-        );
-
-        filteredRows = allRows.filter((row) => {
-          const cat = row.children[0].textContent.trim();
-          const prod = row.children[1].textContent.trim();
-          const matchCat = !selectedCat || cat === selectedCat;
-          const matchProd = !selectedProd || prod === selectedProd;
-          return matchCat && matchProd;
-        });
-
-        currentPage = 1;
+      pageBtn.onclick = () => {
+        currentPage = i;
         paginateTable();
-      }
-
-      window.onload = () => {
-        filterTable();
-        document
-          .getElementById("categoryFilter")
-          .addEventListener("change", () => {
-            document.getElementById("productFilter").value = "";
-            filterTable();
-          });
-        document
-          .getElementById("productFilter")
-          .addEventListener("change", filterTable);
       };
-    </script>
-  </body>
-</html>
+      controls.appendChild(pageBtn);
+    }
+
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.className = currentPage === totalPages ? "disabled" : "";
+    nextBtn.onclick = () => {
+      currentPage++;
+      paginateTable();
+    };
+    controls.appendChild(nextBtn);
+  }
+
+  function filterTable() {
+    const selectedCat = document.getElementById("categoryFilter").value;
+    const selectedProd = document.getElementById("productFilter").value;
+    const allRows = Array.from(
+      document.querySelectorAll("#productTable tbody tr")
+    );
+
+    filteredRows = allRows.filter((row) => {
+      const cat = row.children[0].textContent.trim();
+      const prod = row.children[1].textContent.trim();
+      const matchCat = !selectedCat || cat === selectedCat;
+      const matchProd = !selectedProd || prod === selectedProd;
+      return matchCat && matchProd;
+    });
+
+    currentPage = 1;
+    paginateTable();
+  }
+
+  window.onload = () => {
+    filterTable();
+    document.getElementById("categoryFilter").addEventListener("change", () => {
+      document.getElementById("productFilter").value = "";
+      filterTable();
+    });
+    document
+      .getElementById("productFilter")
+      .addEventListener("change", filterTable);
+  };
+</script>
+{% endblock %}

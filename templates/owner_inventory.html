@@ -1,223 +1,191 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Owner Inventory - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-      .pagination-controls {
-        text-align: center;
-        margin-top: 20px;
-      }
-      .pagination-controls button {
-        margin: 0 3px;
-        padding: 5px 10px;
-        cursor: pointer;
-      }
-      .pagination-controls button.disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-      }
-      .inventory-cell {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        min-width: 80px;
-      }
+{% extends "layout.html" %}
 
-      .qty-display {
-        font-weight: bold;
-      }
+{% block title %}Owner Inventory - RO Solutions{% endblock %}
 
-      .edit-input {
-        width: 60px;
-        padding: 2px;
-        text-align: center;
-      }
+{% block styles %}
+<style>
+  .pagination-controls {
+    text-align: center;
+    margin-top: 20px;
+  }
+  .pagination-controls button {
+    margin: 0 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .pagination-controls button.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 
-      .save-btn {
-        background-color: #034078;
-        color: white;
-        border: none;
-        padding: 2px 6px;
-        cursor: pointer;
-        margin-top: 2px;
-      }
+  .inventory-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 80px;
+  }
 
-    </style>
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>OWNER: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div class="navbar-right" style="display: flex; align-items: center; gap: 10px">
-            {% if session.username %}
-            <a href="/logout">
-              <button style="background-color: #d9534f; color: white; margin-left: 12px;">Logout</button>
+  .qty-display {
+    font-weight: bold;
+  }
+
+  .edit-input {
+    width: 60px;
+    padding: 2px;
+    text-align: center;
+  }
+
+  .save-btn {
+    background-color: #034078;
+    color: white;
+    border: none;
+    padding: 2px 6px;
+    cursor: pointer;
+    margin-top: 2px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<h4>📦 Branch-wise Inventory Summary</h4>
+
+<form method="GET" action="/owner_inventory" class="report-filters">
+  <fieldset>
+    <legend>Filter by Branch</legend>
+    <div class="filter-row">
+      <div class="filter-item">
+        <label for="branch">Branch</label>
+        <select name="branch">
+          <option value="">-- All Branches --</option>
+          {% for b in branches %}
+          <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-item" style="align-self: flex-end">
+        <button type="submit">Apply Filter</button>
+      </div>
+    </div>
+  </fieldset>
+</form>
+
+<div class="summary-container">
+  <div class="summary-card">
+    <h4>Total Stock Quantity</h4>
+    <p>{{ total_stock or 0 }}</p>
+  </div>
+  <div class="summary-card">
+    <h4>Total Inventory Worth (UGX)</h4>
+    <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+      <div class="alert {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+{% if table %}
+<div class="table-responsive">
+  <table class="table" id="ownerInventoryTable">
+    <thead>
+      <tr>
+        <th>Category - Product</th>
+        {% for branch in branches %}
+        <th>{{ branch }}</th>
+        {% endfor %}
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product, branches_data in table.items() %}
+      <tr>
+        <td>{{ product }}</td>
+        {% for branch in branches %}
+        <td>
+          <div class="inventory-cell">
+            {% if inventory_ids[product, branch] is defined %}
+            <a href="{{ url_for('edit_inventory_page', inventory_id=inventory_ids[product, branch]) }}" class="qty-display">
+              {{ branches_data.get(branch, 0) }}
             </a>
+            {% else %}
+            <span class="qty-display">{{ branches_data.get(branch, 0) }}</span>
             {% endif %}
           </div>
-        </div>
-      </div>
-    </div>
+        </td>
+        {% endfor %}
+        <td><strong>{{ totals[product] }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="pagination-controls" id="pagination-controls"></div>
+{% else %}
+<p>No inventory data available.</p>
+{% endif %}
+{% endblock %}
 
-    <div class="container">
-      <h4>📦 Branch-wise Inventory Summary</h4>
-      <form method="GET" action="/owner_inventory" class="report-filters">
-        <fieldset>
-          <legend>Filter by Branch</legend>
-          <div class="filter-row">
-            <div class="filter-item">
-              <label for="branch">Branch</label>
-              <select name="branch">
-                <option value="">-- All Branches --</option>
-                {% for b in branches %}
-                <option value="{{ b }}" {% if selected_branch == b %}selected{% endif %}>{{ b }}</option>
-                {% endfor %}
-              </select>
-            </div>
-            <div class="filter-item" style="align-self: flex-end">
-              <button type="submit">Apply Filter</button>
-            </div>
-          </div>
-        </fieldset>
-      </form>      
-      
-      <div class="summary-container">
-        <div class="summary-card">
-          <h4>Total Stock Quantity</h4>
-          <p>{{ total_stock or 0 }}</p>
-        </div>
-        <div class="summary-card">
-          <h4>Total Inventory Worth (UGX)</h4>
-          <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
-        </div>
-      </div>
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="flash-container">
-            {% for category, message in messages %}
-              <div class="alert {{ category }}">{{ message }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
-      {% if table %}
-      <div class="table-responsive">
-        <table class="table" id="ownerInventoryTable">
-          <thead>
-            <tr>
-              <th>Category - Product</th>
-              {% for branch in branches %}
-              <th>{{ branch }}</th>
-              {% endfor %}
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for product, branches_data in table.items() %}
-            <tr>
-              <td>{{ product }}</td>
-              {% for branch in branches %}
-              <td>
-                <div class="inventory-cell">
-                  {% if inventory_ids[product, branch] is defined %}
-                    <a href="{{ url_for('edit_inventory_page', inventory_id=inventory_ids[product, branch]) }}" class="qty-display">
-                      {{ branches_data.get(branch, 0) }}
-                    </a>
-                  {% else %}
-                    <span class="qty-display">{{ branches_data.get(branch, 0) }}</span>
-                  {% endif %}
-                </div>
-              </td>
-              {% endfor %}
-              <td><strong>{{ totals[product] }}</strong></td>
-            </tr>
-            {% endfor %}
-          </tbody>          
-        </table>
-      </div>
-      <div class="pagination-controls" id="pagination-controls"></div>
-      {% else %}
-      <p>No inventory data available.</p>
-      {% endif %}
-    </div>
+{% block scripts %}
+<script>
+  const rowsPerPage = 10;
+  let currentPage = 1;
 
-    <script>
-      const rowsPerPage = 10;
-      let currentPage = 1;
+  function paginateTable() {
+    const rows = Array.from(document.querySelectorAll("#ownerInventoryTable tbody tr"));
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+    rows.forEach(row => row.style.display = "none");
 
-      function paginateTable() {
-        const rows = Array.from(
-          document.querySelectorAll("#ownerInventoryTable tbody tr")
-        );
-        const totalPages = Math.ceil(rows.length / rowsPerPage);
-        rows.forEach((row) => (row.style.display = "none"));
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    rows.slice(start, end).forEach(row => row.style.display = "");
 
-        const start = (currentPage - 1) * rowsPerPage;
-        const end = start + rowsPerPage;
-        rows.slice(start, end).forEach((row) => (row.style.display = ""));
+    const controls = document.getElementById("pagination-controls");
+    controls.innerHTML = "";
 
-        const controls = document.getElementById("pagination-controls");
-        controls.innerHTML = "";
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "Previous";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.className = currentPage === 1 ? "disabled" : "";
+    prevBtn.onclick = () => {
+      currentPage--;
+      paginateTable();
+    };
+    controls.appendChild(prevBtn);
 
-        const prevBtn = document.createElement("button");
-        prevBtn.textContent = "Previous";
-        prevBtn.disabled = currentPage === 1;
-        prevBtn.className = currentPage === 1 ? "disabled" : "";
-        prevBtn.onclick = () => {
-          currentPage--;
-          paginateTable();
-        };
-        controls.appendChild(prevBtn);
-
-        for (let i = 1; i <= totalPages; i++) {
-          const pageBtn = document.createElement("button");
-          pageBtn.textContent = i;
-          if (i === currentPage) {
-            pageBtn.disabled = true;
-            pageBtn.className = "disabled";
-          }
-          pageBtn.onclick = () => {
-            currentPage = i;
-            paginateTable();
-          };
-          controls.appendChild(pageBtn);
-        }
-
-        const nextBtn = document.createElement("button");
-        nextBtn.textContent = "Next";
-        nextBtn.disabled = currentPage === totalPages;
-        nextBtn.className = currentPage === totalPages ? "disabled" : "";
-        nextBtn.onclick = () => {
-          currentPage++;
-          paginateTable();
-        };
-        controls.appendChild(nextBtn);
+    for (let i = 1; i <= totalPages; i++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.textContent = i;
+      if (i === currentPage) {
+        pageBtn.disabled = true;
+        pageBtn.className = "disabled";
       }
-
-      window.onload = () => {
+      pageBtn.onclick = () => {
+        currentPage = i;
         paginateTable();
       };
-    </script>
-  </body>
-</html>
+      controls.appendChild(pageBtn);
+    }
+
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.className = currentPage === totalPages ? "disabled" : "";
+    nextBtn.onclick = () => {
+      currentPage++;
+      paginateTable();
+    };
+    controls.appendChild(nextBtn);
+  }
+
+  window.onload = () => {
+    paginateTable();
+  };
+</script>
+{% endblock %}
