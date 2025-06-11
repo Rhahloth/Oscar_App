@@ -1,86 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Manage Products - AgriShop</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-    <style>
-      .pagination-controls {
-        text-align: center;
-        margin-top: 20px;
-      }
-      .pagination-controls button {
-        margin: 0 5px;
-        padding: 5px 10px;
-        cursor: pointer;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="container" style="text-align: center">
-      <h4>Password Reset Successful</h4>
-      <p><strong>New temporary password:</strong></p>
-      <div
-        style="
-          font-size: 1.2em;
-          font-weight: bold;
-          background: #eee;
-          padding: 10px;
-          width: fit-content;
-        "
-      >
-        {{ password }}
-      </div>
-      <p>
-        Share this password with the salesperson. They can log in again using
-        it.
-      </p>
-      <a href="/users"><button>Back to Manage Users</button></a>
-    </div>
-  </body>
-</html>
+{% extends "layout.html" %} {% block title %}Manage Products - AgriShop{%
+endblock %} {% block content %}
+<div class="container" style="text-align: center">
+  <h4>Password Reset Successful</h4>
+  <p><strong>New temporary password:</strong></p>
+  <div
+    style="
+      font-size: 1.2em;
+      font-weight: bold;
+      background: #eee;
+      padding: 10px;
+      width: fit-content;
+      margin: auto;
+    "
+  >
+    {{ password }}
+  </div>
+  <p>
+    Share this password with the salesperson. They can log in again using it.
+  </p>
+  <a href="/users"><button>Back to Manage Users</button></a>
+</div>
+{% endblock %}

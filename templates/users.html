@@ -1,120 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>RO Solutions - Manage Branches</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
+{% extends "layout.html" %} {% block title %}RO Solutions - Manage Branches{%
+endblock %} {% block content %}
+<div class="container">
+  <h4>Add a Branch</h4>
+  <form method="POST">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" name="username" required />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" name="password" required />
+    </div>
+    <button type="submit">Add Branch</button>
+  </form>
+
+  <h5>Existing Branches</h5>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Branch Name</th>
+          <th>Role</th>
+          <th>Reset Password</th>
+          <th>Deactivate User</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.username }}</td>
+          <td>{{ user.role }}</td>
+          <td>
+            <form
+              method="POST"
+              action="/reset_password"
+              onsubmit="return confirm('Reset password for {{ user.username }}?');"
+            >
+              <input type="hidden" name="user_id" value="{{ user.id }}" />
+              <button type="submit">Reset</button>
+            </form>
+          </td>
+          <td>
+            <form
+              method="POST"
+              action="/delete_user"
+              onsubmit="return confirm('Are you sure you want to deactivate this user?');"
+            >
+              <input type="hidden" name="user_id" value="{{ user.id }}" />
+              <button type="submit" class="btn btn-warning">
+                🚫 Deactivate
               </button>
-            </a>
+            </form>
+          </td>
+          <td>
+            {% if user.is_active %}
+            <span class="status paid">Active</span>
+            {% else %}
+            <span class="status unpaid">Deactivated</span>
             {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>
-
-    <div class="container">
-      <h4>Add a Branch</h4>
-      <form method="POST">
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" name="username" required />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" name="password" required />
-        </div>
-        <button type="submit">Add Branch</button>
-      </form>
-
-      <h5>Existing Branches</h5>
-      <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Branch Name</th>
-            <th>Role</th>
-            <th>Reset Password</th>
-            <th>Deactivate User</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in users %}
-          <tr>
-            <td>{{ user.username }}</td>
-            <td>{{ user.role }}</td>
-            <td>
-              <form
-                method="POST"
-                action="/reset_password"
-                onsubmit="return confirm('Reset password for {{ user.username }}?');"
-              >
-                <input type="hidden" name="user_id" value="{{ user.id }}" />
-                <button type="submit">Reset</button>
-              </form>
-            </td>
-            <td>
-              <form
-                method="POST"
-                action="/delete_user"
-                onsubmit="return confirm('Are you sure you want to deactivate this user?');"
-              >
-                <input type="hidden" name="user_id" value="{{ user.id }}" />
-                <button type="submit" class="btn btn-warning">
-                  🚫 Deactivate
-                </button>
-              </form>
-            </td>
-            <td>
-              {% if user.is_active %}
-              <span class="status paid">Active</span>
-              {% else %}
-              <span class="status unpaid">Deactivated</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    </div>
-  </body>
-</html>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,132 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>My Transactions - RO Solutions</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <div class="navbar-wrapper">
-    <div class="navbar-inner">
-      <div class="navbar">
-        <div class="navbar-left">
-          <img src="/static/logo.png" alt="Logo" class="logo">
-          <div class="company-details-inline">
-            <strong>RO Solutions</strong><br>
-            <em>Your sales are guaranteed</em><br>
-            Tel: +256 778 412 136<br>
-            Email: raysokello@gmail.com
-          </div>
+{% extends "layout.html" %}
+{% block title %}My Transactions - RO Solutions{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>📊 My Transactions</h2>
+
+  <form method="GET" action="/transactions" class="report-filters">
+    <fieldset>
+      <legend>Filter Transactions</legend>
+      <div class="filter-row">
+        <div class="filter-item">
+          <label for="start_date">Start Date:</label>
+          <input type="date" name="start_date" value="{{ start_date or '' }}">
         </div>
-        <div>
-          {% if session.username %}
-          <div>BRANCH: {{ session.username }}</div>
-          {% endif %}
+        <div class="filter-item">
+          <label for="end_date">End Date:</label>
+          <input type="date" name="end_date" value="{{ end_date or '' }}">
         </div>
-        <div>
-          <a href="/dashboard"><button>Back to Dashboard</button></a>
+        <div class="filter-item">
+          <label for="payment_method">Payment Method:</label>
+          <select name="payment_method">
+            <option value="">-- All --</option>
+            <option value="Cash" {% if payment_method == 'Cash' %}selected{% endif %}>Cash</option>
+            <option value="Credit" {% if payment_method == 'Credit' %}selected{% endif %}>Credit</option>
+          </select>
         </div>
-        <div class="navbar-right" style="display: flex; align-items: center; gap: 10px;">
-          {% if session.username %}
-          <a href="/logout">
-            <button style="background-color: #d9534f; color: white;">Logout</button>
-          </a>
-          {% endif %}
+        <div class="filter-item" style="align-self: flex-end">
+          <button type="submit">Apply Filter</button>
         </div>
       </div>
-    </div>
+    </fieldset>
+  </form>
+
+  <h3>📦 Transaction History</h3>
+
+  {% if sales %}
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Batch No</th>
+          <th>Payment Method</th>
+          <th>Total Quantity</th>
+          <th>Total Amount (UGX)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for batch in sales %}
+        <tr>
+          <td>{{ batch.date.strftime('%Y-%m-%d') }}</td>
+          <td>
+            <a href="/batch_sales/{{ batch.batch_number }}">{{ batch.batch_number }}</a>
+          </td>
+          <td>{{ batch.payment_method }}</td>
+          <td>{{ batch.total_quantity }}</td>
+          <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
+  {% else %}
+    <p>No transactions found for the selected period.</p>
+  {% endif %}
 
-  <div class="container">
-    <h2>📊 My Transactions</h2>
-
-    <form method="GET" action="/transactions" class="report-filters">
-      <fieldset>
-        <legend>Filter Transactions</legend>
-        <div class="filter-row">
-          <div class="filter-item">
-            <label for="start_date">Start Date:</label>
-            <input type="date" name="start_date" value="{{ start_date or '' }}">
-          </div>
-          <div class="filter-item">
-            <label for="end_date">End Date:</label>
-            <input type="date" name="end_date" value="{{ end_date or '' }}">
-          </div>
-          <div class="filter-item">
-            <label for="payment_method">Payment Method:</label>
-            <select name="payment_method">
-              <option value="">-- All --</option>
-              <option value="Cash" {% if payment_method == 'Cash' %}selected{% endif %}>Cash</option>
-              <option value="Credit" {% if payment_method == 'Credit' %}selected{% endif %}>Credit</option>
-            </select>
-          </div>
-          <div class="filter-item" style="align-self: flex-end">
-            <button type="submit">Apply Filter</button>
-          </div>
-        </div>
-      </fieldset>
-    </form>
-
-    <h3>📦 Transaction History</h3>
-    <!-- <div class="summary-container">
-  
-        <div class="summary-card">
-          <h4>Total Cash Sales (UGX)</h4>
-          <p>UGX {{ "{:,.0f}".format(total_cash_sales or 0) }}</p>
-        </div>
-  
-        <div class="summary-card">
-          <h4>Total Credit Sales (UGX)</h4>
-          <p>UGX {{ "{:,.0f}".format(total_credit_sales or 0) }}</p>
-        </div>
-      </div> -->
-
-    {% if sales %}
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Batch No</th>
-            <th>Payment Method</th>
-            <th>Total Quantity</th>
-            <th>Total Amount (UGX)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for batch in sales %}
-          <tr>
-            <td>{{ batch.date.strftime('%Y-%m-%d') }}</td>
-            <td>
-              <a href="/batch_sales/{{ batch.batch_number }}">{{ batch.batch_number }}</a>
-            </td>
-            <td>{{ batch.payment_method }}</td>
-            <td>{{ batch.total_quantity }}</td>
-            <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-      <p>No transactions found for the selected period.</p>
+  <div class="pagination-controls" style="text-align: center; margin-top: 20px;">
+    {% if page > 1 %}
+      <a href="{{ url_for('transactions', start_date=start_date, end_date=end_date, payment_method=payment_method, page=page-1) }}">
+        <button>Previous</button>
+      </a>
     {% endif %}
-
-    <div class="pagination-controls" style="text-align: center; margin-top: 20px;">
-        {% if page > 1 %}
-          <a href="{{ url_for('transactions', start_date=start_date, end_date=end_date, payment_method=payment_method, page=page-1) }}">
-            <button>Previous</button>
-          </a>
-        {% endif %}
-        <span>Page {{ page }} of {{ total_pages }}</span>
-        {% if page < total_pages %}
-          <a href="{{ url_for('transactions', start_date=start_date, end_date=end_date, payment_method=payment_method, page=page+1) }}">
-            <button>Next</button>
-          </a>
-        {% endif %}
-      </div>
-      
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+      <a href="{{ url_for('transactions', start_date=start_date, end_date=end_date, payment_method=payment_method, page=page+1) }}">
+        <button>Next</button>
+      </a>
+    {% endif %}
   </div>
-</body>
-</html>
+</div>
+{% endblock %}

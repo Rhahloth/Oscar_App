@@ -1,134 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Review Stock Requests - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout"
-              ><button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button></a
+{% extends "layout.html" %} {% block title %}Review Stock Requests - RO
+Solutions{% endblock %} {% block content %}
+<div class="container">
+  <h4 style="margin-bottom: 20px">Pending Stock Requests Sent to You</h4>
+
+  {% if requests %}
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Requested By</th>
+          <th>Quantity</th>
+          <th>Submitted Name</th>
+          <th>Requested At</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in requests %}
+        <tr>
+          <td>{{ r.product_name }}</td>
+          <td>{{ r.requester_username }}</td>
+          <td>{{ r.quantity }}</td>
+          <td>{{ r.requester_name }}</td>
+          <td>
+            {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else ''
+            }}
+          </td>
+          <td>
+            <form
+              method="POST"
+              action="/review_requests"
+              style="display: flex; gap: 5px; flex-direction: column"
             >
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
+              <input type="hidden" name="request_id" value="{{ r.id }}" />
 
-    <div class="container">
-      <h4 style="margin-bottom: 20px">Pending Stock Requests Sent to You</h4>
+              {% if r.reviewer_stock is not none %} {% if r.reviewer_stock >=
+              r.quantity %}
+              <button type="submit" name="action" value="approve">
+                Approve
+              </button>
+              {% elif r.reviewer_stock == 0 %}
+              <span style="color: red; font-size: 12px">You have 0 stock</span>
+              {% else %}
+              <span style="color: orange; font-size: 12px"
+                >Insufficient stock</span
+              >
+              {% endif %} {% else %}
+              <span style="color: grey; font-size: 12px"
+                >Stock unavailable</span
+              >
+              {% endif %}
 
-      {% if requests %}
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>Requested By</th>
-              <th>Quantity</th>
-              <th>Submitted Name</th>
-              <th>Requested At</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in requests %}
-            <tr>
-              <td>{{ r.product_name }}</td>
-              <td>{{ r.requester_username }}</td>
-              <td>{{ r.quantity }}</td>
-              <td>{{ r.requester_name }}</td>
-              <td>
-                {{ r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else
-                '' }}
-              </td>
-              <td>
-                <form
-                  method="POST"
-                  action="/review_requests"
-                  style="display: flex; gap: 5px; flex-direction: column"
-                >
-                  <input type="hidden" name="request_id" value="{{ r.id }}" />
-
-                  {% if r.reviewer_stock is not none %} {% if r.reviewer_stock
-                  >= r.quantity %}
-                  <button type="submit" name="action" value="approve">
-                    Approve
-                  </button>
-                  {% elif r.reviewer_stock == 0 %}
-                  <span style="color: red; font-size: 12px"
-                    >You have 0 stock</span
-                  >
-                  {% else %}
-                  <span style="color: orange; font-size: 12px"
-                    >Insufficient stock</span
-                  >
-                  {% endif %} {% else %}
-                  <span style="color: grey; font-size: 12px"
-                    >Stock unavailable</span
-                  >
-                  {% endif %}
-
-                  <textarea
-                    name="rejection_reason"
-                    rows="2"
-                    placeholder="Rejection reason (optional)"
-                  ></textarea>
-                  <button
-                    type="submit"
-                    name="action"
-                    value="reject"
-                    class="btn-danger"
-                  >
-                    Reject
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p>No pending requests at this time.</p>
-      {% endif %}
-    </div>
-  </body>
-</html>
+              <textarea
+                name="rejection_reason"
+                rows="2"
+                placeholder="Rejection reason (optional)"
+              ></textarea>
+              <button
+                type="submit"
+                name="action"
+                value="reject"
+                class="btn-danger"
+              >
+                Reject
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>No pending requests at this time.</p>
+  {% endif %}
+</div>
+{% endblock %}

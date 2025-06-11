@@ -1,241 +1,174 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Request Stock - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
+{% extends "layout.html" %} {% block title %}Request Stock - RO Solutions{%
+endblock %} {% block content %}
+<div class="container">
+  <h3>Request Stock</h3>
 
-    <div class="container">
-      <h3>Request Stock</h3>
+  <!-- Product Search -->
+  <label for="productSearch">Search Product:</label>
+  <input
+    type="text"
+    id="productSearch"
+    placeholder="Type product name..."
+    onkeyup="filterProducts()"
+    autocomplete="off"
+  />
+  <ul id="productList">
+    {% for item in inventory %}
+    <li
+      data-name="{{ item.product_name }}"
+      data-quantity="{{ item.quantity }}"
+      data-price="{{ item.buying_price }}"
+      onclick="addToCart('{{ item.product_name }}', {{ item.quantity }}, {{ item.buying_price }})"
+      style="display: none"
+    >
+      {{ item.product_name }} — You have {{ item.quantity }}
+    </li>
+    {% endfor %}
+  </ul>
 
-      <!-- Product Search -->
-      <label for="productSearch">Search Product:</label>
-      <input
-        type="text"
-        id="productSearch"
-        placeholder="Type product name..."
-        onkeyup="filterProducts()"
-        autocomplete="off"
-      />
-      <ul id="productList">
-        {% for item in inventory %}
-        <li
-          data-name="{{ item.product_name }}"
-          data-quantity="{{ item.quantity }}"
-          data-price="{{ item.buying_price }}"
-          onclick="addToCart('{{ item.product_name }}', {{ item.quantity }}, {{ item.buying_price }})"
-          style="display: none"
-        >
-          {{ item.product_name }} — You have {{ item.quantity }}
-        </li>
+  <!-- Cart -->
+  <h4>Stock Request Cart</h4>
+  <form method="POST" action="/request_stock" onsubmit="prepareSubmission()">
+    <div class="cart-table" id="cartContainer"></div>
+
+    <div class="form-group">
+      <label>FROM (BRANCH)</label>
+      <select name="recipient_id" required>
+        {% for r in recipients %}
+        <option value="{{ r.id }}">{{ r.username }}</option>
         {% endfor %}
-      </ul>
-
-      <!-- Cart -->
-      <h4>Stock Request Cart</h4>
-      <form
-        method="POST"
-        action="/request_stock"
-        onsubmit="prepareSubmission()"
-      >
-        <div class="cart-table" id="cartContainer"></div>
-
-        <div class="form-group">
-          <label>FROM (BRANCH)</label>
-          <select name="recipient_id" required>
-            {% for r in recipients %}
-            <option value="{{ r.id }}">{{ r.username }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Your Full Name</label>
-          <input
-            type="text"
-            name="requester_name"
-            required
-            autocomplete="off"
-          />
-        </div>
-
-        <input type="hidden" name="cart_data" id="cartData" />
-        <div class="cart-actions">
-          <button type="button" onclick="clearCart()">Clear Cart</button>
-          <button type="submit">Submit Request</button>
-        </div>
-      </form>
+      </select>
     </div>
 
-    <script>
-      let cart = [];
+    <div class="form-group">
+      <label>Your Full Name</label>
+      <input type="text" name="requester_name" required autocomplete="off" />
+    </div>
 
-      function filterProducts() {
-        const query = document
-          .getElementById("productSearch")
-          .value.toLowerCase();
-        const items = document.querySelectorAll("#productList li");
+    <input type="hidden" name="cart_data" id="cartData" />
+    <div class="cart-actions">
+      <button type="button" onclick="clearCart()">Clear Cart</button>
+      <button type="submit">Submit Request</button>
+    </div>
+  </form>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  let cart = [];
 
-        if (query.length < 2) {
-          items.forEach((item) => (item.style.display = "none"));
-          return;
-        }
+  function filterProducts() {
+    const query = document.getElementById("productSearch").value.toLowerCase();
+    const items = document.querySelectorAll("#productList li");
 
-        items.forEach((item) => {
-          const name = item.getAttribute("data-name").toLowerCase();
-          item.style.display = name.includes(query) ? "" : "none";
-        });
-      }
+    if (query.length < 2) {
+      items.forEach((item) => (item.style.display = "none"));
+      return;
+    }
 
-      function addToCart(name, available, price) {
-        const existing = cart.find((item) => item.name === name);
-        if (existing) {
-          existing.quantity += 1;
-        } else {
-          cart.push({ name, quantity: 1, available, price });
-        }
-        renderCart();
-        clearSearch();
-      }
+    items.forEach((item) => {
+      const name = item.getAttribute("data-name").toLowerCase();
+      item.style.display = name.includes(query) ? "" : "none";
+    });
+  }
 
-      function renderCart() {
-        const container = document.getElementById("cartContainer");
-        container.innerHTML = "";
+  function addToCart(name, available, price) {
+    const existing = cart.find((item) => item.name === name);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({ name, quantity: 1, available, price });
+    }
+    renderCart();
+    clearSearch();
+  }
 
-        if (cart.length === 0) {
-          container.innerHTML = "<p>No items in cart.</p>";
-          return;
-        }
+  function renderCart() {
+    const container = document.getElementById("cartContainer");
+    container.innerHTML = "";
 
-        let totalUGX = 0;
+    if (cart.length === 0) {
+      container.innerHTML = "<p>No items in cart.</p>";
+      return;
+    }
 
-        const table = document.createElement("table");
-        table.className = "table";
-        table.style.width = "100%";
-        table.innerHTML = `
-    <thead>
-      <tr>
-        <th>Product Name</th>
-        <th style="text-align: center;">Quantity</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
+    let totalUGX = 0;
+    const table = document.createElement("table");
+    table.className = "table";
+    table.style.width = "100%";
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Product Name</th>
+          <th style="text-align: center;">Quantity</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
 
-        const tbody = table.querySelector("tbody");
+    const tbody = table.querySelector("tbody");
 
-        cart.forEach((item, index) => {
-          totalUGX += item.quantity * item.price;
-          const row = document.createElement("tr");
+    cart.forEach((item, index) => {
+      totalUGX += item.quantity * item.price;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${item.name}</td>
+        <td style="text-align: center;">
+          <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)" style="text-align: center; width: 60px;" />
+        </td>
+        <td><button class="remove-btn" onclick="removeItem(${index})">Remove</button></td>
+      `;
+      tbody.appendChild(row);
+    });
 
-          row.innerHTML = `
-                            <td>${item.name}</td>
-                            <td style="text-align: center;">
-                              <input type="number" min="1" value="${item.quantity}" onchange="updateQty(${index}, this.value)" style="text-align: center; width: 60px;" />
-                            </td>
-                            <td><button class="remove-btn" onclick="removeItem(${index})">Remove</button></td>
-                          `;
+    container.appendChild(table);
 
-          tbody.appendChild(row);
-        });
+    const totalDiv = document.createElement("div");
+    totalDiv.className = "cart-total";
+    totalDiv.style = `
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 1.2rem;
+      background-color: #f2f2f2;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+    totalDiv.innerHTML = `<strong>Total Stock Value (UGX): ${totalUGX.toLocaleString()}</strong>`;
+    container.appendChild(totalDiv);
+  }
 
-        container.appendChild(table);
+  function updateQty(index, newQty) {
+    cart[index].quantity = parseInt(newQty);
+    renderCart();
+  }
 
-        const totalDiv = document.createElement("div");
-        totalDiv.className = "cart-total";
-        totalDiv.style = `
-                          margin-top: 20px;
-                          text-align: center;
-                          font-weight: bold;
-                          font-size: 1.2rem;
-                          background-color: #f2f2f2;
-                          padding: 12px;
-                          border-radius: 8px;
-                          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        `;
-        totalDiv.innerHTML = `<strong>Total Stock Value (UGX): ${totalUGX.toLocaleString()}</strong>`;
-        container.appendChild(totalDiv);
-      }
+  function removeItem(index) {
+    cart.splice(index, 1);
+    renderCart();
+  }
 
-      function updateQty(index, newQty) {
-        cart[index].quantity = parseInt(newQty);
-        renderCart();
-      }
+  function clearCart() {
+    cart = [];
+    renderCart();
+  }
 
-      function removeItem(index) {
-        cart.splice(index, 1);
-        renderCart();
-      }
+  function clearSearch() {
+    const search = document.getElementById("productSearch");
+    search.value = "";
+    search.blur();
+    const items = document.querySelectorAll("#productList li");
+    items.forEach((item) => (item.style.display = "none"));
+  }
 
-      function clearCart() {
-        cart = [];
-        renderCart();
-      }
-
-      function clearSearch() {
-        const search = document.getElementById("productSearch");
-        search.value = "";
-        search.blur();
-        const items = document.querySelectorAll("#productList li");
-        items.forEach((item) => (item.style.display = "none"));
-      }
-
-      function prepareSubmission() {
-        document.getElementById("cartData").value = JSON.stringify(
-          cart.map((item) => ({
-            name: item.name,
-            quantity: item.quantity,
-          }))
-        );
-      }
-    </script>
-  </body>
-</html>
+  function prepareSubmission() {
+    document.getElementById("cartData").value = JSON.stringify(
+      cart.map((item) => ({
+        name: item.name,
+        quantity: item.quantity,
+      }))
+    );
+  }
+</script>
+{% endblock %}
