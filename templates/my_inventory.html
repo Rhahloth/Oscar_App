@@ -6,9 +6,7 @@
 <div class="form-group action-buttons" style="text-align: left; justify-content: center;">    
   <div style="margin-bottom: 20px;">
     <a href="/sales_upload_inventory">
-      <button>
-        + Add Stocks
-      </button>
+      <button>+ Add Stocks</button>
     </a>
   </div>
 </div>
@@ -46,7 +44,6 @@
     <h4>Total Stock Quantity</h4>
     <p>{{ total_stock or 0 }}</p>
   </div>
-
   <div class="summary-card">
     <h4>Total Inventory Worth (UGX)</h4>
     <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
@@ -74,14 +71,15 @@
         <td>{{ item.quantity }}</td>
         <td>{{ "{:,.0f}".format(item.agent_price or 0) }}</td>
         <td>{{ "{:,.0f}".format(item.wholesale_price or 0) }}</td>
-        <td>{{ "{:,.0f}".format(item.retail_price or 0) }}</td>          
+        <td>{{ "{:,.0f}".format(item.retail_price or 0) }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
-<div class="pagination-controls" id="pagination-controls" style="text-align: center; margin-top: 20px;"></div>
+<!-- Updated Pagination Style -->
+<div style="text-align: center; margin-top: 20px;" id="pagination-controls"></div>
 {% else %}
 <p>You currently have no stock assigned.</p>
 {% endif %}
@@ -105,41 +103,40 @@
     const controls = document.getElementById("pagination-controls");
     controls.innerHTML = "";
 
-    // Previous button
-    const prevBtn = document.createElement("button");
-    prevBtn.textContent = "Previous";
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        paginateTable();
-      }
-    };
-    controls.appendChild(prevBtn);
+    if (totalPages > 1) {
+      // First
+      const firstBtn = document.createElement("button");
+      firstBtn.innerText = "First";
+      firstBtn.disabled = currentPage === 1;
+      firstBtn.onclick = () => { currentPage = 1; paginateTable(); };
+      controls.appendChild(firstBtn);
 
-    // Page numbers
-    for (let i = 1; i <= totalPages; i++) {
-      const btn = document.createElement("button");
-      btn.innerText = i;
-      btn.disabled = i === currentPage;
-      btn.onclick = () => {
-        currentPage = i;
-        paginateTable();
-      };
-      controls.appendChild(btn);
+      // Prev
+      const prevBtn = document.createElement("button");
+      prevBtn.innerText = "« Prev";
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => { currentPage--; paginateTable(); };
+      controls.appendChild(prevBtn);
+
+      // Page Info
+      const info = document.createElement("span");
+      info.innerHTML = ` Page ${currentPage} of ${totalPages} `;
+      controls.appendChild(info);
+
+      // Next
+      const nextBtn = document.createElement("button");
+      nextBtn.innerText = "Next »";
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => { currentPage++; paginateTable(); };
+      controls.appendChild(nextBtn);
+
+      // Last
+      const lastBtn = document.createElement("button");
+      lastBtn.innerText = "Last";
+      lastBtn.disabled = currentPage === totalPages;
+      lastBtn.onclick = () => { currentPage = totalPages; paginateTable(); };
+      controls.appendChild(lastBtn);
     }
-
-    // Next button
-    const nextBtn = document.createElement("button");
-    nextBtn.textContent = "Next";
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        paginateTable();
-      }
-    };
-    controls.appendChild(nextBtn);
   }
 
   window.onload = () => {

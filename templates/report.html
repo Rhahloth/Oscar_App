@@ -67,7 +67,7 @@
   <!-- Sales Summary Table -->
   <h3>Sales Performance Summary</h3>
   <div class="table-responsive">
-    <table class="table">
+    <table class="table" id="reportTable">
       <thead>
         <tr>
           <th>Salesperson</th>
@@ -94,6 +94,9 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Pagination Controls -->
+  <div id="report-pagination-controls" style="text-align: center; margin-top: 20px;"></div>
 
   <!-- Chart -->
   <div style="margin: 20px 0;"><canvas id="salesChart" style="max-height: 300px;"></canvas></div>
@@ -136,19 +139,6 @@
       </tbody>
     </table>
   </div>
-
-  <!-- Pagination -->
-  <div style="margin-top: 20px; text-align: center;">
-    {% if current_page > 1 %}
-      <a href="{{ url_for('report', page=1) }}"><button>First</button></a>
-      <a href="{{ url_for('report', page=current_page - 1) }}"><button>&laquo; Prev</button></a>
-    {% endif %}
-    Page {{ current_page }} of {{ total_pages }}
-    {% if current_page < total_pages %}
-      <a href="{{ url_for('report', page=current_page + 1) }}"><button>Next &raquo;</button></a>
-      <a href="{{ url_for('report', page=total_pages) }}"><button>Last</button></a>
-    {% endif %}
-  </div>
 </div>
 {% endblock %}
 
@@ -183,5 +173,56 @@
       scales: { y: { beginAtZero: true } }
     }
   });
+</script>
+
+<script>
+  const rowsPerPage = 10;
+  let currentPage = 1;
+
+  function paginateReportTable() {
+    const table = document.getElementById("reportTable");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+    rows.forEach(row => row.style.display = "none");
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    rows.slice(start, end).forEach(row => row.style.display = "");
+
+    const controls = document.getElementById("report-pagination-controls");
+    controls.innerHTML = "";
+
+    const first = document.createElement("button");
+    first.textContent = "First";
+    first.disabled = currentPage === 1;
+    first.onclick = () => { currentPage = 1; paginateReportTable(); };
+    controls.appendChild(first);
+
+    const prev = document.createElement("button");
+    prev.textContent = "« Prev";
+    prev.disabled = currentPage === 1;
+    prev.onclick = () => { currentPage--; paginateReportTable(); };
+    controls.appendChild(prev);
+
+    const info = document.createElement("span");
+    info.innerHTML = ` Page ${currentPage} of ${totalPages} `;
+    controls.appendChild(info);
+
+    const next = document.createElement("button");
+    next.textContent = "Next »";
+    next.disabled = currentPage === totalPages;
+    next.onclick = () => { currentPage++; paginateReportTable(); };
+    controls.appendChild(next);
+
+    const last = document.createElement("button");
+    last.textContent = "Last";
+    last.disabled = currentPage === totalPages;
+    last.onclick = () => { currentPage = totalPages; paginateReportTable(); };
+    controls.appendChild(last);
+  }
+
+  window.onload = () => {
+    paginateReportTable();
+  };
 </script>
 {% endblock %}
