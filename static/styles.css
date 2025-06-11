@@ -129,7 +129,6 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
     width: 100%;
 }
 
@@ -585,7 +584,8 @@ button:hover {
     .navbar-left,
     .navbar-right {
         max-width: 100%;
-        flex-direction: column;
+        flex-direction: row;
+        justify-content: space-between;
         align-items: center;
         gap: 10px;
     }
@@ -684,6 +684,7 @@ button:hover {
     .navbar-right {
         justify-content: space-between;
         width: 100%;
+        flex-direction: row;
     }
 
     .navbar-inner {
