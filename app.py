@@ -243,7 +243,6 @@ def dashboard():
         for sale in sales:
             if sale['date']:
                 sale['date'] = sale['date'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
-
         # Get inventory
         cur.execute('''
             SELECT ui.*, 
@@ -260,8 +259,11 @@ def dashboard():
         business_id = cur.fetchone()['business_id']
         session['business_id'] = business_id
 
-        cur.execute("SELECT COUNT(*) FROM users WHERE business_id = %s", (business_id,))
-        session['branch_count'] = cur.fetchone()[0]
+        # Count branches (users in the same business)
+        cur.execute("SELECT COUNT(*) AS branch_count FROM users WHERE business_id = %s", (business_id,))
+        result = cur.fetchone()
+        session['branch_count'] = result['branch_count'] if result and 'branch_count' in result else 0
+
 
         return render_template('dashboard_sales.html', inventory=inventory, sales=sales, username=session['username'])
 
