@@ -13,15 +13,18 @@
       href="{{ url_for('static', filename='manifest.json') }}"
     />
     <meta name="theme-color" content="#034078" />
-
-    <!-- Offline icon -->
     <link
       rel="icon"
       sizes="192x192"
       href="{{ url_for('static', filename='icons/icon-192.png') }}"
     />
   </head>
-  <body>
+
+  <body
+    class="{% if request.endpoint in ['login', 'register_owner'] %}login-body{% endif %}"
+  >
+    {% if request.endpoint not in ['login', 'register_owner'] %}
+    <!-- Standard Navbar -->
     <div class="navbar-wrapper">
       <div class="navbar-inner">
         <div class="navbar">
@@ -63,8 +66,14 @@
         </div>
       </div>
     </div>
+    {% endif %}
 
+    <!-- Conditional Wrapper for Login/Register Pages -->
+    {% if request.endpoint in ['login', 'register_owner'] %}
+    <div class="login-wrapper">{% block content %}{% endblock %}</div>
+    {% else %}
     <div class="container">{% block content %}{% endblock %}</div>
+    {% endif %}
 
     <!-- ✅ PWA & IndexedDB Setup -->
     <script src="{{ url_for('static', filename='js/db.js') }}"></script>
@@ -80,5 +89,7 @@
         }
       });
     </script>
+
+    {% block scripts %}{% endblock %}
   </body>
 </html>
