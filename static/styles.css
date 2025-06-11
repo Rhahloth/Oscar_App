@@ -186,6 +186,16 @@ button:hover {
     border-radius: 20%;
 }
 
+.footer {
+    background-color: #034078;
+    color: white;
+    text-align: center;
+    padding: 15px;
+    font-size: 13px;
+    margin-top: 40px;
+    border-top: 1px solid #ccc;
+}
+
 /* Table Styling */
 /* Table Styling */
 .table {

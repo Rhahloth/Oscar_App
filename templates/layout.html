@@ -24,40 +24,29 @@
     class="{% if request.endpoint in ['login', 'register_owner'] %}login-body{% endif %}"
   >
     {% if request.endpoint not in ['login', 'register_owner'] %}
-    <!-- Standard Navbar -->
+    <!-- ✅ Updated Navbar with your original style -->
     <div class="navbar-wrapper">
       <div class="navbar-inner">
         <div class="navbar">
           <div class="navbar-left">
             <img src="/static/logo.png" alt="ROB Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>ROB Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
+            <strong>ROB Solutions</strong>
           </div>
+
           <div>
             {% if session.username %}
-            <div>{{ session.role|upper }}: {{ session.username }}</div>
+            <span>{{ session.role|upper }}: {{ session.username }}</span>
             {% endif %}
           </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
+
+          <div class="navbar-right">
+            {% if session.username and request.endpoint != 'dashboard' %}
+            <a href="/dashboard">
+              <button>Back to Dashboard</button>
+            </a>
+            {% endif %} {% if session.username %}
             <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
+              <button style="background-color: #d9534f; color: white">
                 Logout
               </button>
             </a>
@@ -68,14 +57,25 @@
     </div>
     {% endif %}
 
-    <!-- ✅ Only one content block -->
+    <!-- ✅ Main Content -->
     <div
       class="{% if request.endpoint in ['login', 'register_owner'] %}login-wrapper{% else %}container{% endif %}"
+      style="margin-top: 120px"
     >
       {% block content %}{% endblock %}
     </div>
 
-    <!-- PWA & IndexedDB Setup -->
+    <!-- ✅ Footer -->
+    {% if request.endpoint not in ['login', 'register_owner'] %}
+    <footer class="footer">
+      <div class="footer-content">
+        <strong>ROB Solutions</strong> — Your sales are guaranteed<br />
+        Tel: +256 778 412 136 | Email: raysokello@gmail.com
+      </div>
+    </footer>
+    {% endif %}
+
+    <!-- ✅ PWA & IndexedDB Setup -->
     <script src="{{ url_for('static', filename='js/db.js') }}"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
