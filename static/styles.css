@@ -194,6 +194,8 @@ button:hover {
     margin-top: 10px;
     border-top: 1px solid #ccc;
     max-width: 90%;
+    display: flex;
+    justify-content: center;
 }
 
 /* Table Styling */
