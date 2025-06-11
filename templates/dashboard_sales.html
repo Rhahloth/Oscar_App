@@ -1,121 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Salesperson Dashboard - AgriShop</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
+{% extends "layout.html" %} {% block title %}Salesperson Dashboard - AgriShop{%
+endblock %} {% block content %}
+<h4>Welcome, {{ session.username }}!</h4>
 
-    <div class="container">
-      <h4>Welcome, {{ session.username }}!</h4>
-      <div class="form-group action-buttons">
-        <a href="/record_sale"><button>🛒 POS</button></a>
-        <a href="/my_inventory"><button>📦 Manage Stock</button></a>
-        <a href="/request_stock"><button>📥 Request Stock</button></a>
-        <a href="/review_requests"><button>🔄 Review Transfers</button></a>
-        <a href="/repayments"><button>💳 Credit Repayments</button></a>
-        <a href="/record_expense"><button>💰 Record Expense</button></a>
-      </div>
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div class="flash-messages">
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-      {% endif %} {% endwith %}
-      <h5>Your Recent Sales</h5>
-      <h4>Recent Sales Batches</h4>
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Batch No</th>
-              <th>Payment Method</th>
-              <th>Total Quantity</th>
-              <th>Total Amount (UGX)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for batch in sales %}
-            <tr>
-              <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
-              <td>
-                <a href="/batch_sales/{{ batch.batch_number }}"
-                  >{{ batch.batch_number }}</a
-                >
-              </td>
-              <td>{{ batch.payment_method }}</td>
-              <td>{{ batch.total_quantity }}</td>
-              <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <div style="margin-top: 20px; text-align: center">
-        <a href="/transactions">
-          <button
-            style="
-              background-color: #034078;
-              color: white;
-              padding: 8px 16px;
-              border: none;
-              border-radius: 5px;
-              font-weight: bold;
-            "
-          >
-            📜 View Full Transaction History
-          </button>
-        </a>
-      </div>
-    </div>
-  </body>
-</html>
+<div class="form-group action-buttons">
+  <a href="/record_sale"><button>🛒 POS</button></a>
+  <a href="/my_inventory"><button>📦 Manage Stock</button></a>
+  <a href="/request_stock"><button>📥 Request Stock</button></a>
+  <a href="/review_requests"><button>🔄 Review Transfers</button></a>
+  <a href="/repayments"><button>💳 Credit Repayments</button></a>
+  <a href="/record_expense"><button>💰 Record Expense</button></a>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div class="flash-messages">
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %} {% endwith %}
+
+<h4>Recent Sales Batches</h4>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Batch No</th>
+        <th>Payment Method</th>
+        <th>Total Quantity</th>
+        <th>Total Amount (UGX)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for batch in sales %}
+      <tr>
+        <td>{{ batch.date.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>
+          <a href="/batch_sales/{{ batch.batch_number }}">
+            {{ batch.batch_number }}
+          </a>
+        </td>
+        <td>{{ batch.payment_method }}</td>
+        <td>{{ batch.total_quantity }}</td>
+        <td>{{ "{:,.0f}".format(batch.total_price or 0) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top: 20px; text-align: center">
+  <a href="/transactions">
+    <button class="primary-button">📜 View Full Transaction History</button>
+  </a>
+</div>
+{% endblock %}
