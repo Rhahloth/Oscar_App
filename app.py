@@ -192,8 +192,10 @@ def dashboard():
         session['business_id'] = business_id
 
         # Count branches (users in the same business)
-        cur.execute("SELECT COUNT(*) FROM users WHERE business_id = %s", (business_id,))
-        session['branch_count'] = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) AS branch_count FROM users WHERE business_id = %s", (business_id,))
+        result = cur.fetchone()
+        session['branch_count'] = result['branch_count'] if result else 0
+
 
         # Fetch owner dashboard data
         cur.execute("""
