@@ -22,32 +22,25 @@
 
   <body
     class="{% if request.endpoint in ['login', 'register_owner'] %}login-body{% endif %}"
-    data-endpoint="{{ request.endpoint }}"
   >
     {% if request.endpoint not in ['login', 'register_owner'] %}
-    <!-- ✅ Updated Navbar -->
+    <!-- ✅ Updated Navbar with your original style -->
     <div class="navbar-wrapper">
       <div class="navbar-inner">
         <div class="navbar">
-          <!-- Logo and brand (hidden on mobile) -->
           <div class="navbar-left">
             <img src="/static/logo.png" alt="ROB Solutions Logo" class="logo" />
             <strong>ROB Solutions</strong>
           </div>
 
-          <!-- Username display -->
           <div>
             {% if session.username %}
-            <span>{{ session.username }}</span>
+            <span>{{ session.role|upper }}: {{ session.username }}</span>
             {% endif %}
           </div>
 
-          <!-- Right-side controls -->
           <div class="navbar-right">
-            {% if session.username and request.endpoint == 'dashboard' %}
-            <span class="branch-name">Branch: {{ session.branch_name }}</span>
-            {% endif %} {% if session.username and request.endpoint !=
-            'dashboard' %}
+            {% if session.username and request.endpoint != 'dashboard' %}
             <a href="/dashboard">
               <button>Back to Dashboard</button>
             </a>
@@ -71,6 +64,16 @@
     >
       {% block content %}{% endblock %}
     </div>
+
+    <!-- ✅ Footer -->
+    {% if request.endpoint not in ['login', 'register_owner'] %}
+    <footer class="footer">
+      <div class="footer-content">
+        <strong>ROB Solutions</strong> — Your sales are guaranteed<br />
+        Tel: +256 778 412 136 | Email: raysokello@gmail.com
+      </div>
+    </footer>
+    {% endif %}
 
     <!-- ✅ PWA & IndexedDB Setup -->
     <script src="{{ url_for('static', filename='js/db.js') }}"></script>
