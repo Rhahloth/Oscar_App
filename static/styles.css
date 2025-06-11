@@ -184,38 +184,6 @@ button:hover {
     border-radius: 20%;
 }
 
-.footer {
-    background-color: #034078;
-    color: #ccc;
-    /* Optional: improve contrast */
-    max-width: 90%;
-    width: 100%;
-    margin: 20px auto 20px auto;
-    padding: 20px 20px;
-    font-size: 13px;
-
-    display: flex;
-    align-items: center;
-    /* Center vertically */
-    justify-content: center;
-    /* Center horizontally */
-
-    text-align: center;
-    border-radius: 6px;
-    border-top: 1px solid #ccc;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
-    /* Optional: visual consistency with navbar */
-}
-
-@media (max-width: 768px) {
-    .footer {
-        font-size: 12px;
-        padding: 0 10px;
-        height: auto;
-        /* Allow wrapping if needed */
-    }
-}
-
 /* Table Styling */
 /* Table Styling */
 .table {
@@ -676,8 +644,8 @@ button:hover {
 @media (max-width: 768px) {
 
     .navbar-left,
-    .navbar-center {
-        display: none;
+    .navbar>div:not(.navbar-right) {
+        display: none !important;
     }
 
     .navbar-right {
@@ -694,4 +662,10 @@ button:hover {
         padding: 8px 12px;
         font-size: 14px;
     }
+}
+
+/* Align logout to right ONLY on dashboard */
+body[data-endpoint="dashboard"] .navbar-right {
+    justify-content: flex-end;
+    gap: 10px;
 }
