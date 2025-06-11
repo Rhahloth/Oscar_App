@@ -1,213 +1,187 @@
-<!-- report.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Report Dashboard - RO Solutions</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-  <!-- Navbar -->
-  <div class="navbar-wrapper">
-    <div class="navbar-inner">
-      <div class="navbar">
-        <div class="navbar-left">
-          <img src="/static/logo.png" alt="RO Solutions Logo" class="logo">
-          <div class="company-details-inline">
-            <strong>RO Solutions</strong><br>
-            <em>Your sales are guaranteed</em><br>
-            Tel: +256 778 412 136<br>
-            Email: raysokello@gmail.com
-          </div>
-        </div>
-        <div>{% if session.username %}<div>BRANCH: {{ session.username }}</div>{% endif %}</div>
-        <div><a href="/dashboard"><button>Back to Main Dashboard</button></a></div>
-        <div class="navbar-right" style="display: flex; align-items: center; gap: 10px">
-          {% if session.username %}
-          <a href="/logout">
-            <button style="background-color: #d9534f; color: white; margin-left: 12px;">Logout</button>
-          </a>
-          {% endif %}
-        </div>
-      </div>
-    </div>
+{% extends "layout.html" %}
+{% block title %}Report Dashboard - RO Solutions{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>📊 Sales Report Dashboard</h2>
+
+  <!-- Quick Access -->
+  <div class="form-group action-buttons" style="justify-content: center;">
+    <a href="/view_expenses"><button>💰 VIEW EXPENSES</button></a>
   </div>
-  
 
   <!-- Filters -->
-  <div class="container">
-    <div class="form-group action-buttons" style="justify-content: center;"> 
-      <a href="/view_expenses">
-        <button>💰 VIEW EXPENSES</button>
-      </a>
-    </div>
-    <form method="POST" class="report-filters">
-      <fieldset>
-        <legend>Filter Sales Report</legend>
-        <div class="filter-row">
-          <div class="filter-item"><label>Start Date</label><input type="date" name="start_date" value="{{ request.form.start_date or '' }}"></div>
-          <div class="filter-item"><label>End Date</label><input type="date" name="end_date" value="{{ request.form.end_date or '' }}"></div>
-          <div class="filter-item">
-            <label>Salesperson</label>
-            <select name="salesperson">
-              <option value="">All</option>
-              {% for sp in salespeople %}
-              <option value="{{ sp }}" {% if request.form.salesperson == sp %}selected{% endif %}>{{ sp }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="filter-item">
-            <label>Payment Type</label>
-            <select name="payment_method">
-              <option value="">All</option>
-              <option value="Cash" {% if request.form.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
-              <option value="Credit" {% if request.form.payment_method == 'Credit' %}selected{% endif %}>Credit</option>
-            </select>
-          </div>
-          <div class="filter-item" style="align-self: flex-end">
-            <button type="submit">Apply Filter</button>
-          </div>
+  <form method="POST" class="report-filters">
+    <fieldset>
+      <legend>Filter Sales Report</legend>
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>Start Date</label>
+          <input type="date" name="start_date" value="{{ request.form.start_date or '' }}">
         </div>
-      </fieldset>
-    </form>
+        <div class="filter-item">
+          <label>End Date</label>
+          <input type="date" name="end_date" value="{{ request.form.end_date or '' }}">
+        </div>
+        <div class="filter-item">
+          <label>Salesperson</label>
+          <select name="salesperson">
+            <option value="">All</option>
+            {% for sp in salespeople %}
+            <option value="{{ sp }}" {% if request.form.salesperson == sp %}selected{% endif %}>{{ sp }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-item">
+          <label>Payment Type</label>
+          <select name="payment_method">
+            <option value="">All</option>
+            <option value="Cash" {% if request.form.payment_method == 'Cash' %}selected{% endif %}>Cash</option>
+            <option value="Credit" {% if request.form.payment_method == 'Credit' %}selected{% endif %}>Credit</option>
+          </select>
+        </div>
+        <div class="filter-item" style="align-self: flex-end">
+          <button type="submit">Apply Filter</button>
+        </div>
+      </div>
+    </fieldset>
+  </form>
 
-    {% if request.form.salesperson %}
-    <div style="margin: 10px 0; font-weight: bold; text-align: center; font-size: 22px;">
-      📍 <span style="color: #034078;">REPORT FOR {{ request.form.salesperson }}</span>
-    </div>
-    {% endif %}
+  <!-- Filter Indicator -->
+  {% if request.form.salesperson %}
+  <div style="margin: 10px 0; text-align: center; font-size: 22px; font-weight: bold;">
+    📍 REPORT FOR <span style="color: #034078;">{{ request.form.salesperson }}</span>
+  </div>
+  {% endif %}
 
-    <!-- Summary Cards -->
-    <div class="summary-container">
-      <div class="summary-card"><h4>Total Quantity Sold</h4><p>{{ summary.total_quantity or 0 }}</p></div>
-      <div class="summary-card"><h4>Total Revenue (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p></div>
-      <div class="summary-card"><h4>Total Cost Price (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_cost_price or 0) }}</p></div>
-      <div class="summary-card"><h4>Total Expenses (UGX)</h4><p>UGX {{ "{:,.0f}".format(total_expenses or 0) }}</p></div>
-      <div class="summary-card"><h4>Net Profit (UGX)</h4><p>UGX {{ "{:,.0f}".format(net_balance or 0) }}</p></div>
-      <div class="summary-card"><h4>Top Salesperson</h4><p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p></div>
-    </div>
-
-    <!-- Sales Table -->
-    <h3>Sales Performance Summary</h3>
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Salesperson</th>
-            <th>Payment Type</th>
-            <th>Sales Count</th>
-            <th>Total Quantity</th>
-            <th>Buying Price (UGX)</th>
-            <th>Selling Price (UGX)</th>
-            <th>Profit (UGX)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in report %}
-          <tr>
-            <td>{{ row.salesperson }}</td>
-            <td>{{ row.payment_method }}</td>
-            <td>{{ row.sales_count }}</td>
-            <td>{{ row.total_qty }}</td>
-            <td>{{ "{:,.0f}".format(row.total_buying_price or 0) }}</td>
-            <td>{{ "{:,.0f}".format(row.total_selling_price or 0) }}</td>
-            <td>{{ "{:,.0f}".format(row.profit or 0) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Chart -->
-    <div style="margin: 20px 0;"><canvas id="salesChart" style="max-height: 300px;"></canvas></div>
-
-    <!-- Export Button -->
-    <form action="/export_report" method="POST" style="margin-top: 15px;">
-      <input type="hidden" name="start_date" value="{{ request.form.start_date }}">
-      <input type="hidden" name="end_date" value="{{ request.form.end_date }}">
-      <input type="hidden" name="salesperson" value="{{ request.form.salesperson }}">
-      <button type="submit">Export to CSV</button>
-    </form>
-
-    <!-- Distribution Log Table -->
-    <h3 style="margin-top: 40px;">Stock Distribution Log</h3>
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Product</th>
-            <th>From (Salesperson)</th>
-            <th>To (Salesperson)</th>
-            <th>Quantity</th>
-            <th>Status</th>
-            <th>Total Value (UGX)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for dist in distribution_log %}
-          <tr>
-            <td>{{ dist.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td>{{ dist.product_name }}</td>
-            <td>{{ dist.from_salesperson }}</td>
-            <td>{{ dist.to_salesperson }}</td>
-            <td>{{ dist.quantity }}</td>
-            <td>{{ dist.status }}</td>
-            <td>{{ "{:,.0f}".format(dist.value_ugx or 0) }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <div style="margin-top: 20px; text-align: center;">
-      {% if current_page > 1 %}
-        <a href="{{ url_for('report', page=current_page - 1) }}"><button>&laquo; Prev</button></a>
-      {% endif %}
-      Page {{ current_page }} of {{ total_pages }}
-      {% if current_page < total_pages %}
-        <a href="{{ url_for('report', page=current_page + 1) }}"><button>Next &raquo;</button></a>
-      {% endif %}
-    </div>
+  <!-- Summary Cards -->
+  <div class="summary-container">
+    <div class="summary-card"><h4>Total Quantity Sold</h4><p>{{ summary.total_quantity or 0 }}</p></div>
+    <div class="summary-card"><h4>Total Revenue (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p></div>
+    <div class="summary-card"><h4>Total Cost Price (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_cost_price or 0) }}</p></div>
+    <div class="summary-card"><h4>Total Expenses (UGX)</h4><p>UGX {{ "{:,.0f}".format(total_expenses or 0) }}</p></div>
+    <div class="summary-card"><h4>Net Profit (UGX)</h4><p>UGX {{ "{:,.0f}".format(net_balance or 0) }}</p></div>
+    <div class="summary-card"><h4>Top Salesperson</h4><p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p></div>
   </div>
 
-  <!-- Chart Script -->
-  <script>
-    const rawData = {{ report | tojson }};
-    const revenueBySalesperson = {};
-    rawData.forEach(row => {
-      const sp = row.salesperson;
-      const revenue = row.total_selling_price || 0;
-      if (!revenueBySalesperson[sp]) revenueBySalesperson[sp] = 0;
-      revenueBySalesperson[sp] += revenue;
-    });
+  <!-- Sales Summary Table -->
+  <h3>Sales Performance Summary</h3>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Salesperson</th>
+          <th>Payment Type</th>
+          <th>Sales Count</th>
+          <th>Total Quantity</th>
+          <th>Buying Price (UGX)</th>
+          <th>Selling Price (UGX)</th>
+          <th>Profit (UGX)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report %}
+        <tr>
+          <td>{{ row.salesperson }}</td>
+          <td>{{ row.payment_method }}</td>
+          <td>{{ row.sales_count }}</td>
+          <td>{{ row.total_qty }}</td>
+          <td>{{ "{:,.0f}".format(row.total_buying_price or 0) }}</td>
+          <td>{{ "{:,.0f}".format(row.total_selling_price or 0) }}</td>
+          <td>{{ "{:,.0f}".format(row.profit or 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-    const labels = Object.keys(revenueBySalesperson);
-    const values = Object.values(revenueBySalesperson);
+  <!-- Chart -->
+  <div style="margin: 20px 0;"><canvas id="salesChart" style="max-height: 300px;"></canvas></div>
 
-    new Chart(document.getElementById('salesChart'), {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Total Revenue by Salesperson (UGX)',
-          data: values,
-          backgroundColor: '#034078'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  </script>
-</body>
-</html>
+  <!-- Export to CSV -->
+  <form action="/export_report" method="POST" style="margin-top: 15px;">
+    <input type="hidden" name="start_date" value="{{ request.form.start_date }}">
+    <input type="hidden" name="end_date" value="{{ request.form.end_date }}">
+    <input type="hidden" name="salesperson" value="{{ request.form.salesperson }}">
+    <button type="submit">Export to CSV</button>
+  </form>
+
+  <!-- Distribution Log -->
+  <h3 style="margin-top: 40px;">Stock Distribution Log</h3>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Product</th>
+          <th>From (Salesperson)</th>
+          <th>To (Salesperson)</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Total Value (UGX)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dist in distribution_log %}
+        <tr>
+          <td>{{ dist.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ dist.product_name }}</td>
+          <td>{{ dist.from_salesperson }}</td>
+          <td>{{ dist.to_salesperson }}</td>
+          <td>{{ dist.quantity }}</td>
+          <td>{{ dist.status }}</td>
+          <td>{{ "{:,.0f}".format(dist.value_ugx or 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div style="margin-top: 20px; text-align: center;">
+    {% if current_page > 1 %}
+      <a href="{{ url_for('report', page=1) }}"><button>First</button></a>
+      <a href="{{ url_for('report', page=current_page - 1) }}"><button>&laquo; Prev</button></a>
+    {% endif %}
+    Page {{ current_page }} of {{ total_pages }}
+    {% if current_page < total_pages %}
+      <a href="{{ url_for('report', page=current_page + 1) }}"><button>Next &raquo;</button></a>
+      <a href="{{ url_for('report', page=total_pages) }}"><button>Last</button></a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const rawData = {{ report | tojson }};
+  const revenueBySalesperson = {};
+  rawData.forEach(row => {
+    const sp = row.salesperson;
+    const revenue = row.total_selling_price || 0;
+    if (!revenueBySalesperson[sp]) revenueBySalesperson[sp] = 0;
+    revenueBySalesperson[sp] += revenue;
+  });
+
+  const labels = Object.keys(revenueBySalesperson);
+  const values = Object.values(revenueBySalesperson);
+
+  new Chart(document.getElementById('salesChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Total Revenue by Salesperson (UGX)',
+        data: values,
+        backgroundColor: '#034078'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+{% endblock %}

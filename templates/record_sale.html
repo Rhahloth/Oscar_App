@@ -1,259 +1,210 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Record Sale - RO Solutions</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
-    />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button style="background-color: #d9534f; color: white">
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
+{% extends "layout.html" %} {% block title %}Record Sale - RO Solutions{%
+endblock %} {% block content %}
+<h4>Point of Sale</h4>
+
+{% if not products %}
+<p style="color: red; font-weight: bold">
+  You don't have any inventory assigned. Contact your manager.
+</p>
+<a href="/sales_upload_inventory"><button>+ Add Stocks</button></a>
+{% endif %}
+
+<form
+  id="saleForm"
+  method="POST"
+  action="/submit_sale"
+  onsubmit="submitSale(event)"
+>
+  <div class="flex-row">
+    <!-- LEFT SIDE: Search & Credit -->
+    <div class="flex-left-narrow">
+      <div class="section-box filter-section">
+        <label for="productSearch">Search Product</label>
+        <input
+          id="productSearch"
+          placeholder="Type to search..."
+          oninput="handleProductInput()"
+          autocomplete="off"
+        />
+        <div
+          id="matchResults"
+          style="margin-top: 10px; max-height: 150px; overflow-y: auto"
+        ></div>
+      </div>
+
+      <div class="section-box" id="creditOptions" style="display: none">
+        <label for="customerSelect">Customer (Credit Sale)</label>
+        <select name="customer_id" id="customerSelect">
+          <option value="">-- Select --</option>
+          {% for customer in customers %}
+          <option value="{{ customer.id }}">{{ customer.name }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="dueDate">Due Date</label>
+        <input type="date" name="due_date" id="dueDate" />
       </div>
     </div>
 
-    <div class="container">
-      <h4>Point of Sale</h4>
+    <!-- RIGHT SIDE: Cart Table and Summary -->
+    <div class="flex-right-wide">
+      <div class="section-box cart-table">
+        <table class="table" id="cartTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Price</th>
+              <th>Subtotal</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
 
-      {% if not products %}
-      <p style="color: red; font-weight: bold">
-        You don't have any inventory assigned. Contact your manager.
-      </p>
-      <a href="/sales_upload_inventory"><button>+ Add Stocks</button></a>
-      {% endif %}
-
-      <form
-        id="saleForm"
-        method="POST"
-        action="/submit_sale"
-        onsubmit="submitSale(event)"
-      >
-        <div class="flex-row">
-          <!-- LEFT SIDE: Search & Credit -->
-          <div class="flex-left-narrow">
-            <div class="section-box filter-section">
-              <label for="productSearch">Search Product</label>
-              <input
-                id="productSearch"
-                placeholder="Type to search..."
-                oninput="handleProductInput()"
-                autocomplete="off"
-              />
-              <div
-                id="matchResults"
-                style="margin-top: 10px; max-height: 150px; overflow-y: auto"
-              ></div>
-            </div>
-
-            <div class="section-box" id="creditOptions" style="display: none">
-              <label for="customerSelect">Customer (Credit Sale)</label>
-              <select name="customer_id" id="customerSelect">
-                <option value="">-- Select --</option>
-                {% for customer in customers %}
-                <option value="{{ customer.id }}">{{ customer.name }}</option>
-                {% endfor %}
-              </select>
-
-              <label for="dueDate">Due Date</label>
-              <input type="date" name="due_date" id="dueDate" />
-            </div>
-          </div>
-
-          <!-- RIGHT SIDE: Cart Table and Summary -->
-          <div class="flex-right-wide">
-            <div class="section-box cart-table">
-              <table class="table" id="cartTable">
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th>Subtotal</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-
-            <div class="section-box">
-              <p>Total Quantity: <span id="total_qty">0</span></p>
-              <p>Total Amount: UGX <span id="total_amount">0</span></p>
-            </div>
-          </div>
-        </div>
-
-        <input type="hidden" name="payment_method" id="payment_method" />
-        <input type="hidden" name="cart_data" id="cart_data" />
-
-        <div class="cart-actions">
-          <button type="button" onclick="finalizeSale('Credit')">Credit</button>
-          <button type="button" onclick="finalizeSale('Cash')">Cash</button>
-        </div>
-      </form>
+      <div class="section-box">
+        <p>Total Quantity: <span id="total_qty">0</span></p>
+        <p>Total Amount: UGX <span id="total_amount">0</span></p>
+      </div>
     </div>
+  </div>
 
-    <script>
-      let cart = [];
-      const fullProductList = [
-        {% for p in products %}
-          {
-            name: "{{ p.product_name }} ({{ p.quantity }} available)",
-            id: "{{ p.product_id }}",
-            retail: "{{ p.retail_price }}",
-            cost: "{{ p.buying_price }}",
-            quantity: {{ p.quantity }}
-          },
-        {% endfor %}
-      ];
+  <input type="hidden" name="payment_method" id="payment_method" />
+  <input type="hidden" name="cart_data" id="cart_data" />
 
-      function handleProductInput() {
-        const input = document.getElementById("productSearch").value.toLowerCase();
-        const results = document.getElementById("matchResults");
-        results.innerHTML = "";
+  <div class="cart-actions">
+    <button type="button" onclick="finalizeSale('Credit')">Credit</button>
+    <button type="button" onclick="finalizeSale('Cash')">Cash</button>
+  </div>
+</form>
+{% endblock %} {% block scripts %}
+<script>
+  let cart = [];
+  const fullProductList = [
+    {% for p in products %}
+      {
+        name: "{{ p.product_name }} ({{ p.quantity }} available)",
+        id: "{{ p.product_id }}",
+        retail: "{{ p.retail_price }}",
+        cost: "{{ p.buying_price }}",
+        quantity: {{ p.quantity }}
+      },
+    {% endfor %}
+  ];
 
-        if (input.length >= 2) {
-          const matches = fullProductList.filter(p => p.name.toLowerCase().includes(input));
-          matches.forEach(p => {
-            const btn = document.createElement("button");
-            btn.textContent = p.name;
-            btn.className = "match-pill";
-            btn.onclick = () => addToCart(p);
-            results.appendChild(btn);
-          });
-        }
-      }
+  function handleProductInput() {
+    const input = document.getElementById("productSearch").value.toLowerCase();
+    const results = document.getElementById("matchResults");
+    results.innerHTML = "";
 
-      function addToCart(product) {
-        cart.push({
-          productId: product.id,
-          productName: product.name,
-          quantity: 1,
-          price: parseFloat(product.retail),
-          cost: parseFloat(product.cost),
-          subtotal: parseFloat(product.retail)
-        });
-        renderCart();
-        document.getElementById("productSearch").value = "";
-        document.getElementById("matchResults").innerHTML = "";
-      }
-
-      function getProductStock(productId) {
-        const product = fullProductList.find(p => p.id == productId);
-        return product ? product.quantity : 'N/A';
-      }
-
-      function renderCart() {
-        const tbody = document.querySelector("#cartTable tbody");
-        tbody.innerHTML = "";
-        let totalQty = 0;
-        let totalAmount = 0;
-
-        cart.forEach((item, i) => {
-          totalQty += item.quantity;
-          totalAmount += item.subtotal;
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${item.productName}<br /><small>(Available: ${getProductStock(item.productId)})</small></td>
-            <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" /></td>
-            <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" /></td>
-            <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
-            <td><button type="button" onclick="removeItem(${i})">X</button></td>
-          `;
-          tbody.appendChild(row);
-        });
-
-        document.getElementById("total_qty").innerText = totalQty;
-        document.getElementById("total_amount").innerText = totalAmount.toLocaleString('en-UG');
-      }
-
-      function updateQty(index, value) {
-        cart[index].quantity = parseInt(value) || 1;
-        cart[index].subtotal = cart[index].quantity * cart[index].price;
-        renderCart();
-      }
-
-      function updatePrice(index, value) {
-        const newPrice = parseFloat(value) || 0;
-        if (newPrice < parseFloat(cart[index].cost)) {
-          alert("⚠️ Price too low. Check and try again.");
-          renderCart();
-          return;
-        }
-        cart[index].price = newPrice;
-        cart[index].subtotal = cart[index].quantity * cart[index].price;
-        renderCart();
-      }
-
-      function removeItem(i) {
-        cart.splice(i, 1);
-        renderCart();
-      }
-
-      function submitSale(e) {
-        e.preventDefault();
-      }
-
-      function finalizeSale(method) {
-        if (!cart.length) return alert("Add at least one item.");
-        document.getElementById("cart_data").value = JSON.stringify(cart);
-        document.getElementById("payment_method").value = method;
-
-        if (method === 'Credit') {
-          const customerId = document.getElementById("customerSelect").value;
-          const dueDate = document.getElementById("dueDate").value;
-          if (!customerId || !dueDate) {
-            alert("❌ Please select customer and due date.");
-            return;
-          }
-        }
-
-        document.getElementById("saleForm").submit();
-      }
-
-      document.querySelectorAll("button").forEach(btn => {
-        btn.addEventListener("click", () => {
-          if (btn.innerText === "Credit") {
-            document.getElementById("creditOptions").style.display = "block";
-          } else {
-            document.getElementById("creditOptions").style.display = "none";
-          }
-        });
+    if (input.length >= 2) {
+      const matches = fullProductList.filter(p => p.name.toLowerCase().includes(input));
+      matches.forEach(p => {
+        const btn = document.createElement("button");
+        btn.textContent = p.name;
+        btn.className = "match-pill";
+        btn.onclick = () => addToCart(p);
+        results.appendChild(btn);
       });
-    </script>
-  </body>
-</html>
+    }
+  }
+
+  function addToCart(product) {
+    cart.push({
+      productId: product.id,
+      productName: product.name,
+      quantity: 1,
+      price: parseFloat(product.retail),
+      cost: parseFloat(product.cost),
+      subtotal: parseFloat(product.retail)
+    });
+    renderCart();
+    document.getElementById("productSearch").value = "";
+    document.getElementById("matchResults").innerHTML = "";
+  }
+
+  function getProductStock(productId) {
+    const product = fullProductList.find(p => p.id == productId);
+    return product ? product.quantity : 'N/A';
+  }
+
+  function renderCart() {
+    const tbody = document.querySelector("#cartTable tbody");
+    tbody.innerHTML = "";
+    let totalQty = 0;
+    let totalAmount = 0;
+
+    cart.forEach((item, i) => {
+      totalQty += item.quantity;
+      totalAmount += item.subtotal;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${item.productName}<br /><small>(Available: ${getProductStock(item.productId)})</small></td>
+        <td><input type="number" min="1" value="${item.quantity}" onchange="updateQty(${i}, this.value)" /></td>
+        <td><input type="number" min="0" value="${item.price}" onchange="updatePrice(${i}, this.value)" /></td>
+        <td>UGX ${item.subtotal.toLocaleString('en-UG')}</td>
+        <td><button type="button" onclick="removeItem(${i})">X</button></td>
+      `;
+      tbody.appendChild(row);
+    });
+
+    document.getElementById("total_qty").innerText = totalQty;
+    document.getElementById("total_amount").innerText = totalAmount.toLocaleString('en-UG');
+  }
+
+  function updateQty(index, value) {
+    cart[index].quantity = parseInt(value) || 1;
+    cart[index].subtotal = cart[index].quantity * cart[index].price;
+    renderCart();
+  }
+
+  function updatePrice(index, value) {
+    const newPrice = parseFloat(value) || 0;
+    if (newPrice < parseFloat(cart[index].cost)) {
+      alert("⚠️ Price too low. Check and try again.");
+      renderCart();
+      return;
+    }
+    cart[index].price = newPrice;
+    cart[index].subtotal = cart[index].quantity * cart[index].price;
+    renderCart();
+  }
+
+  function removeItem(i) {
+    cart.splice(i, 1);
+    renderCart();
+  }
+
+  function submitSale(e) {
+    e.preventDefault();
+  }
+
+  function finalizeSale(method) {
+    if (!cart.length) return alert("Add at least one item.");
+    document.getElementById("cart_data").value = JSON.stringify(cart);
+    document.getElementById("payment_method").value = method;
+
+    if (method === 'Credit') {
+      const customerId = document.getElementById("customerSelect").value;
+      const dueDate = document.getElementById("dueDate").value;
+      if (!customerId || !dueDate) {
+        alert("❌ Please select customer and due date.");
+        return;
+      }
+    }
+
+    document.getElementById("saleForm").submit();
+  }
+
+  document.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (btn.innerText === "Credit") {
+        document.getElementById("creditOptions").style.display = "block";
+      } else {
+        document.getElementById("creditOptions").style.display = "none";
+      }
+    });
+  });
+</script>
+{% endblock %}

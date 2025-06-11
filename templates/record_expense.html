@@ -1,130 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Record Expense - AgriShop</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
+{% extends "layout.html" %} {% block title %}Record Expense - AgriShop{%
+endblock %} {% block content %}
+<h3>💰 Record New Expense</h3>
+
+{% with messages = get_flashed_messages() %} {% if messages %}
+<ul style="color: green">
+  {% for message in messages %}
+  <li>{{ message }}</li>
+  {% endfor %}
+</ul>
+{% endif %} {% endwith %}
+
+<form action="/record_expense" method="POST" class="form">
+  <div class="form-group">
+    <label for="staff_name">Staff Name</label>
+    <select id="staff_name" name="staff_name" required>
+      <option value="">-- Select Staff --</option>
+      {% for name in staff_list %}
+      <option value="{{ name }}">{{ name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="item">Expense Category</label>
+    <select name="item" id="item" required>
+      <option value="">-- Select Expense Type --</option>
+      <option value="Allowances">Allowances</option>
+      <option value="Transport">Transport</option>
+      <option value="Electricity and Water">Electricity and Water</option>
+      <option value="Rent and Salaries">Rent and Salaries</option>
+      <option value="Others">Others</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="amount">Amount (UGX)</label>
+    <input
+      type="number"
+      id="amount"
+      name="amount"
+      step="0.01"
+      required
+      placeholder="Enter amount"
     />
-  </head>
-  <body>
-    <div class="navbar-wrapper">
-      <div class="navbar-inner">
-        <div class="navbar">
-          <div class="navbar-left">
-            <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-            <div class="company-details-inline">
-              <strong>RO Solutions</strong><br />
-              <em>Your sales are guaranteed</em><br />
-              Tel: +256 778 412 136 <br />
-              Email: raysokello@gmail.com
-            </div>
-          </div>
-          <div>
-            {% if session.username %}
-            <div>BRANCH: {{ session.username }}</div>
-            {% endif %}
-          </div>
-          <div>
-            <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-          </div>
-          <div
-            class="navbar-right"
-            style="display: flex; align-items: center; gap: 10px"
-          >
-            {% if session.username %}
-            <a href="/logout">
-              <button
-                style="
-                  background-color: #d9534f;
-                  color: white;
-                  margin-left: 12px;
-                "
-              >
-                Logout
-              </button>
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
+  </div>
 
-    <div class="container">
-      <h3>💰 Record New Expense</h3>
+  <div class="form-group">
+    <label for="comment">Comment</label>
+    <textarea
+      id="comment"
+      name="comment"
+      rows="3"
+      placeholder="Optional comment or description"
+    ></textarea>
+  </div>
 
-      {% with messages = get_flashed_messages() %} {% if messages %}
-      <ul style="color: green">
-        {% for message in messages %}
-        <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-      {% endif %} {% endwith %}
-
-      <form action="/record_expense" method="POST" class="form">
-        <div class="form-group">
-          <label for="staff_name">Staff Name</label>
-          <select id="staff_name" name="staff_name" required>
-            <option value="">-- Select Staff --</option>
-            {% for name in staff_list %}
-            <option value="{{ name }}">{{ name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="item">Expense Category</label>
-          <select name="item" id="item" required>
-            <option value="">-- Select Expense Type --</option>
-            <option value="Allowances">Allowances</option>
-            <option value="Transport">Transport</option>
-            <option value="Electricity and Water">Electricity and Water</option>
-            <option value="Rent and Salaries">Rent and Salaries</option>
-            <option value="Others">Others</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="amount">Amount (UGX)</label>
-          <input
-            type="number"
-            id="amount"
-            name="amount"
-            step="0.01"
-            required
-            placeholder="Enter amount"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="comment">Comment</label>
-          <textarea
-            id="comment"
-            name="comment"
-            rows="3"
-            placeholder="Optional comment or description"
-          ></textarea>
-        </div>
-
-        <div style="text-align: center; margin-top: 20px">
-          <button
-            type="submit"
-            style="
-              background-color: #034078;
-              color: white;
-              padding: 10px 20px;
-              border: none;
-              border-radius: 5px;
-              font-weight: bold;
-              font-size: 16px;
-            "
-          >
-            ➕ Submit Expense
-          </button>
-        </div>
-      </form>
-    </div>
-  </body>
-</html>
+  <div style="text-align: center; margin-top: 20px">
+    <button
+      type="submit"
+      style="
+        background-color: #034078;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 16px;
+      "
+    >
+      ➕ Submit Expense
+    </button>
+  </div>
+</form>
+{% endblock %}
