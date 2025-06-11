@@ -643,15 +643,24 @@ button:hover {
 /* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
 @media (max-width: 768px) {
 
+    /* Hide logo and extra divs except navbar-right */
     .navbar-left,
     .navbar>div:not(.navbar-right) {
         display: none !important;
     }
 
-    .navbar-right {
+    /* Dashboard-specific mobile layout */
+    body[data-endpoint="dashboard"] .navbar-right {
+        display: flex;
         justify-content: space-between;
+        align-items: center;
         width: 100%;
-        flex-direction: row;
+    }
+
+    body[data-endpoint="dashboard"] .branch-name {
+        display: block !important;
+        font-weight: bold;
+        font-size: 14px;
     }
 
     .navbar-inner {
@@ -662,10 +671,4 @@ button:hover {
         padding: 8px 12px;
         font-size: 14px;
     }
-}
-
-/* Align logout to right ONLY on dashboard */
-body[data-endpoint="dashboard"] .navbar-right {
-    justify-content: flex-end;
-    gap: 10px;
 }

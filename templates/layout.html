@@ -25,23 +25,29 @@
     data-endpoint="{{ request.endpoint }}"
   >
     {% if request.endpoint not in ['login', 'register_owner'] %}
-    <!-- ✅ Updated Navbar with your original style -->
+    <!-- ✅ Updated Navbar -->
     <div class="navbar-wrapper">
       <div class="navbar-inner">
         <div class="navbar">
+          <!-- Logo and brand (hidden on mobile) -->
           <div class="navbar-left">
             <img src="/static/logo.png" alt="ROB Solutions Logo" class="logo" />
             <strong>ROB Solutions</strong>
           </div>
 
+          <!-- Username display -->
           <div>
             {% if session.username %}
             <span>{{ session.username }}</span>
             {% endif %}
           </div>
 
+          <!-- Right-side controls -->
           <div class="navbar-right">
-            {% if session.username and request.endpoint != 'dashboard' %}
+            {% if session.username and request.endpoint == 'dashboard' %}
+            <span class="branch-name">Branch: {{ session.branch_name }}</span>
+            {% endif %} {% if session.username and request.endpoint !=
+            'dashboard' %}
             <a href="/dashboard">
               <button>Back to Dashboard</button>
             </a>
