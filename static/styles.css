@@ -675,38 +675,41 @@ button:hover {
 
 @media (max-width: 768px) {
 
-    /* ✅ Ensure all navbar sections are visible */
-    .navbar-left,
+    /* Hide branding/logo */
+    .navbar-left {
+        display: none !important;
+    }
+
+    /* Show center and right sections */
     .navbar-center,
     .navbar-right {
         display: flex !important;
+        align-items: center;
     }
 
+    /* Layout adjustments */
     .navbar {
-        flex-wrap: wrap;
+        display: flex;
         justify-content: space-between;
+        flex-wrap: wrap;
         width: 100%;
-    }
-
-    .navbar-left {
-        align-items: center;
-        gap: 8px;
-    }
-
-    .navbar-center {
-        justify-content: center;
-        align-items: center;
-        flex: 1;
-    }
-
-    .navbar-right {
-        justify-content: flex-end;
-        align-items: center;
-        gap: 10px;
     }
 
     .navbar-inner {
         padding: 15px 20px;
+    }
+
+    .navbar-center {
+        flex: 1;
+        justify-content: flex-start;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .navbar-right {
+        justify-content: flex-end;
+        gap: 10px;
+        flex-shrink: 0;
     }
 
     .navbar a button {

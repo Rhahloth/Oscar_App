@@ -1,57 +1,55 @@
 {% extends "layout.html" %} {% block title %}Request Stock - ROB Solutions{%
 endblock %} {% block content %}
-<div class="container">
-  <h3>Request Stock</h3>
+<h3>Request Stock</h3>
 
-  <!-- Product Search -->
-  <label for="productSearch">Search Product:</label>
-  <input
-    type="text"
-    id="productSearch"
-    placeholder="Type product name..."
-    onkeyup="filterProducts()"
-    autocomplete="off"
-  />
-  <ul id="productList">
-    {% for item in inventory %}
-    <li
-      data-name="{{ item.product_name }}"
-      data-quantity="{{ item.quantity }}"
-      data-price="{{ item.buying_price }}"
-      onclick="addToCart('{{ item.product_name }}', {{ item.quantity }}, {{ item.buying_price }})"
-      style="display: none"
-    >
-      {{ item.product_name }} — You have {{ item.quantity }}
-    </li>
-    {% endfor %}
-  </ul>
+<!-- Product Search -->
+<label for="productSearch">Search Product:</label>
+<input
+  type="text"
+  id="productSearch"
+  placeholder="Type product name..."
+  onkeyup="filterProducts()"
+  autocomplete="off"
+/>
+<ul id="productList">
+  {% for item in inventory %}
+  <li
+    data-name="{{ item.product_name }}"
+    data-quantity="{{ item.quantity }}"
+    data-price="{{ item.buying_price }}"
+    onclick="addToCart('{{ item.product_name }}', {{ item.quantity }}, {{ item.buying_price }})"
+    style="display: none"
+  >
+    {{ item.product_name }} — You have {{ item.quantity }}
+  </li>
+  {% endfor %}
+</ul>
 
-  <!-- Cart -->
-  <h4>Stock Request Cart</h4>
-  <form method="POST" action="/request_stock" onsubmit="prepareSubmission()">
-    <div class="cart-table" id="cartContainer"></div>
+<!-- Cart -->
+<h4>Stock Request Cart</h4>
+<form method="POST" action="/request_stock" onsubmit="prepareSubmission()">
+  <div class="cart-table" id="cartContainer"></div>
 
-    <div class="form-group">
-      <label>FROM (BRANCH)</label>
-      <select name="recipient_id" required>
-        {% for r in recipients %}
-        <option value="{{ r.id }}">{{ r.username }}</option>
-        {% endfor %}
-      </select>
-    </div>
+  <div class="form-group">
+    <label>FROM (BRANCH)</label>
+    <select name="recipient_id" required>
+      {% for r in recipients %}
+      <option value="{{ r.id }}">{{ r.username }}</option>
+      {% endfor %}
+    </select>
+  </div>
 
-    <div class="form-group">
-      <label>Your Full Name</label>
-      <input type="text" name="requester_name" required autocomplete="off" />
-    </div>
+  <div class="form-group">
+    <label>Your Full Name</label>
+    <input type="text" name="requester_name" required autocomplete="off" />
+  </div>
 
-    <input type="hidden" name="cart_data" id="cartData" />
-    <div class="cart-actions">
-      <button type="button" onclick="clearCart()">Clear Cart</button>
-      <button type="submit">Submit Request</button>
-    </div>
-  </form>
-</div>
+  <input type="hidden" name="cart_data" id="cartData" />
+  <div class="cart-actions">
+    <button type="button" onclick="clearCart()">Clear Cart</button>
+    <button type="submit">Submit Request</button>
+  </div>
+</form>
 {% endblock %} {% block scripts %}
 <script>
   let cart = [];
