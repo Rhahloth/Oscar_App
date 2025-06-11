@@ -177,33 +177,23 @@ endblock %} {% block styles %}
     controls.innerHTML = "";
 
     const prevBtn = document.createElement("button");
-    prevBtn.textContent = "Previous";
+    prevBtn.textContent = "⟨ Prev";
     prevBtn.disabled = currentPage === 1;
-    prevBtn.className = currentPage === 1 ? "disabled" : "";
     prevBtn.onclick = () => {
       currentPage--;
       paginateTable();
     };
     controls.appendChild(prevBtn);
 
-    for (let i = 1; i <= totalPages; i++) {
-      const pageBtn = document.createElement("button");
-      pageBtn.textContent = i;
-      if (i === currentPage) {
-        pageBtn.disabled = true;
-        pageBtn.className = "disabled";
-      }
-      pageBtn.onclick = () => {
-        currentPage = i;
-        paginateTable();
-      };
-      controls.appendChild(pageBtn);
-    }
+    // Display format: Page X of Y
+    const pageInfo = document.createElement("span");
+    pageInfo.style.margin = "0 12px";
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    controls.appendChild(pageInfo);
 
     const nextBtn = document.createElement("button");
-    nextBtn.textContent = "Next";
+    nextBtn.textContent = "Next ⟩";
     nextBtn.disabled = currentPage === totalPages;
-    nextBtn.className = currentPage === totalPages ? "disabled" : "";
     nextBtn.onclick = () => {
       currentPage++;
       paginateTable();
