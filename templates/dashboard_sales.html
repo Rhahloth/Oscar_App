@@ -1,6 +1,28 @@
 {% extends "layout.html" %} {% block title %}Salesperson Dashboard - AgriShop{%
 endblock %} {% block content %}
 <h4>Welcome, {{ session.username }}!</h4>
+{% if session.role in ['owner', 'salesperson'] and session.branch_count == 1 %}
+<form
+  method="POST"
+  action="/switch_role"
+  style="text-align: center; margin: 15px 0"
+>
+  <button
+    type="submit"
+    onclick="return confirm('Switch to {{ 'Owner' if session.role == 'salesperson' else 'Salesperson' }}?')"
+    style="
+      background-color: #6c757d;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+    "
+  >
+    🔁 Switch to {{ 'Owner' if session.role == 'salesperson' else 'Salesperson'
+    }}
+  </button>
+</form>
+{% endif %}
 
 <div class="form-group action-buttons">
   <a href="/record_sale"><button>🛒 POS</button></a>
