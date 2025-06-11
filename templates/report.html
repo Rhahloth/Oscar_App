@@ -67,7 +67,7 @@
   <!-- Sales Summary Table -->
   <h3>Sales Performance Summary</h3>
   <div class="table-responsive">
-    <table class="table" id="reportTable">
+    <table class="table">
       <thead>
         <tr>
           <th>Salesperson</th>
@@ -95,9 +95,6 @@
     </table>
   </div>
 
-  <!-- Pagination Controls -->
-  <div id="report-pagination-controls" style="text-align: center; margin-top: 20px;"></div>
-
   <!-- Chart -->
   <div style="margin: 20px 0;"><canvas id="salesChart" style="max-height: 300px;"></canvas></div>
 
@@ -112,7 +109,7 @@
   <!-- Distribution Log -->
   <h3 style="margin-top: 40px;">Stock Distribution Log</h3>
   <div class="table-responsive">
-    <table class="table">
+    <table class="table" id="distributionLogTable">
       <thead>
         <tr>
           <th>Time</th>
@@ -139,6 +136,9 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Distribution Log Pagination -->
+  <div id="distribution-pagination-controls" style="text-align: center; margin-top: 20px;"></div>
 </div>
 {% endblock %}
 
@@ -179,8 +179,8 @@
   const rowsPerPage = 10;
   let currentPage = 1;
 
-  function paginateReportTable() {
-    const table = document.getElementById("reportTable");
+  function paginateDistributionTable() {
+    const table = document.getElementById("distributionLogTable");
     const rows = Array.from(table.querySelectorAll("tbody tr"));
     const totalPages = Math.ceil(rows.length / rowsPerPage);
 
@@ -189,19 +189,19 @@
     const end = start + rowsPerPage;
     rows.slice(start, end).forEach(row => row.style.display = "");
 
-    const controls = document.getElementById("report-pagination-controls");
+    const controls = document.getElementById("distribution-pagination-controls");
     controls.innerHTML = "";
 
     const first = document.createElement("button");
     first.textContent = "First";
     first.disabled = currentPage === 1;
-    first.onclick = () => { currentPage = 1; paginateReportTable(); };
+    first.onclick = () => { currentPage = 1; paginateDistributionTable(); };
     controls.appendChild(first);
 
     const prev = document.createElement("button");
     prev.textContent = "« Prev";
     prev.disabled = currentPage === 1;
-    prev.onclick = () => { currentPage--; paginateReportTable(); };
+    prev.onclick = () => { currentPage--; paginateDistributionTable(); };
     controls.appendChild(prev);
 
     const info = document.createElement("span");
@@ -211,18 +211,18 @@
     const next = document.createElement("button");
     next.textContent = "Next »";
     next.disabled = currentPage === totalPages;
-    next.onclick = () => { currentPage++; paginateReportTable(); };
+    next.onclick = () => { currentPage++; paginateDistributionTable(); };
     controls.appendChild(next);
 
     const last = document.createElement("button");
     last.textContent = "Last";
     last.disabled = currentPage === totalPages;
-    last.onclick = () => { currentPage = totalPages; paginateReportTable(); };
+    last.onclick = () => { currentPage = totalPages; paginateDistributionTable(); };
     controls.appendChild(last);
   }
 
   window.onload = () => {
-    paginateReportTable();
+    paginateDistributionTable();
   };
 </script>
 {% endblock %}
