@@ -109,7 +109,6 @@ button:hover {
     left: 0;
     right: 0;
     z-index: 1000;
-    padding-top: 20px;
     /* Space above the navbar */
     background: transparent;
 }
