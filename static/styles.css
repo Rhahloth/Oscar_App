@@ -650,7 +650,7 @@ button:hover {
 }
 
 /* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
 
     .navbar-left,
     .navbar-center {
@@ -661,6 +661,48 @@ button:hover {
         justify-content: space-between;
         width: 100%;
         flex-direction: row;
+    }
+
+    .navbar-inner {
+        padding: 15px 20px;
+    }
+
+    .navbar a button {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+} */
+
+@media (max-width: 768px) {
+
+    /* ✅ Ensure all navbar sections are visible */
+    .navbar-left,
+    .navbar-center,
+    .navbar-right {
+        display: flex !important;
+    }
+
+    .navbar {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .navbar-left {
+        align-items: center;
+        gap: 8px;
+    }
+
+    .navbar-center {
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+    }
+
+    .navbar-right {
+        justify-content: flex-end;
+        align-items: center;
+        gap: 10px;
     }
 
     .navbar-inner {
