@@ -593,7 +593,7 @@ button:hover {
     }
 
     .flex .card {
-        min-width: 100%;
+        max-width: 90%;
     }
 
     .login-card {
