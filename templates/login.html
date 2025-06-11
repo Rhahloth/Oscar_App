@@ -1,47 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Login - AgriShop</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='styles.css') }}"
+{% extends "layout.html" %} {% block title %}Login - AgriShop{% endblock %} {%
+block content %}
+<div class="login-card">
+  <div style="text-align: center; margin-bottom: 10px">
+    <img
+      src="{{ url_for('static', filename='logo.png') }}"
+      alt="RO Solutions Logo"
+      style="max-width: 120px; height: auto; border-radius: 15%"
     />
-  </head>
-  <body class="login-body">
-    <div class="login-card">
-      <div style="text-align: center; margin-bottom: 10px">
-        <img
-          src="/static/logo.png"
-          alt="RO Solutions Logo"
-          style="max-width: 120px; height: auto; border-radius: 15%"
-        />
-      </div>
+  </div>
 
-      <h4 style="text-align: center; margin-bottom: 20px">
-        Login to RO Solutions
-      </h4>
+  <h4 style="text-align: center; margin-bottom: 20px">Login to RO Solutions</h4>
 
-      <form method="POST" action="/login">
-        <div class="form-group">
-          <label>Username</label>
-          <input type="text" name="username" required />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" name="password" required />
-        </div>
-        <button type="submit">Login</button>
-      </form>
-
-      {% if error %}
-      <p style="color: red; margin-top: 10px">{{ error }}</p>
-      {% endif %}
-
-      <p style="margin-top: 20px">
-        New business? <a href="/register_owner">Register here</a>
-      </p>
+  <form method="POST" action="/login">
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" name="username" required />
     </div>
-  </body>
-</html>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" name="password" required />
+    </div>
+    <button type="submit" class="button-primary">Login</button>
+  </form>
+
+  {% if error %}
+  <p style="color: red; margin-top: 10px">{{ error }}</p>
+  {% endif %}
+
+  <p style="margin-top: 20px">
+    New business? <a href="/register_owner">Register here</a>
+  </p>
+</div>
+{% endblock %}

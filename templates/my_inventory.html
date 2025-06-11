@@ -1,187 +1,149 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>My Inventory - RO Solutions</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-  <div class="navbar-wrapper">
-    <div class="navbar-inner">
-      <div class="navbar">
-        <div class="navbar-left">
-          <img src="/static/logo.png" alt="RO Solutions Logo" class="logo" />
-          <div class="company-details-inline">
-            <strong>RO Solutions</strong><br />
-            <em>Your sales are guaranteed</em><br />
-            Tel: +256 778 412 136 <br>
-            Email: raysokello@gmail.com
-          </div>
-        </div>
-        <div>
-          {% if session.username %}
-          <div>BRANCH: {{ session.username }}</div>
-          {% endif %}
-        </div>
-        <div>
-          <a href="/dashboard"><button>Back to Main Dashboard</button></a>
-        </div>
-        <div class="navbar-right" style="display: flex; align-items: center; gap: 10px">
-          {% if session.username %}
-          <a href="/logout">
-            <button style="background-color: #d9534f; color: white; margin-left: 12px;">
-              Logout
-            </button>
-          </a>
-          {% endif %}
-        </div>
+{% extends "layout.html" %}
+
+{% block title %}My Inventory - RO Solutions{% endblock %}
+
+{% block content %}
+<div class="form-group action-buttons" style="text-align: left; justify-content: center;">    
+  <div style="margin-bottom: 20px;">
+    <a href="/sales_upload_inventory">
+      <button>
+        + Add Stocks
+      </button>
+    </a>
+  </div>
+</div>
+
+<h4>My Current Inventory</h4>
+
+<form method="GET" action="/my_inventory" class="report-filters">
+  <fieldset>
+    <legend>Filter Inventory</legend>
+    <div class="filter-row">
+      <div class="filter-item">
+        <label>Category</label>
+        <select name="category" onchange="this.form.submit()">
+          <option value="">-- All Categories --</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label>Search Product</label>
+        <input type="text" name="search" value="{{ search_term }}" placeholder="Enter product name" />
+      </div>
+
+      <div class="filter-item" style="align-self: flex-end">
+        <button type="submit">Apply Filter</button>
       </div>
     </div>
+  </fieldset>
+</form>
+
+<div class="summary-container">
+  <div class="summary-card">
+    <h4>Total Stock Quantity</h4>
+    <p>{{ total_stock or 0 }}</p>
   </div>
 
-  <div class="container">
-    <div class="form-group action-buttons" style="text-align: left; justify-content: center;">    
-      <div style="margin-bottom: 20px;">
-        <a href="/sales_upload_inventory">
-          <button>
-            + Add Stocks
-          </button>
-        </a>
-      </div>
-    </div>
-    <h4>My Current Inventory</h4>
-
-    <form method="GET" action="/my_inventory" class="report-filters">
-      <fieldset>
-        <legend>Filter Inventory</legend>
-        <div class="filter-row">
-          <div class="filter-item">
-            <label>Category</label>
-            <select name="category" onchange="this.form.submit()">
-              <option value="">-- All Categories --</option>
-              {% for cat in categories %}
-                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <div class="filter-item">
-            <label>Search Product</label>
-            <input type="text" name="search" value="{{ search_term }}" placeholder="Enter product name" />
-          </div>
-
-          <div class="filter-item" style="align-self: flex-end">
-            <button type="submit">Apply Filter</button>
-          </div>
-        </div>
-      </fieldset>
-    </form>
-
-    <div class="summary-container">
-      <div class="summary-card">
-        <h4>Total Stock Quantity</h4>
-        <p>{{ total_stock or 0 }}</p>
-      </div>
-
-      <div class="summary-card">
-        <h4>Total Inventory Worth (UGX)</h4>
-        <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
-      </div>
-      
-    </div>
-
-    {% if inventory %}
-    <div class="table-responsive">
-    <table class="table" id="inventoryTable">
-      <thead>
-        <tr>
-          <th>Category</th>
-          <th>Product</th>
-          <th>Quantity</th>
-          <th>Agent Price</th>
-          <th>Wholesale Price</th>
-          <th>Retail Price</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in inventory %}
-        <tr>
-          <td>{{ item.category }}</td>
-          <td>{{ item.product_name }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>{{ "{:,.0f}".format(item.agent_price or 0) }}</td>
-          <td>{{ "{:,.0f}".format(item.wholesale_price or 0) }}</td>
-          <td>{{ "{:,.0f}".format(item.retail_price or 0) }}</td>          
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="summary-card">
+    <h4>Total Inventory Worth (UGX)</h4>
+    <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
   </div>
-    
-    <div class="pagination-controls" id="pagination-controls" style="text-align: center; margin-top: 20px;"></div>
-    {% else %}
-    <p>You currently have no stock assigned.</p>
-    {% endif %}
-  </div>
+</div>
 
-  <script>
-    const rowsPerPage = 10;
-    let currentPage = 1;
+{% if inventory %}
+<div class="table-responsive">
+  <table class="table" id="inventoryTable">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Product</th>
+        <th>Quantity</th>
+        <th>Agent Price</th>
+        <th>Wholesale Price</th>
+        <th>Retail Price</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in inventory %}
+      <tr>
+        <td>{{ item.category }}</td>
+        <td>{{ item.product_name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ "{:,.0f}".format(item.agent_price or 0) }}</td>
+        <td>{{ "{:,.0f}".format(item.wholesale_price or 0) }}</td>
+        <td>{{ "{:,.0f}".format(item.retail_price or 0) }}</td>          
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-    function paginateTable() {
-      const table = document.getElementById("inventoryTable");
-      const rows = Array.from(table.querySelectorAll("tbody tr"));
-      const totalPages = Math.ceil(rows.length / rowsPerPage);
+<div class="pagination-controls" id="pagination-controls" style="text-align: center; margin-top: 20px;"></div>
+{% else %}
+<p>You currently have no stock assigned.</p>
+{% endif %}
+{% endblock %}
 
-      rows.forEach(row => row.style.display = "none");
-      const start = (currentPage - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      rows.slice(start, end).forEach(row => row.style.display = "");
+{% block scripts %}
+<script>
+  const rowsPerPage = 10;
+  let currentPage = 1;
 
-      const controls = document.getElementById("pagination-controls");
-      controls.innerHTML = "";
+  function paginateTable() {
+    const table = document.getElementById("inventoryTable");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
 
-      // Previous button
-      const prevBtn = document.createElement("button");
-      prevBtn.textContent = "Previous";
-      prevBtn.disabled = currentPage === 1;
-      prevBtn.onclick = () => {
-        if (currentPage > 1) {
-          currentPage--;
-          paginateTable();
-        }
-      };
-      controls.appendChild(prevBtn);
+    rows.forEach(row => row.style.display = "none");
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    rows.slice(start, end).forEach(row => row.style.display = "");
 
-      // Page numbers
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.innerText = i;
-        btn.disabled = i === currentPage;
-        btn.onclick = () => {
-          currentPage = i;
-          paginateTable();
-        };
-        controls.appendChild(btn);
+    const controls = document.getElementById("pagination-controls");
+    controls.innerHTML = "";
+
+    // Previous button
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "Previous";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        paginateTable();
       }
+    };
+    controls.appendChild(prevBtn);
 
-      // Next button
-      const nextBtn = document.createElement("button");
-      nextBtn.textContent = "Next";
-      nextBtn.disabled = currentPage === totalPages;
-      nextBtn.onclick = () => {
-        if (currentPage < totalPages) {
-          currentPage++;
-          paginateTable();
-        }
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+      const btn = document.createElement("button");
+      btn.innerText = i;
+      btn.disabled = i === currentPage;
+      btn.onclick = () => {
+        currentPage = i;
+        paginateTable();
       };
-      controls.appendChild(nextBtn);
+      controls.appendChild(btn);
     }
 
-    window.onload = () => {
-      paginateTable();
+    // Next button
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        paginateTable();
+      }
     };
-  </script>
-</body>
-</html>
+    controls.appendChild(nextBtn);
+  }
+
+  window.onload = () => {
+    paginateTable();
+  };
+</script>
+{% endblock %}
