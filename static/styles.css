@@ -187,13 +187,14 @@ button:hover {
 }
 
 .footer {
-    background-color: #034078;
+    background-color: orange;
     color: white;
     text-align: center;
     padding: 15px;
     font-size: 13px;
-    margin-top: 40px;
+    margin-top: 10px;
     border-top: 1px solid #ccc;
+    max-width: 90%;
 }
 
 /* Table Styling */
