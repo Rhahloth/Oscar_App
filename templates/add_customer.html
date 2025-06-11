@@ -40,37 +40,39 @@ ROB Solutions{% endblock %} {% block content %}
   <div class="flex-child">
     <h4>📋 Active Customers</h4>
     {% if customers %}
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Created</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for c in customers %}
-        <tr>
-          <td>{{ c.name }}</td>
-          <td>{{ c.phone or '—' }}</td>
-          <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td>
-            <form method="POST" style="display: inline">
-              <input type="hidden" name="action" value="toggle_status" />
-              <input type="hidden" name="customer_id" value="{{ c.id }}" />
-              <button
-                type="submit"
-                class="{{ 'btn-activate' if not c.is_active else 'btn-deactivate' }}"
-              >
-                {{ 'Activate' if not c.is_active else 'Deactivate' }}
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Created</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in customers %}
+          <tr>
+            <td>{{ c.name }}</td>
+            <td>{{ c.phone or '—' }}</td>
+            <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              <form method="POST" style="display: inline">
+                <input type="hidden" name="action" value="toggle_status" />
+                <input type="hidden" name="customer_id" value="{{ c.id }}" />
+                <button
+                  type="submit"
+                  class="{{ 'btn-activate' if not c.is_active else 'btn-deactivate' }}"
+                >
+                  {{ 'Activate' if not c.is_active else 'Deactivate' }}
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
     <p>No customers yet.</p>
     {% endif %}
@@ -82,38 +84,42 @@ ROB Solutions{% endblock %} {% block content %}
 <!-- ✅ Credit Summary -->
 <h4>💳 Credit Summary by Batch</h4>
 {% if credit_summary %}
-<table class="table">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Batch No</th>
-      <th>Customer</th>
-      <th>Total Credit (UGX)</th>
-      <th>Balance (UGX)</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in credit_summary %}
-    <tr>
-      <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
-      <td><a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a></td>
-      <td>{{ row.customer_name }}</td>
-      <td>{{ "{:,.0f}".format(row.amount) }}</td>
-      <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
-      <td>
-        {% if row.balance == 0 %}
-        <span class="status paid">✅ Paid</span>
-        {% elif row.balance < row.amount %}
-        <span class="status partial">🟡 Partial</span>
-        {% else %}
-        <span class="status unpaid">❌ Unpaid</span>
-        {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Batch No</th>
+        <th>Customer</th>
+        <th>Total Credit (UGX)</th>
+        <th>Balance (UGX)</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in credit_summary %}
+      <tr>
+        <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+        <td>
+          <a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a>
+        </td>
+        <td>{{ row.customer_name }}</td>
+        <td>{{ "{:,.0f}".format(row.amount) }}</td>
+        <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
+        <td>
+          {% if row.balance == 0 %}
+          <span class="status paid">✅ Paid</span>
+          {% elif row.balance < row.amount %}
+          <span class="status partial">🟡 Partial</span>
+          {% else %}
+          <span class="status unpaid">❌ Unpaid</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
 <p>No credit summary available.</p>
 {% endif %}
