@@ -560,6 +560,29 @@ button:hover {
     min-width: 300px;
 }
 
+.pagination-controls {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+.pagination-controls button {
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.pagination-controls button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-weight: 600;
+    font-size: 15px;
+}
 /* Mobile phones (up to 600px) */
 @media (max-width: 600px) {
     .navbar-inner {

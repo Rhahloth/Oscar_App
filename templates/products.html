@@ -2,17 +2,27 @@
 endblock %} {% block styles %}
 <style>
   .pagination-controls {
-    text-align: center;
-    margin-top: 20px;
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
   }
+
   .pagination-controls button {
-    margin: 0 3px;
-    padding: 5px 10px;
+    padding: 6px 12px;
+    font-size: 14px;
     cursor: pointer;
   }
+
   .pagination-controls button.disabled {
-    cursor: not-allowed;
     opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pagination-info {
+    font-weight: 600;
+    font-size: 15px;
   }
 </style>
 {% endblock %} {% block content %}
