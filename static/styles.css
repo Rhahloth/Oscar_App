@@ -652,29 +652,17 @@ button:hover {
 /* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
 @media (max-width: 768px) {
 
-    /* Hide other sections except navbar-right */
     .navbar-left,
-    .navbar>div:not(.navbar-right) {
-        display: none !important;
+    .navbar-center {
+        display: none;
     }
 
-    /* Make navbar-right fill space on dashboard */
-    body[data-endpoint="dashboard"] .navbar-right {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center;
-        width: 100% !important;
+    .navbar-right {
+        justify-content: space-between;
+        width: 100%;
+        flex-direction: row;
     }
 
-    /* Style branch name */
-    body[data-endpoint="dashboard"] .branch-name {
-        font-weight: bold;
-        font-size: 14px;
-        color: white;
-        margin-right: auto;
-    }
-
-    /* Ensure inner navbar looks clean */
     .navbar-inner {
         padding: 15px 20px;
     }
