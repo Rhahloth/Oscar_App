@@ -179,7 +179,6 @@ def dashboard():
 
     conn = get_db()
     cur = conn.cursor()
-
     user_id = session['user_id']
     role = session['role']
 
@@ -190,8 +189,13 @@ def dashboard():
         if not business:
             return "Business not found", 400
         business_id = business['business_id']
+        session['business_id'] = business_id
 
-        # Fetch only sales for this business, include total and batch number
+        # Count branches (users in the same business)
+        cur.execute("SELECT COUNT(*) FROM users WHERE business_id = %s", (business_id,))
+        session['branch_count'] = cur.fetchone()[0]
+
+        # Fetch owner dashboard data
         cur.execute("""
             SELECT 
                 s.batch_no AS batch_number,
@@ -210,15 +214,14 @@ def dashboard():
         """, (business_id,))
         sales = cur.fetchall()
 
-        # Convert date to Africa/Kampala time
         for sale in sales:
             if sale['date']:
                 sale['date'] = sale['date'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
 
         return render_template('dashboard_owner.html', sales=sales)
 
-    else:  # salesperson
-        # Get sales only for this salesperson, include total_price and batch number
+    else:
+        # For salesperson: get sales + inventory
         cur.execute("""
             SELECT 
                 s.batch_no AS batch_number,
@@ -235,12 +238,11 @@ def dashboard():
         """, (user_id,))
         sales = cur.fetchall()
 
-        # Convert date to Africa/Kampala time
         for sale in sales:
             if sale['date']:
                 sale['date'] = sale['date'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
 
-        # Fetch user inventory
+        # Get inventory
         cur.execute('''
             SELECT ui.*, 
                    p.name AS product_name, 
@@ -251,7 +253,45 @@ def dashboard():
         ''', (user_id,))
         inventory = cur.fetchall()
 
+        # Count users in the business
+        cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+        business_id = cur.fetchone()['business_id']
+        session['business_id'] = business_id
+
+        cur.execute("SELECT COUNT(*) FROM users WHERE business_id = %s", (business_id,))
+        session['branch_count'] = cur.fetchone()[0]
+
         return render_template('dashboard_sales.html', inventory=inventory, sales=sales, username=session['username'])
+
+@app.route('/switch_role', methods=['POST'])
+def switch_role():
+    if 'user_id' not in session or 'role' not in session:
+        flash("Session expired. Please log in again.")
+        return redirect('/login')
+
+    user_id = session['user_id']
+    current_role = session['role']
+    business_id = session.get('business_id')
+    branch_count = session.get('branch_count', 0)
+
+    if branch_count != 1:
+        flash("Cannot switch roles when multiple users exist.")
+        return redirect('/dashboard')
+
+    # Toggle the role
+    new_role = 'salesperson' if current_role == 'owner' else 'owner'
+
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET role = %s WHERE id = %s", (new_role, user_id))
+    conn.commit()
+
+    # Update session
+    session['role'] = new_role
+    flash(f"Switched role to {new_role.capitalize()}.")
+
+    return redirect('/dashboard')
+
 
 @app.route('/record_sale', methods=['GET'])
 def record_sale():
