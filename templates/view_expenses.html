@@ -1,56 +1,53 @@
 {% extends "layout.html" %} {% block title %}View Expenses - RO Solutions{%
 endblock %} {% block content %}
-<div class="container">
-  <h3>💰 All Recorded Expenses</h3>
+<h3>💰 All Recorded Expenses</h3>
 
-  {% if expenses %}
-  <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Staff Name</th>
-          <th>Item</th>
-          <th>Amount (UGX)</th>
-          <th>Comment</th>
-          <th>Submitted By</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for expense in expenses %}
-        <tr>
-          <td>{{ expense.date.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td>{{ expense.staff_name }}</td>
-          <td>{{ expense.item }}</td>
-          <td>{{ "{:,.0f}".format(expense.amount) }}</td>
-          <td>{{ expense.comment or '-' }}</td>
-          <td>{{ expense.username }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+{% if expenses %}
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Staff Name</th>
+        <th>Item</th>
+        <th>Amount (UGX)</th>
+        <th>Comment</th>
+        <th>Submitted By</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for expense in expenses %}
+      <tr>
+        <td>{{ expense.date.strftime('%Y-%m-%d %H:%M') }}</td>
+        <td>{{ expense.staff_name }}</td>
+        <td>{{ expense.item }}</td>
+        <td>{{ "{:,.0f}".format(expense.amount) }}</td>
+        <td>{{ expense.comment or '-' }}</td>
+        <td>{{ expense.username }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
-  <!-- Pagination -->
-  <div class="pagination" style="margin-top: 20px; text-align: center">
-    {% if page > 1 %}
-    <a href="{{ url_for('view_expenses', page=page-1) }}">
-      <button>Previous</button>
-    </a>
-    {% endif %}
+<!-- Pagination -->
+<div class="pagination" style="margin-top: 20px; text-align: center">
+  {% if page > 1 %}
+  <a href="{{ url_for('view_expenses', page=page-1) }}">
+    <button>Previous</button>
+  </a>
+  {% endif %}
 
-    <span style="margin: 0 10px"
-      >Page {{ page }}{% if total_pages %} of {{ total_pages }}{% endif %}</span
-    >
+  <span style="margin: 0 10px"
+    >Page {{ page }}{% if total_pages %} of {{ total_pages }}{% endif %}</span
+  >
 
-    {% if has_next %}
-    <a href="{{ url_for('view_expenses', page=page+1) }}">
-      <button>Next</button>
-    </a>
-    {% endif %}
-  </div>
-  {% else %}
-  <p>No expenses recorded yet.</p>
+  {% if has_next %}
+  <a href="{{ url_for('view_expenses', page=page+1) }}">
+    <button>Next</button>
+  </a>
   {% endif %}
 </div>
-{% endblock %}
+{% else %}
+<p>No expenses recorded yet.</p>
+{% endif %} {% endblock %}

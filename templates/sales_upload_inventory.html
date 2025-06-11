@@ -25,97 +25,96 @@ endblock %} {% block content %}
   }
 </style>
 
-<div class="container">
-  <h3>Update Stock</h3>
+<h3>Update Stock</h3>
 
-  <label for="productSearch">Search Product:</label>
-  <input
-    type="text"
-    id="productSearch"
-    placeholder="Type product name..."
-    oninput="filterProducts()"
-    autocomplete="off"
-  />
+<label for="productSearch">Search Product:</label>
+<input
+  type="text"
+  id="productSearch"
+  placeholder="Type product name..."
+  oninput="filterProducts()"
+  autocomplete="off"
+/>
 
+<div
+  id="searchResults"
+  style="
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+  "
+></div>
+
+<form
+  method="POST"
+  action="/sales_upload_inventory"
+  onsubmit="return submitCart()"
+>
   <div
-    id="searchResults"
     style="
-      border: 1px solid #ccc;
-      max-height: 150px;
+      min-height: 300px;
       overflow-y: auto;
-      display: none;
+      background-color: #f8f9fa;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     "
-  ></div>
-
-  <form
-    method="POST"
-    action="/sales_upload_inventory"
-    onsubmit="return submitCart()"
   >
-    <div
-      style="
-        min-height: 300px;
-        overflow-y: auto;
-        background-color: #f8f9fa;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-      "
-    >
-      <table class="cart-table" id="cartTable">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Category</th>
-            <th>Quantity</th>
-            <th>Remove</th>
-          </tr>
-        </thead>
-        <tbody id="cartBody"></tbody>
-      </table>
-    </div>
+    <table class="cart-table" id="cartTable">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Category</th>
+          <th>Quantity</th>
+          <th>Remove</th>
+        </tr>
+      </thead>
+      <tbody id="cartBody"></tbody>
+    </table>
+  </div>
 
-    <input type="hidden" name="cart_data" id="cartData" />
-    <div style="text-align: center; margin-top: 12px">
-      <button type="submit">Update All</button>
-    </div>
-  </form>
+  <input type="hidden" name="cart_data" id="cartData" />
+  <div style="text-align: center; margin-top: 12px">
+    <button type="submit">Update All</button>
+  </div>
+</form>
 
-  <h4>📁 Or Upload via CSV</h4>
+<h4>📁 Or Upload via CSV</h4>
 
-  <p>Please use the following CSV format:</p>
-  <pre style="background-color: #f9f9f9; border: 1px solid #ccc; padding: 10px">
+<p>Please use the following CSV format:</p>
+<pre style="background-color: #f9f9f9; border: 1px solid #ccc; padding: 10px">
 Product Name,Quantity,Category
 Maize Seed,10,Seeds
 Hand Hoe,5,Tools
-  </pre>
+  </pre
+>
 
-  <p>
-    Make sure your columns are: <strong>Product Name</strong>,
-    <strong>Quantity</strong>, <strong>Category</strong>
-  </p>
+<p>
+  Make sure your columns are: <strong>Product Name</strong>,
+  <strong>Quantity</strong>, <strong>Category</strong>
+</p>
 
-  <form
-    method="POST"
-    action="/sales_upload_inventory"
-    enctype="multipart/form-data"
-  >
-    <input type="hidden" name="form_type" value="csv_upload" />
-    <input type="file" name="file" accept=".csv" required />
-    <div style="margin-top: 10px; text-align: left">
-      <button type="submit">Upload CSV</button>
-    </div>
-  </form>
-
-  {% with messages = get_flashed_messages(with_categories=true) %} {% if
-  messages %}
-  <div class="flash-messages">
-    {% for category, message in messages %}
-    <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %}
+<form
+  method="POST"
+  action="/sales_upload_inventory"
+  enctype="multipart/form-data"
+>
+  <input type="hidden" name="form_type" value="csv_upload" />
+  <input type="file" name="file" accept=".csv" required />
+  <div style="margin-top: 10px; text-align: left">
+    <button type="submit">Upload CSV</button>
   </div>
-  {% endif %} {% endwith %}
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div class="flash-messages">
+  {% for category, message in messages %}
+  <div class="alert alert-{{ category }}">{{ message }}</div>
+  {% endfor %}
 </div>
+{% endif %} {% endwith %}
 
 <script>
   const allProducts = {{ product_names | tojson }};
