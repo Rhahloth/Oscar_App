@@ -650,44 +650,21 @@ button:hover {
 }
 
 /* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
-/* @media (max-width: 768px) {
+@media (max-width: 768px) {
 
-    .navbar-left,
-    .navbar-center {
+    /* ❌ Hide only the logo and brand */
+    .navbar-left {
         display: none;
     }
 
-    .navbar-right {
-        justify-content: space-between;
-        width: 100%;
-        flex-direction: row;
-    }
-
-    .navbar-inner {
-        padding: 15px 20px;
-    }
-
-    .navbar a button {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-} */
-
-@media (max-width: 768px) {
-
-    /* Hide branding/logo */
-    .navbar-left {
-        display: none !important;
-    }
-
-    /* Show center and right sections */
+    /* ✅ Show center and right sections */
     .navbar-center,
     .navbar-right {
-        display: flex !important;
+        display: flex;
         align-items: center;
     }
 
-    /* Layout adjustments */
+    /* ✅ Align content responsively */
     .navbar {
         display: flex;
         justify-content: space-between;
