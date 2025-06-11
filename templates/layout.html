@@ -68,14 +68,14 @@
     </div>
     {% endif %}
 
-    <!-- Conditional Wrapper for Login/Register Pages -->
-    {% if request.endpoint in ['login', 'register_owner'] %}
-    <div class="login-wrapper">{% block content %}{% endblock %}</div>
-    {% else %}
-    <div class="container">{% block content %}{% endblock %}</div>
-    {% endif %}
+    <!-- ✅ Only one content block -->
+    <div
+      class="{% if request.endpoint in ['login', 'register_owner'] %}login-wrapper{% else %}container{% endif %}"
+    >
+      {% block content %}{% endblock %}
+    </div>
 
-    <!-- ✅ PWA & IndexedDB Setup -->
+    <!-- PWA & IndexedDB Setup -->
     <script src="{{ url_for('static', filename='js/db.js') }}"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
