@@ -1,9 +1,7 @@
 {% extends "layout.html" %} {% block title %}Owner Dashboard - ROB Solutions{%
 endblock %} {% block content %}
-<div class="dashboard-welcome">
-  <strong>Welcome, {{ session.username }}</strong><br />
-  You have full access to manage sales, products, and reports.
-</div>
+
+<strong>Welcome, {{ session.username }}</strong>
 {% if session.role in ['owner', 'salesperson'] and session.branch_count == 1 %}
 <form
   method="POST"
