@@ -195,6 +195,7 @@ button:hover {
     border-top: 1px solid #ccc;
     max-width: 90%;
     display: flex;
+    border-radius: 6px;
     justify-content: center;
 }
 
@@ -650,5 +651,28 @@ button:hover {
     .table-responsive .table {
         min-width: 600px;
         display: block;
+    }
+}
+
+/* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
+@media (max-width: 768px) {
+
+    .navbar-left,
+    .navbar-center {
+        display: none;
+    }
+
+    .navbar-right {
+        justify-content: flex-end;
+        width: 100%;
+    }
+
+    .navbar-inner {
+        padding: 15px 20px;
+    }
+
+    .navbar a button {
+        padding: 8px 12px;
+        font-size: 14px;
     }
 }
