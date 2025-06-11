@@ -296,7 +296,6 @@ def switch_role():
 
     return redirect('/dashboard')
 
-
 @app.route('/record_sale', methods=['GET'])
 def record_sale():
     if 'user_id' not in session or session['role'] != 'salesperson':
