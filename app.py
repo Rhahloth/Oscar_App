@@ -2398,16 +2398,17 @@ def offline_data():
 
         # Fetch only products assigned to this business and user
         cur.execute("""
-            SELECT p.id, p.product_name, p.retail_price, p.buying_price, ui.quantity
+            SELECT p.id AS product_id, p.name AS product_name, 
+                   p.retail_price, p.buying_price, ui.quantity
             FROM products p
             JOIN user_inventory ui ON p.id = ui.product_id
             WHERE ui.user_id = %s
         """, (user_id,))
         products = [
             {
-                "id": r["id"],
-                "name": r["product_name"],
-                "retail": float(r["retail_price"]),
+                "product_id": r["product_id"],
+                "product_name": r["product_name"],
+                "retail_price": float(r["retail_price"]),
                 "buying_price": float(r["buying_price"]),
                 "quantity": int(r["quantity"]),
             }
