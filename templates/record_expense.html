@@ -1,5 +1,6 @@
 {% extends "layout.html" %} {% block title %}Record Expense - AgriShop{%
 endblock %} {% block content %}
+
 <h3>💰 Record New Expense</h3>
 
 {% with messages = get_flashed_messages() %} {% if messages %}
@@ -10,7 +11,7 @@ endblock %} {% block content %}
 </ul>
 {% endif %} {% endwith %}
 
-<form action="/record_expense" method="POST" class="form">
+<form id="expenseForm" class="form">
   <div class="form-group">
     <label for="staff_name">Staff Name</label>
     <select id="staff_name" name="staff_name" required>
@@ -72,4 +73,44 @@ endblock %} {% block content %}
     </button>
   </div>
 </form>
+
+{% endblock %} {% block scripts %}
+<script>
+  document
+    .getElementById("expenseForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const data = {
+        staff_name: document.getElementById("staff_name").value,
+        item: document.getElementById("item").value,
+        amount: document.getElementById("amount").value,
+        comment: document.getElementById("comment").value,
+        timestamp: new Date().toISOString(),
+      };
+
+      fetch("/record_expense", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Server error");
+          alert("✅ Expense submitted successfully.");
+          window.location.reload();
+        })
+        .catch((err) => {
+          console.warn("⚠️ Saving expense offline due to error:", err);
+          if (typeof saveExpenseOffline === "function") {
+            saveExpenseOffline(data);
+            alert(
+              "💾 Expense saved offline. It will sync when you're back online."
+            );
+            window.location.reload();
+          } else {
+            alert("❌ Failed to save offline. Please try again.");
+          }
+        });
+    });
+</script>
 {% endblock %}

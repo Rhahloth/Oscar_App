@@ -2162,6 +2162,87 @@ def return_product():
 
     return redirect(f"/batch_sales/{sale['batch_no']}")
 
+# OFFLINE SYNCS
+
+@app.route("/submit_sale", methods=["POST"])
+def submit_sale():
+    data = request.get_json()
+    cart_data = data.get("cart_data")
+    payment_method = data.get("payment_method")
+    customer_id = data.get("customer_id")
+    due_date = data.get("due_date")
+    timestamp = data.get("timestamp")
+
+    # TODO: Save to your DB: loop over cart_data and insert into sales table
+
+    return jsonify({"status": "success"}), 200
+
+@app.route("/record_expense", methods=["POST"])
+def record_expense():
+    data = request.get_json()
+    staff_name = data.get("staff_name")
+    item = data.get("item")
+    amount = data.get("amount")
+    comment = data.get("comment")
+    timestamp = data.get("timestamp")
+
+    # TODO: Save expense to DB
+
+    return jsonify({"status": "success"}), 200
+
+@app.route("/repayments", methods=["POST"])
+def handle_repayment():
+    data = request.get_json()
+    customer_id = data.get("customer_id")
+    credit_id = data.get("credit_id")
+    amount = data.get("amount")
+    timestamp = data.get("timestamp")
+
+    # TODO: Insert repayment record and update credit balance
+
+    return jsonify({"status": "success"}), 200
+
+@app.route("/upload_offline_sales", methods=["POST"])
+def upload_offline_sales():
+    sales = request.get_json()
+    for sale in sales:
+        cart_data = sale.get("cart_data")
+        payment_method = sale.get("payment_method")
+        customer_id = sale.get("customer_id")
+        due_date = sale.get("due_date")
+        timestamp = sale.get("timestamp")
+
+        # TODO: Save each sale record from cart_data to DB
+
+    return jsonify({"status": "synced"}), 200
+
+@app.route("/upload_offline_expenses", methods=["POST"])
+def upload_offline_expenses():
+    expenses = request.get_json()
+    for expense in expenses:
+        staff_name = expense.get("staff_name")
+        item = expense.get("item")
+        amount = expense.get("amount")
+        comment = expense.get("comment")
+        timestamp = expense.get("timestamp")
+
+        # TODO: Insert into expense table
+
+    return jsonify({"status": "synced"}), 200
+@app.route("/upload_offline_repayments", methods=["POST"])
+def upload_offline_repayments():
+    repayments = request.get_json()
+    for r in repayments:
+        customer_id = r.get("customer_id")
+        credit_id = r.get("credit_id")
+        amount = r.get("amount")
+        timestamp = r.get("timestamp")
+
+        # TODO: Save to repayments table and update credit balance
+
+    return jsonify({"status": "synced"}), 200
+
+
 @app.route('/logout')
 def logout():
     session.clear()

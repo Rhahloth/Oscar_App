@@ -4,19 +4,30 @@
     <meta charset="UTF-8" />
     <title>{% block title %}ROB Solutions{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Styles -->
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='styles.css') }}"
     />
+
+    <!-- Manifest & Theme -->
     <link
       rel="manifest"
       href="{{ url_for('static', filename='manifest.json') }}"
     />
     <meta name="theme-color" content="#034078" />
+
+    <!-- App Icons -->
     <link
       rel="icon"
       sizes="192x192"
       href="{{ url_for('static', filename='icons/icon-192.png') }}"
+    />
+    <link
+      rel="icon"
+      sizes="512x512"
+      href="{{ url_for('static', filename='icons/icon-512.png') }}"
     />
   </head>
 
@@ -24,7 +35,7 @@
     class="{% if request.endpoint in ['login', 'register_owner'] %}login-body{% endif %}"
   >
     {% if request.endpoint not in ['login', 'register_owner'] %}
-    <!-- ✅ Updated Navbar with your original style -->
+    <!-- Navbar -->
     <div class="navbar-wrapper">
       <div class="navbar-inner">
         <div class="navbar">
@@ -41,9 +52,7 @@
 
           <div class="navbar-right">
             {% if session.username and request.endpoint != 'dashboard' %}
-            <a href="/dashboard">
-              <button>Back to Dashboard</button>
-            </a>
+            <a href="/dashboard"><button>Back to Dashboard</button></a>
             {% endif %} {% if session.username %}
             <a href="/logout">
               <button style="background-color: #d9534f; color: white">
@@ -57,7 +66,7 @@
     </div>
     {% endif %}
 
-    <!-- ✅ Main Content -->
+    <!-- Main Content -->
     <div
       class="{% if request.endpoint in ['login', 'register_owner'] %}login-wrapper{% else %}container{% endif %}"
       style="margin-top: 120px"
@@ -65,15 +74,19 @@
       {% block content %}{% endblock %}
     </div>
 
-    <!-- ✅ PWA & IndexedDB Setup -->
+    <!-- PWA & Offline Sync Scripts -->
     <script src="{{ url_for('static', filename='js/db.js') }}"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        // Register service worker for PWA
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
             .register("/static/js/sw.js")
-            .then(() => console.log("Service Worker registered"));
+            .then(() => console.log("✅ Service Worker registered"))
+            .catch((err) => console.error("❌ Service Worker failed", err));
         }
+
+        // Initialize IndexedDB for offline sync
         if (typeof initIndexedDB === "function") {
           initIndexedDB();
         }

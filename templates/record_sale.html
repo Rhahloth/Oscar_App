@@ -1,5 +1,6 @@
 {% extends "layout.html" %} {% block title %}Record Sale - ROB Solutions{%
 endblock %} {% block content %}
+
 <h4>Point of Sale</h4>
 
 {% if not products %}
@@ -78,6 +79,7 @@ endblock %} {% block content %}
     <button type="button" onclick="finalizeSale('Cash')">Cash</button>
   </div>
 </form>
+
 {% endblock %} {% block scripts %}
 <script>
   let cart = [];
@@ -177,26 +179,51 @@ endblock %} {% block content %}
   }
 
   function submitSale(e) {
-    e.preventDefault();
+    e.preventDefault(); // prevent default submission
   }
 
   function finalizeSale(method) {
     if (!cart.length) return alert("Add at least one item.");
-    document.getElementById("cart_data").value = JSON.stringify(cart);
-    document.getElementById("payment_method").value = method;
 
-    if (method === 'Credit') {
-      const customerId = document.getElementById("customerSelect").value;
-      const dueDate = document.getElementById("dueDate").value;
-      if (!customerId || !dueDate) {
+    const formData = {
+      cart_data: JSON.stringify(cart),
+      payment_method: method,
+      customer_id: document.getElementById("customerSelect").value || null,
+      due_date: document.getElementById("dueDate").value || null,
+      timestamp: new Date().toISOString()
+    };
+
+    if (method === "Credit") {
+      if (!formData.customer_id || !formData.due_date) {
         alert("❌ Please select customer and due date.");
         return;
       }
     }
 
-    document.getElementById("saleForm").submit();
+    // Attempt to send sale online
+    fetch("/submit_sale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Server rejected request");
+      alert("✅ Sale submitted successfully.");
+      window.location.href = "/dashboard";
+    })
+    .catch(err => {
+      console.warn("⚠️ Saving sale offline due to fetch error", err);
+      if (typeof saveSaleOffline === "function") {
+        saveSaleOffline(formData);
+        alert("💾 Sale saved offline and will sync when online.");
+        window.location.href = "/dashboard";
+      } else {
+        alert("❌ Sale could not be saved. Please try again.");
+      }
+    });
   }
 
+  // Show/hide credit fields
   document.querySelectorAll("button").forEach(btn => {
     btn.addEventListener("click", () => {
       if (btn.innerText === "Credit") {
