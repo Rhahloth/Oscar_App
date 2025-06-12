@@ -44,7 +44,7 @@ self.addEventListener("fetch", event => {
       return response || fetch(event.request);
     }).catch(() => {
       // If both cache and network fail, fallback to offline page
-      return caches.match("/offline.html");
+      return caches.match("/static/offline.html");
     })
   );
 });
