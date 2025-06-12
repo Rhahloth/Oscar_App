@@ -206,16 +206,26 @@ endblock %} {% block content %}
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       })
-        .then(res => res.json())
-        .then(data => {
-          if (!data.success) throw new Error("Sale failed");
+      .then(res => {
+        if (!res.ok) throw new Error("Server error");
+        return res.json();
+      })
+      .then(data => {
+        if (data.success && data.batch_no) {
           alert("✅ Sale submitted successfully.");
           window.location.href = `/batch_sales/${data.batch_no}`;
-        })
-        .catch(err => {
-          console.warn("⚠️ Network issue, saving offline", err);
+        } else {
+          throw new Error("Invalid response");
+        }
+      })
+      .catch(err => {
+        if (!navigator.onLine) {
           fallbackOffline(formData);
-        });
+        } else {
+          alert("❌ Sale failed. Try again.");
+          console.error("Sale failed:", err);
+        }
+      });
     } else {
       // Offline: save locally
       fallbackOffline(formData);
