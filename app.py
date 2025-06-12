@@ -2380,39 +2380,6 @@ def upload_offline_sales():
         cur.close()
         conn.close()
 
-@app.route("/upload_offline_expenses", methods=["POST"])
-def upload_offline_expenses():
-    conn = get_db()
-    cur = conn.cursor()
-
-    expenses = request.get_json()
-    for expense in expenses:
-        staff_name = expense.get("staff_name")
-        item = expense.get("item")
-        amount = float(expense.get("amount"))
-        comment = expense.get("comment") or ""
-        timestamp = expense.get("timestamp") or datetime.utcnow().isoformat()
-
-        # Resolve staff_id
-        cur.execute("SELECT id, business_id FROM users WHERE username = %s", (staff_name,))
-        user_result = cur.fetchone()
-        if not user_result:
-            continue  # skip invalid user
-        staff_id, business_id = user_result
-        submitted_by = session.get("username", "offline_user")
-
-        # Save expense
-        cur.execute("""
-            INSERT INTO expenses (business_id, staff_id, staff_name, item, amount, comment, username, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """, (business_id, staff_id, staff_name, item, amount, comment, submitted_by, timestamp))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return jsonify({"status": "expenses synced"}), 200
-
 @app.route("/upload_offline_repayments", methods=["POST"])
 def upload_offline_repayments():
     if not request.is_json:

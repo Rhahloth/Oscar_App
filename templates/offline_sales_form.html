@@ -1,0 +1,209 @@
+<!-- offline_sales_form.html - Enhanced Offline POS Clone -->
+<div class="offline-box">
+  <h2>Offline Point of Sale</h2>
+
+  <div class="section-box filter-section">
+    <label for="productSearch">Search Product</label>
+    <input
+      id="productSearch"
+      placeholder="Type to search..."
+      oninput="handleProductInput()"
+      autocomplete="off"
+    />
+    <div
+      id="matchResults"
+      style="margin-top: 10px; max-height: 150px; overflow-y: auto"
+    ></div>
+  </div>
+
+  <div class="section-box cart-table">
+    <table class="table" id="cartTable">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Subtotal</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section-box">
+    <p>Total Quantity: <span id="total_qty">0</span></p>
+    <p>Total Amount: UGX <span id="total_amount">0</span></p>
+  </div>
+
+  <div class="section-box" id="creditOptions" style="display: none">
+    <label for="customerSelect">Customer (Credit Sale)</label>
+    <select id="customerSelect">
+      <option value="">-- Select --</option>
+    </select>
+    <label for="dueDate">Due Date</label>
+    <input type="date" id="dueDate" />
+  </div>
+
+  <div class="cart-actions">
+    <button type="button" onclick="finalizeOfflineSale('Credit')">
+      Credit
+    </button>
+    <button type="button" onclick="finalizeOfflineSale('Cash')">Cash</button>
+  </div>
+
+  <div id="confirmation" style="margin-top: 1rem"></div>
+</div>
+
+<script>
+  const products = [
+    {
+      id: 1,
+      name: "Maize Flour",
+      retail: 3500,
+      buying_price: 3000,
+      quantity: 50,
+    },
+    {
+      id: 2,
+      name: "Cooking Oil",
+      retail: 6000,
+      buying_price: 5000,
+      quantity: 30,
+    },
+  ];
+
+  const customers = [
+    { id: 1, name: "Amina" },
+    { id: 2, name: "John" },
+  ];
+
+  const cart = [];
+
+  const matchResults = document.getElementById("matchResults");
+  const productSearch = document.getElementById("productSearch");
+  const customerSelect = document.getElementById("customerSelect");
+
+  customers.forEach((c) => {
+    const option = document.createElement("option");
+    option.value = c.id;
+    option.textContent = c.name;
+    customerSelect.appendChild(option);
+  });
+
+  function handleProductInput() {
+    const input = productSearch.value.toLowerCase();
+    matchResults.innerHTML = "";
+    if (input.length < 2) return;
+    products
+      .filter((p) => p.name.toLowerCase().includes(input))
+      .forEach((p) => {
+        const btn = document.createElement("button");
+        btn.textContent = p.name;
+        btn.className = "match-pill";
+        btn.onclick = () => addToCart(p);
+        matchResults.appendChild(btn);
+      });
+  }
+
+  function addToCart(product) {
+    cart.push({
+      productId: product.id,
+      productName: product.name,
+      quantity: 1,
+      price: product.retail,
+      cost: product.buying_price,
+      subtotal: product.retail,
+    });
+    productSearch.value = "";
+    matchResults.innerHTML = "";
+    renderCart();
+  }
+
+  function renderCart() {
+    const tbody = document.querySelector("#cartTable tbody");
+    tbody.innerHTML = "";
+    let totalQty = 0,
+      totalAmount = 0;
+    cart.forEach((item, i) => {
+      totalQty += item.quantity;
+      totalAmount += item.subtotal;
+      const row = document.createElement("tr");
+      row.innerHTML = `
+          <td>${item.productName}</td>
+          <td><input type="number" min="1" value="${
+            item.quantity
+          }" onchange="updateQty(${i}, this.value)" /></td>
+          <td><input type="number" min="0" value="${
+            item.price
+          }" onchange="updatePrice(${i}, this.value)" /></td>
+          <td>UGX ${item.subtotal.toLocaleString("en-UG")}</td>
+          <td><button type="button" onclick="removeItem(${i})">X</button></td>
+        `;
+      tbody.appendChild(row);
+    });
+    document.getElementById("total_qty").innerText = totalQty;
+    document.getElementById("total_amount").innerText =
+      totalAmount.toLocaleString("en-UG");
+  }
+
+  function updateQty(index, value) {
+    cart[index].quantity = parseInt(value) || 1;
+    cart[index].subtotal = cart[index].quantity * cart[index].price;
+    renderCart();
+  }
+
+  function updatePrice(index, value) {
+    const newPrice = parseFloat(value) || 0;
+    if (newPrice < cart[index].cost) {
+      alert("⚠️ Price too low. Check and try again.");
+      renderCart();
+      return;
+    }
+    cart[index].price = newPrice;
+    cart[index].subtotal = cart[index].quantity * newPrice;
+    renderCart();
+  }
+
+  function removeItem(i) {
+    cart.splice(i, 1);
+    renderCart();
+  }
+
+  function finalizeOfflineSale(method) {
+    if (!cart.length) return alert("Add at least one item.");
+    const customer_id = document.getElementById("customerSelect").value;
+    const due_date = document.getElementById("dueDate").value;
+    if (method === "Credit" && (!customer_id || !due_date)) {
+      alert("❌ Please select customer and due date.");
+      return;
+    }
+    const sale = {
+      id: "offline_" + Date.now(),
+      cart_data: cart,
+      payment_method: method,
+      customer_id,
+      due_date,
+      timestamp: new Date().toISOString(),
+    };
+    let existing = JSON.parse(localStorage.getItem("offline_sales") || "[]");
+    existing.push(sale);
+    localStorage.setItem("offline_sales", JSON.stringify(existing));
+    document.getElementById("confirmation").textContent =
+      "✅ Offline sale saved.";
+    cart.length = 0;
+    renderCart();
+    document.getElementById("creditOptions").style.display =
+      method === "Credit" ? "block" : "none";
+  }
+
+  document.querySelectorAll(".cart-actions button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (btn.innerText === "Credit") {
+        document.getElementById("creditOptions").style.display = "block";
+      } else {
+        document.getElementById("creditOptions").style.display = "none";
+      }
+    });
+  });
+</script>
