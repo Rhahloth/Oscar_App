@@ -439,7 +439,8 @@ def submit_sale():
                 ))
 
         conn.commit()
-        return redirect(f'/batch_sales/{batch_no}')
+        return jsonify({"success": True, "batch_no": batch_no})
+
 
     except Exception as e:
         conn.rollback()
