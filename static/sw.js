@@ -1,5 +1,6 @@
 const CACHE_NAME = "rob-cache-v2";
 const OFFLINE_URL = "/static/offline.html";
+const OFFLINE_SALES_FORM_URL = "/static/offline_sales_form.html";
 
 const urlsToCache = [
   "/",
@@ -9,8 +10,8 @@ const urlsToCache = [
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
   "/static/js/db.js",
-  "/static/offline_sales_form.html",
-  OFFLINE_URL,  // Corrected: comma was missing above
+  OFFLINE_SALES_FORM_URL,
+  OFFLINE_URL,
 ];
 
 self.addEventListener("install", event => {
@@ -42,21 +43,36 @@ self.addEventListener("activate", event => {
 });
 
 self.addEventListener("fetch", event => {
-  if (event.request.mode === "navigate") {
-    console.log("📡 Fetching page (HTML):", event.request.url);
+  const { request } = event;
+
+  if (request.mode === "navigate") {
+    console.log("📡 Navigating:", request.url);
+
+    // ✅ Explicitly serve the offline sales form from cache if it's requested
+    if (request.url.endsWith("/static/offline_sales_form.html")) {
+      event.respondWith(
+        caches.match(OFFLINE_SALES_FORM_URL).then(res => {
+          return res || fetch(request).catch(() => caches.match(OFFLINE_URL));
+        })
+      );
+      return;
+    }
+
+    // ✅ Default fallback to offline.html
     event.respondWith(
-      fetch(event.request).catch(() => {
-        console.warn("⚠️ Offline fallback triggered:", event.request.url);
+      fetch(request).catch(() => {
+        console.warn("⚠️ Offline fallback triggered for:", request.url);
         return caches.match(OFFLINE_URL);
       })
     );
   } else {
+    // For static assets
     event.respondWith(
-      caches.match(event.request).then(cachedResponse => {
+      caches.match(request).then(cachedResponse => {
         if (cachedResponse) {
-          console.log("📁 Serving from cache:", event.request.url);
+          console.log("📁 Serving from cache:", request.url);
         }
-        return cachedResponse || fetch(event.request);
+        return cachedResponse || fetch(request);
       })
     );
   }
