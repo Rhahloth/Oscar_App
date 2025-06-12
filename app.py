@@ -28,6 +28,10 @@ def generate_random_password(length=4):
 def home():
     return redirect('/login')
 
+@app.route('/sw.js')
+def service_worker():
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
 @app.route('/offline')
 def offline_page():
     return render_template('offline.html')

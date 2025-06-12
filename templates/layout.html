@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>{% block title %}ROB Solutions{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#034078" />
 
     <!-- Styles -->
     <link
@@ -11,14 +12,13 @@
       href="{{ url_for('static', filename='styles.css') }}"
     />
 
-    <!-- Manifest & Theme -->
+    <!-- Manifest -->
     <link
       rel="manifest"
       href="{{ url_for('static', filename='manifest.json') }}"
     />
-    <meta name="theme-color" content="#034078" />
 
-    <!-- App Icons -->
+    <!-- Icons -->
     <link
       rel="icon"
       sizes="192x192"
@@ -40,7 +40,11 @@
       <div class="navbar-inner">
         <div class="navbar">
           <div class="navbar-left">
-            <img src="/static/logo.png" alt="ROB Solutions Logo" class="logo" />
+            <img
+              src="{{ url_for('static', filename='logo.png') }}"
+              alt="ROB Solutions Logo"
+              class="logo"
+            />
             <strong>ROB Solutions</strong>
           </div>
 
@@ -74,19 +78,19 @@
       {% block content %}{% endblock %}
     </div>
 
-    <!-- PWA & Offline Sync Scripts -->
+    <!-- Scripts -->
     <script src="{{ url_for('static', filename='js/db.js') }}"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
         // Register service worker for PWA
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
-            .register("/static/sw.js")
+            .register("/sw.js") // ✅ Ensure sw.js is served from / via Flask route
             .then(() => console.log("✅ Service Worker registered"))
             .catch((err) => console.error("❌ Service Worker failed", err));
         }
 
-        // Initialize IndexedDB for offline sync
+        // Initialize IndexedDB (if implemented)
         if (typeof initIndexedDB === "function") {
           initIndexedDB();
         }
