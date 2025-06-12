@@ -1,7 +1,8 @@
 const CACHE_NAME = "rob-cache-v1";
 
+// Only cache essentials for offline functionality
 const urlsToCache = [
-  "/", 
+  "/",
   "/record_sale",
   "/record_expense",
   "/repayments",
@@ -13,23 +14,25 @@ const urlsToCache = [
   "/static/offline.html"
 ];
 
+// Install: cache necessary files
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log("✅ Caching essential offline pages");
+      console.log("✅ Caching offline essentials...");
       return cache.addAll(urlsToCache);
     })
   );
 });
 
+// Activate: clean up old caches
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(cacheNames =>
+    caches.keys().then(keys =>
       Promise.all(
-        cacheNames.map(name => {
-          if (name !== CACHE_NAME) {
-            console.log("🗑️ Removing old cache:", name);
-            return caches.delete(name);
+        keys.map(key => {
+          if (key !== CACHE_NAME) {
+            console.log("🗑️ Deleting outdated cache:", key);
+            return caches.delete(key);
           }
         })
       )
@@ -37,13 +40,16 @@ self.addEventListener("activate", event => {
   );
 });
 
+// Fetch: cache-first, fallback to offline page
 self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request).catch(() =>
-        caches.match("/static/offline.html")
-      );
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
+    }).catch(() => {
+      // Show offline page for navigation requests (HTML pages)
+      if (event.request.mode === 'navigate') {
+        return caches.match("/static/offline.html");
+      }
     })
   );
 });
