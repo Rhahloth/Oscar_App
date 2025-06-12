@@ -41,7 +41,7 @@ endblock %} {% block content %}
           <td>{{ s.customer_name or '-' }}</td>
           <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
           <td>
-            {% if not s.is_return %}
+            {% if not s.is_return and s.returned_quantity < s.quantity %}
             <form
               action="/return_product"
               method="POST"
@@ -52,7 +52,7 @@ endblock %} {% block content %}
                 type="number"
                 name="return_quantity"
                 min="1"
-                max="{{ s.quantity }}"
+                max="{{ s.quantity - s.returned_quantity }}"
                 placeholder="Qty"
                 required
                 style="width: 60px"
@@ -61,7 +61,8 @@ endblock %} {% block content %}
                 Return
               </button>
             </form>
-            {% else %} Returned {% endif %}
+            {% elif s.returned_quantity >= s.quantity %} ✅ Fully Returned {%
+            else %} Returned {% endif %}
           </td>
         </tr>
         {% endfor %}

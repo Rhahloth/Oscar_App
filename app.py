@@ -479,10 +479,9 @@ def batch_sales(batch_no):
 
     conn = get_db()
     cur = conn.cursor()
-
-    # Get business_id from session
     business_id = session.get('business_id')
 
+    # Fetch sales with related product and customer info
     cur.execute("""
         SELECT s.*, 
                p.name AS product_name,
@@ -493,12 +492,30 @@ def batch_sales(batch_no):
         WHERE s.batch_no = %s AND s.business_id = %s
         ORDER BY s.date
     """, (batch_no, business_id))
-    sales = cur.fetchall()
+
+    rows = cur.fetchall()
+
+    sales = []
+    for s in rows:
+        # For each sale, calculate how much has been returned (exclude self-return lines)
+        if not s['is_return']:
+            cur.execute("""
+                SELECT COALESCE(SUM(quantity), 0) AS returned_quantity
+                FROM sales
+                WHERE is_return = TRUE AND original_sale_id = %s
+            """, (s['id'],))
+            returned = cur.fetchone()['returned_quantity']
+        else:
+            returned = s['quantity']  # return rows just show own quantity
+
+        s['returned_quantity'] = returned
+        sales.append(s)
 
     cur.close()
     conn.close()
 
     return render_template('batch_sales.html', sales=sales, batch_number=batch_no)
+
 
 @app.route("/record_expense", methods=["GET", "POST"])
 def record_expense():
