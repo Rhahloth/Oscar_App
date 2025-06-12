@@ -11,7 +11,6 @@ const urlsToCache = [
   "/static/logo.png",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
-  "/static/js/db.js"
 ];
 
 self.addEventListener("install", event => {

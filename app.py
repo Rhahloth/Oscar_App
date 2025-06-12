@@ -32,13 +32,13 @@ def home():
 def service_worker():
     return send_from_directory('static', 'sw.js', mimetype='application/javascript')
 
+@app.route("/offline")
+def offline_page():
+    return send_from_directory("static", "offline.html")
+
 @app.route("/offline_sales_form")
 def offline_sales_form():
     return send_from_directory("static", "offline_sales_form.html")
-
-@app.route("/offline")
-def offline_page():
-    return render_template("offline.html")
 
 
 @app.route('/create_super_admin', methods=['GET', 'POST'])
