@@ -2256,43 +2256,41 @@ def upload_offline_sales():
     conn = get_db()
     cur = conn.cursor()
 
-    sales = request.get_json()
-    for sale in sales:
-        cart_data = sale.get("cart_data", [])
-        payment_method = sale.get("payment_method")
+    sales_data = request.get_json()
+
+    for sale in sales_data:
+        salesperson_id = sale["salesperson_id"]
+        payment_method = sale["payment_method"]
         customer_id = sale.get("customer_id")
-        due_date = sale.get("due_date")  # Only for credit sales
+        due_date = sale.get("due_date")
         timestamp = sale.get("timestamp")
-        salesperson_id = sale.get("salesperson_id")  # Must be sent from client
-        batch_no = sale.get("batch_no")
+        cart_data = json.loads(sale["cart_data"])  # FIX HERE
 
+        # Insert sale record (one row per product)
         for item in cart_data:
-            product_id = item["product_id"]
-            quantity = float(item["quantity"])
-            price = float(item["price"])
+            product_id = item["productId"]
+            quantity = item["quantity"]
+            price = item["price"]
 
-            # Insert into sales (no due_date here!)
             cur.execute("""
-                INSERT INTO sales (salesperson_id, product_id, quantity, price, customer_id, payment_method, batch_no, date)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO sales (salesperson_id, product_id, quantity, price, payment_method, customer_id, date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
-            """, (salesperson_id, product_id, quantity, price, customer_id, payment_method, batch_no, timestamp))
-
+            """, (salesperson_id, product_id, quantity, price, payment_method, customer_id, timestamp))
             sale_id = cur.fetchone()[0]
 
-            # Insert into credit_sales only if it's credit
-            if payment_method == "credit":
-                total_amount = quantity * price
+            if payment_method == "Credit":
+                balance = quantity * price
                 cur.execute("""
-                    INSERT INTO credit_sales (sale_id, customer_id, amount, balance, due_date)
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (sale_id, customer_id, total_amount, total_amount, due_date))
+                    INSERT INTO credit_sales (sale_id, customer_id, amount, balance, due_date, status)
+                    VALUES (%s, %s, %s, %s, %s, 'unpaid')
+                """, (sale_id, customer_id, balance, balance, due_date))
 
     conn.commit()
     cur.close()
     conn.close()
 
-    return jsonify({"status": "✅ Sales synced"}), 200
+    return jsonify({"status": "sales synced"}), 200
 
 @app.route("/upload_offline_expenses", methods=["POST"])
 def upload_offline_expenses():

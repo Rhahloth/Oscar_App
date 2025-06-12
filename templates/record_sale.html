@@ -17,7 +17,7 @@ endblock %} {% block content %}
   onsubmit="submitSale(event)"
 >
   <div class="flex-row">
-    <!-- LEFT SIDE: Search & Credit -->
+    <!-- LEFT SIDE -->
     <div class="flex-left-narrow">
       <div class="section-box filter-section">
         <label for="productSearch">Search Product</label>
@@ -47,7 +47,7 @@ endblock %} {% block content %}
       </div>
     </div>
 
-    <!-- RIGHT SIDE: Cart Table and Summary -->
+    <!-- RIGHT SIDE -->
     <div class="flex-right-wide">
       <div class="section-box cart-table">
         <table class="table" id="cartTable">
@@ -200,27 +200,36 @@ endblock %} {% block content %}
       }
     }
 
-    // Attempt to send sale online
-    fetch("/submit_sale", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData)
-    })
-    .then(res => {
-      if (!res.ok) throw new Error("Server rejected request");
-      alert("✅ Sale submitted successfully.");
+    if (navigator.onLine) {
+      // Online: send to server
+      fetch("/submit_sale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Server error");
+          alert("✅ Sale submitted successfully.");
+          window.location.href = "/dashboard";
+        })
+        .catch(err => {
+          console.warn("⚠️ Network issue, saving offline", err);
+          fallbackOffline(formData);
+        });
+    } else {
+      // Offline: save locally
+      fallbackOffline(formData);
+    }
+  }
+
+  function fallbackOffline(data) {
+    if (typeof saveSaleOffline === "function") {
+      saveSaleOffline(data);
+      alert("💾 Sale saved offline and will sync when online.");
       window.location.href = "/dashboard";
-    })
-    .catch(err => {
-      console.warn("⚠️ Saving sale offline due to fetch error", err);
-      if (typeof saveSaleOffline === "function") {
-        saveSaleOffline(formData);
-        alert("💾 Sale saved offline and will sync when online.");
-        window.location.href = "/dashboard";
-      } else {
-        alert("❌ Sale could not be saved. Please try again.");
-      }
-    });
+    } else {
+      alert("❌ Could not save offline. Contact admin.");
+    }
   }
 
   // Show/hide credit fields
