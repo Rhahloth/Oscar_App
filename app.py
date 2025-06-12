@@ -2266,7 +2266,6 @@ def record_sale_post():
 
     return jsonify({"status": "success"}), 200
 
-
 @app.route('/upload_offline_sales', methods=['POST'])
 def upload_offline_sales():
     if 'user_id' not in session or session['role'] != 'salesperson':
@@ -2379,58 +2378,6 @@ def upload_offline_sales():
     finally:
         cur.close()
         conn.close()
-
-@app.route("/upload_offline_repayments", methods=["POST"])
-def upload_offline_repayments():
-    if not request.is_json:
-        return jsonify({"error": "Invalid content type. Expected JSON."}), 400
-
-    repayments = request.get_json()
-
-    if not isinstance(repayments, list):
-        return jsonify({"error": "Invalid payload. Expected a list of repayments."}), 400
-
-    conn = get_db()
-    cur = conn.cursor()
-
-    try:
-        for r in repayments:
-            credit_id = r.get("credit_id")
-            amount = float(r.get("amount", 0))
-            timestamp = r.get("timestamp") or datetime.utcnow().isoformat()
-
-            if not credit_id or amount <= 0:
-                continue  # Skip invalid or incomplete entries
-
-            # Insert repayment
-            cur.execute("""
-                INSERT INTO credit_repayments (credit_id, amount, paid_on)
-                VALUES (%s, %s, %s)
-            """, (credit_id, amount, timestamp))
-
-            # Update the balance and status in credit_sales
-            cur.execute("""
-                UPDATE credit_sales
-                SET balance = balance - %s,
-                    status = CASE
-                        WHEN balance - %s <= 0 THEN 'paid'
-                        WHEN balance - %s < amount THEN 'partial'
-                        ELSE 'unpaid'
-                    END
-                WHERE id = %s
-            """, (amount, amount, amount, credit_id))
-
-        conn.commit()
-        return jsonify({"status": "✅ Repayments synced successfully"}), 200
-
-    except Exception as e:
-        conn.rollback()
-        return jsonify({"error": str(e)}), 500
-
-    finally:
-        cur.close()
-        conn.close()
-
 
 @app.route('/logout')
 def logout():
