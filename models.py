@@ -98,11 +98,6 @@ def initialize_database():
         );
     ''')
 
-    
-    cur.execute("""
-        ALTER TABLE sales
-        ADD COLUMN original_sale_id INTEGER REFERENCES sales(id);
-    """)
     # Sales
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
@@ -119,7 +114,8 @@ def initialize_database():
             customer_id INTEGER REFERENCES customers(id),
             batch_no VARCHAR(50),
             is_return BOOLEAN DEFAULT FALSE,
-            return_reference_id INTEGER REFERENCES sales(id)
+            return_reference_id INTEGER REFERENCES sales(id),
+            original_sale_id INTEGER REFERENCES sales(id)
         );
     ''')
 
