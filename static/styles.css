@@ -8,7 +8,9 @@ body {
 }
 
 /* LOGIN */
-
+.login-wrapper{
+    min-width: 400px;
+}
 .login-body {
     background: linear-gradient(to bottom right, #b0b0b0, #e0e0e0);
     height: 100vh;
@@ -26,7 +28,7 @@ body {
     padding: 30px 25px;
     border-radius: 12px;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
     animation: fadeIn 0.4s ease-in-out;
 }
