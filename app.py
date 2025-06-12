@@ -505,10 +505,21 @@ def record_expense():
     staff_list = [row["username"] for row in cur.fetchall()]
 
     if request.method == "POST":
-        staff_name = request.form["staff_name"]
-        item = request.form["item"]
-        amount = request.form["amount"]
-        comment = request.form["comment"]
+        # Handle JSON request (offline sync) or HTML form
+        if request.is_json:
+            data = request.get_json()
+            staff_name = data.get("staff_name")
+            item = data.get("item")
+            amount = data.get("amount")
+            comment = data.get("comment")
+            timestamp = data.get("timestamp")  # Optional, unused here
+        else:
+            staff_name = request.form["staff_name"]
+            item = request.form["item"]
+            amount = request.form["amount"]
+            comment = request.form["comment"]
+            timestamp = None  # Not used in form
+            submitted_by = session.get("username")
 
         # Get staff_id from username
         cur.execute("""
@@ -518,18 +529,24 @@ def record_expense():
         staff_result = cur.fetchone()
 
         if not staff_result:
+            if request.is_json:
+                return jsonify({"error": "Staff member not found."}), 400
             flash("❌ Staff member not found or not authorized.", "danger")
             return redirect("/record_expense")
 
         staff_id = staff_result["id"]
-        submitted_by = session.get("username")
+        submitted_by = session.get("username") if not request.is_json else staff_name
 
+        # Insert expense
         cur.execute("""
             INSERT INTO expenses (business_id, staff_id, staff_name, item, amount, comment, username)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (business_id, staff_id, staff_name, item, amount, comment, submitted_by))
-
         conn.commit()
+
+        if request.is_json:
+            return jsonify({"status": "success"}), 200
+
         flash("✅ Expense recorded successfully.", "success")
         return redirect("/dashboard")
 
@@ -1751,20 +1768,31 @@ def repayments():
 
     conn = get_db()
     cur = conn.cursor()
-
-    selected_customer_id = request.args.get('customer_id') or request.form.get('customer_id')
-    selected_credit_id = request.form.get('credit_id') if request.method == 'POST' else None
+    selected_customer_id = None
+    selected_credit_id = None
     total_owed = None
 
-    if request.method == 'POST' and selected_credit_id:
-        credit_id = int(selected_credit_id)
-        amount = float(request.form['amount'])
+    if request.method == 'POST':
+        # Detect offline (JSON) or online (form) submission
+        if request.is_json:
+            data = request.get_json()
+            customer_id = data.get('customer_id')
+            credit_id = int(data.get('credit_id'))
+            amount = float(data.get('amount'))
+            timestamp = data.get('timestamp')
+        else:
+            customer_id = request.form.get('customer_id')
+            credit_id = int(request.form.get('credit_id'))
+            amount = float(request.form.get('amount'))
+            timestamp = None  # Optional for online
+            selected_customer_id = customer_id
+            selected_credit_id = credit_id
 
         # Insert repayment
         cur.execute("""
-            INSERT INTO credit_repayments (credit_id, amount)
-            VALUES (%s, %s)
-        """, (credit_id, amount))
+            INSERT INTO credit_repayments (credit_id, amount, paid_on)
+            VALUES (%s, %s, %s)
+        """, (credit_id, amount, timestamp or datetime.now()))
 
         # Update credit sale balance and status
         cur.execute("""
@@ -1780,7 +1808,17 @@ def repayments():
 
         conn.commit()
 
-    # Get customers
+        if request.is_json:
+            cur.close()
+            conn.close()
+            return jsonify({"status": "success"}), 200
+
+    # -----------------------------
+    # GET request - load repayment form
+    # -----------------------------
+    selected_customer_id = request.args.get('customer_id') or selected_customer_id
+
+    # Get customers with credit sales for current salesperson
     cur.execute("""
         SELECT DISTINCT c.id, c.name
         FROM credit_sales cs
@@ -1790,7 +1828,7 @@ def repayments():
     """, (session['user_id'],))
     customers = cur.fetchall()
 
-    # Get credit sales for selected customer
+    credit_sales = []
     if selected_customer_id:
         cur.execute("""
             SELECT cs.id AS credit_id, c.name AS customer_name, cs.amount, cs.balance, s.date
@@ -1809,11 +1847,9 @@ def repayments():
             WHERE cs.status IN ('unpaid', 'partial') AND s.salesperson_id = %s AND cs.customer_id = %s
         """, (session['user_id'], selected_customer_id))
         result = cur.fetchone()
-        total_owed = result['total_balance'] if result and result['total_balance'] else 0
-    else:
-        credit_sales = []
+        total_owed = result[0] if result and result[0] else 0
 
-    # Get repayment history
+    # Get recent repayments
     cur.execute("""
         SELECT r.amount, r.paid_on, c.name AS customer_name
         FROM credit_repayments r
@@ -1826,7 +1862,7 @@ def repayments():
     """, (session['user_id'],))
     repayments = cur.fetchall()
 
-    # Get customer-level credit summary
+    # Get credit summary
     cur.execute("""
         SELECT 
             c.id AS customer_id,
@@ -1842,6 +1878,9 @@ def repayments():
     """, (session['user_id'],))
     credit_summary = cur.fetchall()
 
+    cur.close()
+    conn.close()
+
     return render_template('repayments.html',
         customers=customers,
         selected_customer_id=selected_customer_id,
@@ -1851,8 +1890,6 @@ def repayments():
         total_owed=total_owed,
         credit_summary=credit_summary
     )
-
-from flask import request, session, redirect, render_template, flash
 
 @app.route('/add_customer', methods=['GET', 'POST'])
 def add_customer():
@@ -2164,150 +2201,180 @@ def return_product():
 
 # OFFLINE SYNCS
 
-@app.route("/sync_sale", methods=["POST"])
-def sync_sale():
-    data = request.get_json()
+@app.route("/record_sale", methods=["POST"])
+def record_sale_post():
+    if not request.is_json:
+        return jsonify({"error": "Only JSON allowed"}), 400
 
-    cart_data = data.get("cart_data")
-    payment_method = data.get("payment_method")
-    customer_id = data.get("customer_id")
-    due_date = data.get("due_date")
-    timestamp = data.get("timestamp")
+    sale = request.get_json()
 
-    # ✅ Validate input
-    if not cart_data or not payment_method or not timestamp:
-        return jsonify({"status": "error", "message": "Missing data"}), 400
+    cart_data = sale.get("cart_data")
+    payment_method = sale.get("payment_method")
+    customer_id = sale.get("customer_id")
+    due_date = sale.get("due_date")
+    timestamp = sale.get("timestamp")
+    user_id = session.get("user_id")
 
-    # ✅ Save sale to your DB (simplified)
-    for item in cart_data:
-        # Example: insert each item into your sales table
-        print("Saving:", item)
-        # Add your DB logic here
-
-    return jsonify({"status": "success"}), 200
-
-
-@app.route("/record_expense", methods=["POST"])
-def record_expense():
-    data = request.get_json()
-    staff_name = data.get("staff_name")
-    item = data.get("item")
-    amount = data.get("amount")
-    comment = data.get("comment")
-    timestamp = data.get("timestamp")
-
-    # TODO: Save expense to DB
-
-    return jsonify({"status": "success"}), 200
-
-@app.route("/repayments", methods=["POST"])
-def submit_repayment():
-    data = request.get_json()
-    customer_id = data.get("customer_id")
-    credit_id = data.get("credit_id")
-    amount = data.get("amount")
-    paid_on = data.get("timestamp") or datetime.now()
-
-    conn = get_db_connection()
+    conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("""
-        INSERT INTO repayments (customer_id, credit_id, amount, paid_on)
-        VALUES (%s, %s, %s, %s)
-    """, (customer_id, credit_id, amount, paid_on))
+    for item in cart_data:
+        product_id = item["productId"]
+        quantity = item["quantity"]
+        price = item["price"]
+        subtotal = item["subtotal"]
 
-    # Update credit balance
-    cur.execute("""
-        UPDATE credit_sales SET balance = balance - %s WHERE id = %s
-    """, (amount, credit_id))
+        # Insert each sale item into sales table
+        cur.execute("""
+            INSERT INTO sales (user_id, product_id, quantity, price, subtotal, payment_method, customer_id, due_date, timestamp)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            user_id,
+            product_id,
+            quantity,
+            price,
+            subtotal,
+            payment_method,
+            customer_id if payment_method == "Credit" else None,
+            due_date if payment_method == "Credit" else None,
+            timestamp
+        ))
+
+        # Decrease from salesperson inventory
+        cur.execute("""
+            UPDATE user_inventory 
+            SET quantity = quantity - %s 
+            WHERE user_id = %s AND product_id = %s
+        """, (quantity, user_id, product_id))
 
     conn.commit()
     cur.close()
     conn.close()
+
     return jsonify({"status": "success"}), 200
 
 
 @app.route("/upload_offline_sales", methods=["POST"])
 def upload_offline_sales():
-    sales = request.get_json()
-    conn = get_db_connection()
+    conn = get_db()
     cur = conn.cursor()
 
+    sales = request.get_json()
     for sale in sales:
-        cart = sale.get("cart_data", [])
+        cart_data = sale.get("cart_data", [])
         payment_method = sale.get("payment_method")
-        customer_id = sale.get("customer_id")
+        customer_id = sale.get("customer_id") or None
         due_date = sale.get("due_date")
-        timestamp = sale.get("timestamp") or datetime.now()
+        timestamp = sale.get("timestamp") or datetime.utcnow().isoformat()
+        salesperson_id = session.get("user_id")
 
-        for item in cart:
+        # Create new sale
+        cur.execute("""
+            INSERT INTO sales (salesperson_id, customer_id, payment_method, due_date, date)
+            VALUES (%s, %s, %s, %s, %s) RETURNING id
+        """, (salesperson_id, customer_id, payment_method, due_date, timestamp))
+        sale_id = cur.fetchone()[0]
+
+        # Insert sale items
+        for item in cart_data:
+            product_id = item.get("product_id")
+            quantity = float(item.get("quantity"))
+            price = float(item.get("price"))
+
             cur.execute("""
-                INSERT INTO sales (product_id, product_name, quantity, price, subtotal, payment_method, customer_id, due_date, timestamp)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                item["productId"], item["productName"], item["quantity"],
-                item["price"], item["subtotal"], payment_method,
-                customer_id, due_date, timestamp
-            ))
+                INSERT INTO sale_items (sale_id, product_id, quantity, price)
+                VALUES (%s, %s, %s, %s)
+            """, (sale_id, product_id, quantity, price))
 
-            # Optionally update stock levels here
+            # Decrease inventory
+            cur.execute("""
+                UPDATE user_inventory
+                SET quantity = quantity - %s
+                WHERE user_id = %s AND product_id = %s
+            """, (quantity, salesperson_id, product_id))
+
+        # If credit sale, record in credit_sales
+        if payment_method == "credit" and customer_id:
+            total_amount = sum(float(i['quantity']) * float(i['price']) for i in cart_data)
+            cur.execute("""
+                INSERT INTO credit_sales (sale_id, customer_id, amount, balance, status)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (sale_id, customer_id, total_amount, total_amount, 'unpaid'))
 
     conn.commit()
     cur.close()
     conn.close()
-    return jsonify({"status": "synced"}), 200
+
+    return jsonify({"status": "sales synced"}), 200
 
 @app.route("/upload_offline_expenses", methods=["POST"])
 def upload_offline_expenses():
-    expenses = request.get_json()
-    conn = get_db_connection()
+    conn = get_db()
     cur = conn.cursor()
 
+    expenses = request.get_json()
     for expense in expenses:
+        staff_name = expense.get("staff_name")
+        item = expense.get("item")
+        amount = float(expense.get("amount"))
+        comment = expense.get("comment") or ""
+        timestamp = expense.get("timestamp") or datetime.utcnow().isoformat()
+
+        # Resolve staff_id
+        cur.execute("SELECT id, business_id FROM users WHERE username = %s", (staff_name,))
+        user_result = cur.fetchone()
+        if not user_result:
+            continue  # skip invalid user
+        staff_id, business_id = user_result
+        submitted_by = session.get("username", "offline_user")
+
+        # Save expense
         cur.execute("""
-            INSERT INTO expenses (staff_name, item, amount, comment, timestamp)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (
-            expense.get("staff_name"),
-            expense.get("item"),
-            expense.get("amount"),
-            expense.get("comment"),
-            expense.get("timestamp") or datetime.now()
-        ))
+            INSERT INTO expenses (business_id, staff_id, staff_name, item, amount, comment, username, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (business_id, staff_id, staff_name, item, amount, comment, submitted_by, timestamp))
 
     conn.commit()
     cur.close()
     conn.close()
-    return jsonify({"status": "synced"}), 200
+
+    return jsonify({"status": "expenses synced"}), 200
 
 @app.route("/upload_offline_repayments", methods=["POST"])
 def upload_offline_repayments():
-    repayments = request.get_json()
-    conn = get_db_connection()
+    conn = get_db()
     cur = conn.cursor()
 
+    repayments = request.get_json()
     for r in repayments:
         customer_id = r.get("customer_id")
         credit_id = r.get("credit_id")
-        amount = r.get("amount")
-        timestamp = r.get("timestamp") or datetime.now()
+        amount = float(r.get("amount"))
+        timestamp = r.get("timestamp") or datetime.utcnow().isoformat()
 
+        # Insert repayment
         cur.execute("""
-            INSERT INTO repayments (customer_id, credit_id, amount, paid_on)
-            VALUES (%s, %s, %s, %s)
-        """, (customer_id, credit_id, amount, timestamp))
+            INSERT INTO credit_repayments (credit_id, amount, paid_on)
+            VALUES (%s, %s, %s)
+        """, (credit_id, amount, timestamp))
 
-        # Update credit balance
+        # Update balance in credit_sales
         cur.execute("""
             UPDATE credit_sales
-            SET balance = balance - %s
+            SET balance = balance - %s,
+                status = CASE
+                    WHEN balance - %s <= 0 THEN 'paid'
+                    WHEN balance - %s < amount THEN 'partial'
+                    ELSE 'unpaid'
+                END
             WHERE id = %s
-        """, (amount, credit_id))
+        """, (amount, amount, amount, credit_id))
 
     conn.commit()
     cur.close()
     conn.close()
-    return jsonify({"status": "synced"}), 200
+
+    return jsonify({"status": "repayments synced"}), 200
 
 
 @app.route('/logout')
