@@ -2151,12 +2151,15 @@ def return_product():
         return redirect('/login')
 
     sale_id = request.form.get('sale_id')
-    return_quantity = int(request.form.get('return_quantity'))
+    try:
+        return_quantity = int(request.form.get('return_quantity'))
+    except (TypeError, ValueError):
+        flash("❌ Invalid return quantity.", "danger")
+        return redirect(request.referrer or "/transactions")
 
     if return_quantity <= 0:
         flash("❌ Return quantity must be greater than zero.", "danger")
         return redirect(request.referrer or "/transactions")
-
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -2169,24 +2172,33 @@ def return_product():
         flash("❌ Sale not found. Please try again.", "danger")
         cur.close()
         conn.close()
-        return redirect("/transactions")  # Or a safe fallback page
+        return redirect("/transactions")
 
-    # 🔐 Ensure salesperson can only return their own sales
+    # 🔐 Ensure only the salesperson who made the sale can return it
     if sale['salesperson_id'] != session['user_id']:
         flash("⚠️ You are not authorized to return this sale.", "warning")
         cur.close()
         conn.close()
         return redirect(f"/batch_sales/{sale['batch_no']}")
 
-    # Quantity exceeds original sale
-    if return_quantity > sale['quantity']:
-        flash("❌ Return quantity cannot exceed original sale quantity.", "danger")
+    # Get the total quantity already returned for this sale
+    cur.execute("""
+        SELECT COALESCE(SUM(-quantity), 0) AS total_returned
+        FROM sales
+        WHERE is_return = TRUE AND return_reference_id = %s
+    """, (sale_id,))
+    returned = cur.fetchone()['total_returned']
+
+    remaining_qty = sale['quantity'] - returned
+
+    # Prevent over-return
+    if return_quantity > remaining_qty:
+        flash(f"❌ Only {remaining_qty} item(s) remaining to return.", "danger")
         cur.close()
         conn.close()
         return redirect(f"/batch_sales/{sale['batch_no']}")
 
-
-    # Insert return record with negative quantity and amount
+    # Insert return record
     cur.execute("""
         INSERT INTO sales (
             product_id,
@@ -2214,10 +2226,10 @@ def return_product():
         sale['payment_status'],
         sale['customer_id'],
         sale['batch_no'],
-        sale['id']  # Link to original sale
+        sale['id']
     ))
 
-    # Update inventory: add returned quantity back to salesperson's stock
+    # Restore returned quantity to user's inventory
     cur.execute("""
         UPDATE user_inventory
         SET quantity = quantity + %s
@@ -2232,6 +2244,7 @@ def return_product():
     cur.close()
     conn.close()
 
+    flash("✅ Product return processed successfully.", "success")
     return redirect(f"/batch_sales/{sale['batch_no']}")
 
 # OFFLINE SYNCS
