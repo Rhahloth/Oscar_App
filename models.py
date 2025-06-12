@@ -98,7 +98,11 @@ def initialize_database():
         );
     ''')
 
-   
+    
+    cur.execute("""
+        ALTER TABLE sales
+        ADD COLUMN original_sale_id INTEGER REFERENCES sales(id);
+    """)
     # Sales
     cur.execute('''
         CREATE TABLE IF NOT EXISTS sales (
