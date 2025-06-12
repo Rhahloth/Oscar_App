@@ -1,21 +1,19 @@
 const CACHE_NAME = "rob-cache-v1";
 const OFFLINE_URL = "/static/offline.html";
 
-// ✅ List all assets you want to cache during install
+// ✅ List all essential static assets and fallback pages
 const urlsToCache = [
-  "/",
-  "/record_sale",
-  "/record_expense",
-  "/repayments",
+  "/", // Home redirect
   "/static/styles.css",
   "/static/logo.png",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
   "/static/js/db.js",
-  OFFLINE_URL
+  "/static/offline.html",
+  "/static/offline_sales_form.html",  // ✅ Offline fallback sales
 ];
 
-// ✅ On install: cache app shell and offline page
+// ✅ On install: pre-cache everything
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -26,7 +24,7 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-// ✅ On activate: delete any old cache versions
+// ✅ On activate: clean old caches
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -41,18 +39,18 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
-// ✅ On fetch: serve from cache, fall back to network, then offline.html
+// ✅ On fetch: fallback strategy for pages + static assets
 self.addEventListener("fetch", event => {
-  if (event.request.mode === 'navigate') {
-    // Handle navigation requests (HTML pages)
+  if (event.request.mode === "navigate") {
+    // Page requests (like /record_sale)
     event.respondWith(
       fetch(event.request).catch(() => {
-        console.warn("⚠️ Offline fallback triggered");
+        console.warn("⚠️ Offline page served:", event.request.url);
         return caches.match(OFFLINE_URL);
       })
     );
   } else {
-    // Handle static assets (CSS, JS, images)
+    // Static asset requests (CSS, JS, icons)
     event.respondWith(
       caches.match(event.request).then(response => {
         return response || fetch(event.request);
