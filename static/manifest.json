@@ -1,6 +1,6 @@
 {
-    "name": "Raymond Business Solutions",
-    "short_name": "ROb Solutions",
+    "name": "ROB Solutions",
+    "short_name": "ROB",
     "start_url": "/dashboard",
     "display": "standalone",
     "background_color": "#ffffff",
