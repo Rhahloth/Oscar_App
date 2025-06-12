@@ -213,6 +213,7 @@ endblock %} {% block content %}
       .then(data => {
         if (data.success && data.batch_no) {
           alert("✅ Sale submitted successfully.");
+          document.getElementById("saleHeading").innerText = "✅ Sale Submitted!";
           window.location.href = `/batch_sales/${data.batch_no}`;
         } else {
           throw new Error("Invalid response");
