@@ -501,7 +501,7 @@ def record_expense():
     result = cur.fetchone()
     if not result:
         flash("❌ User not associated with a business.", "danger")
-        return redirect("/record_expense")
+        return redirect("/dashboard")
 
     business_id = result["business_id"]
 
@@ -540,7 +540,7 @@ def record_expense():
             if request.is_json:
                 return jsonify({"error": "Staff member not found."}), 400
             flash("❌ Staff member not found or not authorized.", "danger")
-            return redirect("/record_expense")
+            return redirect("/dashboard")
 
         staff_id = staff_result["id"]
         submitted_by = session.get("username") if not request.is_json else staff_name
