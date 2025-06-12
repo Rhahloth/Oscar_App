@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ROB Solutions — Offline</title>
+    <meta name="theme-color" content="#034078" />
+
+    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="icon" sizes="192x192" href="/static/icons/icon-192.png" />
+    <link rel="icon" sizes="512x512" href="/static/icons/icon-512.png" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 2rem;
+        text-align: center;
+      }
+      .offline-box {
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 2rem;
+        max-width: 600px;
+        margin: 2rem auto;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      .offline-box h1 {
+        color: #034078;
+        margin-bottom: 1rem;
+      }
+      .offline-box p {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+      }
+      .offline-box a {
+        display: inline-block;
+        margin: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background-color: #034078;
+        color: #fff;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      .offline-box a:hover {
+        background-color: #022e5a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="offline-box">
+      <h1>🔌 You're Offline</h1>
+      <p>
+        No internet connection detected. But don’t worry — you can still
+        continue recording data offline.
+      </p>
+      <p>
+        Your sales, expenses, and repayments will automatically sync when you're
+        back online.
+      </p>
+
+      <a href="/record_sale">🛒 Record Sale</a>
+      <a href="/record_expense">💸 Record Expense</a>
+      <a href="/repayments">💳 Submit Repayment</a>
+    </div>
+  </body>
+</html>
