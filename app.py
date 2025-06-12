@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for, send_file, Response, flash
+from flask import Flask, render_template, request, redirect, session, url_for, send_file, Response, flash,jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     get_user, get_sales, get_products, add_sale, get_user_inventory,
@@ -1086,7 +1086,7 @@ def manage_users():
 
 @app.route('/delete_user', methods=['POST'])
 def delete_user():
-    from flask import request, redirect, flash, session
+
     user_id = request.form.get('user_id')
 
     if not user_id:
@@ -1622,9 +1622,6 @@ def export_report():
     }
 
     return Response(si.getvalue(), mimetype="text/csv", headers=headers)
-
-from flask import flash, request, redirect, render_template, session
-import json, csv
 
 @app.route('/sales_upload_inventory', methods=['GET', 'POST'])
 def sales_upload_inventory():
@@ -2342,39 +2339,54 @@ def upload_offline_expenses():
 
 @app.route("/upload_offline_repayments", methods=["POST"])
 def upload_offline_repayments():
+    if not request.is_json:
+        return jsonify({"error": "Invalid content type. Expected JSON."}), 400
+
+    repayments = request.get_json()
+
+    if not isinstance(repayments, list):
+        return jsonify({"error": "Invalid payload. Expected a list of repayments."}), 400
+
     conn = get_db()
     cur = conn.cursor()
 
-    repayments = request.get_json()
-    for r in repayments:
-        customer_id = r.get("customer_id")
-        credit_id = r.get("credit_id")
-        amount = float(r.get("amount"))
-        timestamp = r.get("timestamp") or datetime.utcnow().isoformat()
+    try:
+        for r in repayments:
+            credit_id = r.get("credit_id")
+            amount = float(r.get("amount", 0))
+            timestamp = r.get("timestamp") or datetime.utcnow().isoformat()
 
-        # Insert repayment
-        cur.execute("""
-            INSERT INTO credit_repayments (credit_id, amount, paid_on)
-            VALUES (%s, %s, %s)
-        """, (credit_id, amount, timestamp))
+            if not credit_id or amount <= 0:
+                continue  # Skip invalid or incomplete entries
 
-        # Update balance in credit_sales
-        cur.execute("""
-            UPDATE credit_sales
-            SET balance = balance - %s,
-                status = CASE
-                    WHEN balance - %s <= 0 THEN 'paid'
-                    WHEN balance - %s < amount THEN 'partial'
-                    ELSE 'unpaid'
-                END
-            WHERE id = %s
-        """, (amount, amount, amount, credit_id))
+            # Insert repayment
+            cur.execute("""
+                INSERT INTO credit_repayments (credit_id, amount, paid_on)
+                VALUES (%s, %s, %s)
+            """, (credit_id, amount, timestamp))
 
-    conn.commit()
-    cur.close()
-    conn.close()
+            # Update the balance and status in credit_sales
+            cur.execute("""
+                UPDATE credit_sales
+                SET balance = balance - %s,
+                    status = CASE
+                        WHEN balance - %s <= 0 THEN 'paid'
+                        WHEN balance - %s < amount THEN 'partial'
+                        ELSE 'unpaid'
+                    END
+                WHERE id = %s
+            """, (amount, amount, amount, credit_id))
 
-    return jsonify({"status": "repayments synced"}), 200
+        conn.commit()
+        return jsonify({"status": "✅ Repayments synced successfully"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
 
 
 @app.route('/logout')
