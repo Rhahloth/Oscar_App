@@ -23,6 +23,45 @@
         font-weight: bold;
         color: #034078;
       }
+      .table-responsive {
+        overflow-x: auto;
+        width: 100%;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 600px;
+      }
+
+      .table th,
+      .table td {
+        padding: 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+      }
+
+      @media (max-width: 768px) {
+        .offline-box {
+          margin: 1rem;
+          padding: 1rem;
+        }
+
+        .table th,
+        .table td {
+          font-size: 14px;
+          padding: 6px;
+        }
+
+        input[type="number"] {
+          width: 60px;
+        }
+
+        #productSearch {
+          width: 100%;
+          box-sizing: border-box;
+        }
+      }
     </style>
   </head>
   <body>
