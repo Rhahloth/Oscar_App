@@ -2193,7 +2193,7 @@ def return_product():
 
     # Prevent over-return
     if return_quantity > remaining_qty:
-        flash(f"❌ Only {remaining_qty} item(s) remaining to return.", "danger")
+        flash(f"❌ You have returned all, {remaining_qty} items remaining", "danger")
         cur.close()
         conn.close()
         return redirect(f"/batch_sales/{sale['batch_no']}")
