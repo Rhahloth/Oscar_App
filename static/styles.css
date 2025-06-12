@@ -650,6 +650,12 @@ button:hover {
         min-width: 600px;
         display: block;
     }
+    
+    .table th,
+    .table td {
+        font-size: 14px;
+        padding: 6px;
+    }
 }
 
 /* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
