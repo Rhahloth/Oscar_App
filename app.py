@@ -2260,49 +2260,39 @@ def upload_offline_sales():
     for sale in sales:
         cart_data = sale.get("cart_data", [])
         payment_method = sale.get("payment_method")
-        customer_id = sale.get("customer_id") or None
-        due_date = sale.get("due_date")
-        timestamp = sale.get("timestamp") or datetime.utcnow().isoformat()
-        salesperson_id = session.get("user_id")
+        customer_id = sale.get("customer_id")
+        due_date = sale.get("due_date")  # Only for credit sales
+        timestamp = sale.get("timestamp")
+        salesperson_id = sale.get("salesperson_id")  # Must be sent from client
+        batch_no = sale.get("batch_no")
 
-        # Create new sale
-        cur.execute("""
-            INSERT INTO sales (salesperson_id, customer_id, payment_method, due_date, date)
-            VALUES (%s, %s, %s, %s, %s) RETURNING id
-        """, (salesperson_id, customer_id, payment_method, due_date, timestamp))
-        sale_id = cur.fetchone()[0]
-
-        # Insert sale items
         for item in cart_data:
-            product_id = item.get("product_id")
-            quantity = float(item.get("quantity"))
-            price = float(item.get("price"))
+            product_id = item["product_id"]
+            quantity = float(item["quantity"])
+            price = float(item["price"])
 
+            # Insert into sales (no due_date here!)
             cur.execute("""
-                INSERT INTO sale_items (sale_id, product_id, quantity, price)
-                VALUES (%s, %s, %s, %s)
-            """, (sale_id, product_id, quantity, price))
+                INSERT INTO sales (salesperson_id, product_id, quantity, price, customer_id, payment_method, batch_no, date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """, (salesperson_id, product_id, quantity, price, customer_id, payment_method, batch_no, timestamp))
 
-            # Decrease inventory
-            cur.execute("""
-                UPDATE user_inventory
-                SET quantity = quantity - %s
-                WHERE user_id = %s AND product_id = %s
-            """, (quantity, salesperson_id, product_id))
+            sale_id = cur.fetchone()[0]
 
-        # If credit sale, record in credit_sales
-        if payment_method == "credit" and customer_id:
-            total_amount = sum(float(i['quantity']) * float(i['price']) for i in cart_data)
-            cur.execute("""
-                INSERT INTO credit_sales (sale_id, customer_id, amount, balance, status)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (sale_id, customer_id, total_amount, total_amount, 'unpaid'))
+            # Insert into credit_sales only if it's credit
+            if payment_method == "credit":
+                total_amount = quantity * price
+                cur.execute("""
+                    INSERT INTO credit_sales (sale_id, customer_id, amount, balance, due_date)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (sale_id, customer_id, total_amount, total_amount, due_date))
 
     conn.commit()
     cur.close()
     conn.close()
 
-    return jsonify({"status": "sales synced"}), 200
+    return jsonify({"status": "✅ Sales synced"}), 200
 
 @app.route("/upload_offline_expenses", methods=["POST"])
 def upload_offline_expenses():
