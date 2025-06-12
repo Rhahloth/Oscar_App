@@ -78,27 +78,19 @@
       {% block content %}{% endblock %}
     </div>
 
-    <!-- Scripts -->
+    <!-- Service Worker & Offline Preload -->
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // Register service worker
+        // ✅ Register Service Worker
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
             .register("/sw.js")
             .then(() => console.log("✅ Service Worker registered"))
             .catch((err) => console.error("❌ Service Worker failed", err));
         }
-      });
-    </script>
 
-    <!-- Offline Sync Script -->
-    <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
-
-    {% block scripts %}{% endblock %}
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
+        // ✅ Preload offline data if salesperson
         {% if session.role == 'salesperson' %}
-        // Preload products and customers only for salesperson
         fetch("/offline_data")
           .then((res) => res.json())
           .then((data) => {
@@ -112,5 +104,10 @@
         {% endif %}
       });
     </script>
+
+    <!-- Offline Sync Script (Optional) -->
+    <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
+
+    {% block scripts %}{% endblock %}
   </body>
 </html>
