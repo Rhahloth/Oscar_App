@@ -346,12 +346,14 @@ def record_sale():
 @app.route('/submit_sale', methods=['POST'])
 def submit_sale():
     if 'user_id' not in session or session['role'] != 'salesperson':
-        return redirect('/login')
+        return jsonify({"error": "Unauthorized"}), 403
 
-    cart_data = request.form.get('cart_data')
-    payment_method = request.form.get('payment_method')
-    customer_id = request.form.get('customer_id') or None
-    due_date = request.form.get('due_date') or None
+    try:
+        data = request.get_json()  # ✅ Properly parse JSON request
+        cart_data = data.get('cart_data')
+        payment_method = data.get('payment_method')
+        customer_id = data.get('customer_id') or None
+        due_date = data.get('due_date') or None
 
     if not cart_data or not payment_method:
         return "Missing sale data or payment method", 400
