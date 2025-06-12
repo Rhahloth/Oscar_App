@@ -36,6 +36,11 @@ def service_worker():
 def offline_sales_form():
     return send_from_directory("static", "offline_sales_form.html")
 
+@app.route("/offline")
+def offline_page():
+    return render_template("offline.html")
+
+
 @app.route('/create_super_admin', methods=['GET', 'POST'])
 def create_super_admin():
     from werkzeug.security import generate_password_hash
