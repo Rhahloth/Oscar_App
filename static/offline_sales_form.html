@@ -64,6 +64,14 @@
       </div>
 
       <p id="confirmation"></p>
+
+      <button id="syncBtn" style="margin-top: 1rem; display: none">
+        🔄 Sync Sales
+      </button>
+
+      <div id="spinner" style="display: none; margin-top: 1rem">
+        <p>🔄 Syncing... Please wait</p>
+      </div>
     </div>
 
     <script>
@@ -204,6 +212,50 @@
           document.getElementById("creditOptions").style.display =
             btn.innerText === "Credit" ? "block" : "none";
         });
+      });
+    </script>
+    <script>
+      const syncBtn = document.getElementById("syncBtn");
+      const spinner = document.getElementById("spinner");
+
+      if (navigator.onLine) {
+        syncBtn.style.display = "inline-block";
+      }
+
+      window.addEventListener("online", () => {
+        syncBtn.style.display = "inline-block";
+      });
+
+      syncBtn.addEventListener("click", () => {
+        const sales = JSON.parse(localStorage.getItem("offline_sales") || "[]");
+        if (!sales.length) {
+          alert("No offline sales to sync.");
+          return;
+        }
+
+        syncBtn.disabled = true;
+        spinner.style.display = "block";
+
+        fetch("/upload_offline_sales", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sales),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            console.log("✅ Synced:", data);
+            localStorage.removeItem("offline_sales");
+            alert("✅ Sales synced successfully!");
+            window.location.href = "/dashboard";
+          })
+          .catch((err) => {
+            console.error("❌ Sync failed:", err);
+            alert("❌ Sync failed. Try again later.");
+          })
+          .finally(() => {
+            syncBtn.disabled = false;
+            spinner.style.display = "none";
+          });
       });
     </script>
   </body>
