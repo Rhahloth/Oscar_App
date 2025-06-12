@@ -79,24 +79,38 @@
     </div>
 
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/db.js') }}"></script>
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // Register service worker for PWA
+        // Register service worker
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
-            .register("/sw.js") // ✅ Ensure sw.js is served from / via Flask route
+            .register("/sw.js")
             .then(() => console.log("✅ Service Worker registered"))
             .catch((err) => console.error("❌ Service Worker failed", err));
-        }
-
-        // Initialize IndexedDB (if implemented)
-        if (typeof initIndexedDB === "function") {
-          initIndexedDB();
         }
       });
     </script>
 
+    <!-- Offline Sync Script -->
+    <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
+
     {% block scripts %}{% endblock %}
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        {% if session.role == 'salesperson' %}
+        // Preload products and customers only for salesperson
+        fetch("/offline_data")
+          .then((res) => res.json())
+          .then((data) => {
+            localStorage.setItem("products", JSON.stringify(data.products));
+            localStorage.setItem("customers", JSON.stringify(data.customers));
+            console.log("✅ Products and customers preloaded into localStorage");
+          })
+          .catch((err) => {
+            console.error("❌ Failed to preload data for offline use:", err);
+          });
+        {% endif %}
+      });
+    </script>
   </body>
 </html>

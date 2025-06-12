@@ -9,7 +9,8 @@ const urlsToCache = [
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
   "/static/js/db.js",
-  OFFLINE_URL,
+  "/static/offline_sales_form.html",
+  OFFLINE_URL,  // Corrected: comma was missing above
 ];
 
 self.addEventListener("install", event => {
@@ -28,10 +29,12 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => {
-          console.log("🗑️ Deleting old cache:", key);
-          return caches.delete(key);
-        })
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => {
+            console.log("🗑️ Deleting old cache:", key);
+            return caches.delete(key);
+          })
       )
     )
   );
@@ -40,20 +43,20 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.mode === "navigate") {
-    console.log("📡 Fetching (HTML):", event.request.url);
+    console.log("📡 Fetching page (HTML):", event.request.url);
     event.respondWith(
       fetch(event.request).catch(() => {
-        console.warn("⚠️ Offline fallback triggered for:", event.request.url);
+        console.warn("⚠️ Offline fallback triggered:", event.request.url);
         return caches.match(OFFLINE_URL);
       })
     );
   } else {
     event.respondWith(
-      caches.match(event.request).then(res => {
-        if (res) {
+      caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
           console.log("📁 Serving from cache:", event.request.url);
         }
-        return res || fetch(event.request);
+        return cachedResponse || fetch(event.request);
       })
     );
   }

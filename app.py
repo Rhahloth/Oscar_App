@@ -2268,55 +2268,56 @@ def record_sale_post():
 
 @app.route('/upload_offline_sales', methods=['POST'])
 def upload_offline_sales():
-    if 'user_id' not in session or session['role'] != 'salesperson':
+    if 'user_id' not in session or session.get('role') != 'salesperson':
         return jsonify({"error": "Unauthorized"}), 403
 
-    sales_data = request.get_json()
-    if not sales_data:
-        return jsonify({"error": "No sales data received"}), 400
-
-    user_id = session['user_id']
-    conn = get_db()
-    cur = conn.cursor()
-
     try:
-        # Get user's username and business ID
-        cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
-        user_row = cur.fetchone()
-        if not user_row:
-            raise ValueError("❌ User not found.")
-        username = user_row['username']
-        business_id = user_row['business_id']
+        sales_data = request.get_json(force=True)
+        if not sales_data or not isinstance(sales_data, list):
+            return jsonify({"error": "Invalid or empty sales data."}), 400
 
+        user_id = session['user_id']
+        conn = get_db()
+        cur = conn.cursor()
+
+        # Get user's business and initials
+        cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
+        user = cur.fetchone()
+        if not user:
+            raise ValueError("❌ User not found.")
+
+        username = user['username']
+        business_id = user['business_id']
         initials = ''.join(part[0] for part in username.strip().split()).upper()
         date_str = datetime.now().strftime("%Y%m%d")
 
-        # Generate batch number
+        # Determine batch number
         cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
-        count_row = cur.fetchone()
-        count = list(count_row.values())[0] + 1 if count_row else 1
+        count = list(cur.fetchone().values())[0] + 1
         batch_no = f"{initials}_{date_str}_{count:03d}"
 
         for entry in sales_data:
-            items = entry.get("cart_data")
+            cart = entry.get("cart_data")
+            if isinstance(cart, str):
+                cart = json.loads(cart)
+            if not cart:
+                continue  # Skip empty cart
+
             payment_method = entry.get("payment_method")
-            customer_id = entry.get("customer_id") or None
-            due_date = entry.get("due_date") or None
+            customer_id = entry.get("customer_id")
+            due_date = entry.get("due_date")
 
-            if isinstance(items, str):
-                items = json.loads(items)
+            for item in cart:
+                product_id = int(item.get("productId"))
+                quantity = int(item.get("quantity", 0))
+                price = float(item.get("price", 0.0))
 
-            for item in items:
-                product_id = int(item["productId"])
-                quantity = int(item["quantity"])
-                price = float(item["price"])
-
-                # Confirm product belongs to this business
+                # Ensure product belongs to this business
                 cur.execute("SELECT id FROM products WHERE id = %s AND business_id = %s", (product_id, business_id))
                 if not cur.fetchone():
-                    raise ValueError(f"❌ Product {product_id} not authorized for this business")
+                    raise ValueError(f"❌ Product {product_id} not found or unauthorized for this business.")
 
-                # Deduct from user_inventory
+                # Update inventory
                 cur.execute("""
                     UPDATE user_inventory
                     SET quantity = quantity - %s
@@ -2326,6 +2327,8 @@ def upload_offline_sales():
                 amount_paid = quantity * price if payment_method == 'Cash' else 0
                 payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
 
+                # Insert sale
+                sale_id = None
                 if payment_method == 'Cash':
                     cur.execute("""
                         INSERT INTO sales (
@@ -2337,9 +2340,10 @@ def upload_offline_sales():
                         product_id, quantity, user_id, price, payment_method,
                         amount_paid, payment_status, business_id, batch_no
                     ))
+                    sale_id = cur.fetchone()['id']
                 else:
-                    if not customer_id:
-                        raise ValueError("❌ Credit sale missing customer.")
+                    if not customer_id or not due_date:
+                        raise ValueError("❌ Credit sale must include customer and due date.")
                     cur.execute("""
                         INSERT INTO sales (
                             product_id, quantity, salesperson_id, price, payment_method,
@@ -2350,13 +2354,9 @@ def upload_offline_sales():
                         product_id, quantity, user_id, price, payment_method,
                         amount_paid, payment_status, business_id, int(customer_id), batch_no
                     ))
+                    sale_id = cur.fetchone()['id']
 
-                sale_row = cur.fetchone()
-                if not sale_row:
-                    raise ValueError("❌ Could not retrieve inserted sale ID.")
-                sale_id = sale_row['id']
-
-                if payment_method == 'Credit' and customer_id:
+                    # Record credit details
                     total_amount = quantity * price
                     cur.execute("""
                         INSERT INTO credit_sales (
@@ -2367,13 +2367,62 @@ def upload_offline_sales():
                     ))
 
         conn.commit()
-        return jsonify({"status": "offline sales synced", "batch": batch_no}), 200
+        return jsonify({"status": "✅ Offline sales synced successfully", "batch": batch_no}), 200
 
     except Exception as e:
-        conn.rollback()
+        if 'conn' in locals(): conn.rollback()
         import traceback
-        print("❌ Offline Sale Sync Error:", traceback.format_exc())
+        print("❌ Error syncing offline sales:", traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        if 'cur' in locals(): cur.close()
+        if 'conn' in locals(): conn.close()
+
+@app.route("/offline_data")
+def offline_data():
+    if "user_id" not in session or session["role"] != "salesperson":
+        return jsonify({"error": "Unauthorized"}), 403
+
+    user_id = session["user_id"]
+    conn = get_db()
+    cur = conn.cursor()
+
+    try:
+        # Get business ID
+        cur.execute("SELECT business_id FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            raise Exception("User not found.")
+        business_id = row["business_id"]
+
+        # Fetch only products assigned to this business and user
+        cur.execute("""
+            SELECT p.id, p.product_name, p.retail_price, p.buying_price, ui.quantity
+            FROM products p
+            JOIN user_inventory ui ON p.id = ui.product_id
+            WHERE ui.user_id = %s
+        """, (user_id,))
+        products = [
+            {
+                "id": r["id"],
+                "name": r["product_name"],
+                "retail": float(r["retail_price"]),
+                "buying_price": float(r["buying_price"]),
+                "quantity": int(r["quantity"]),
+            }
+            for r in cur.fetchall()
+        ]
+
+        # Fetch customers for this business
+        cur.execute("SELECT id, name FROM customers WHERE business_id = %s", (business_id,))
+        customers = [{"id": r["id"], "name": r["name"]} for r in cur.fetchall()]
+
+        return jsonify({"products": products, "customers": customers})
+
+    except Exception as e:
+        print("❌ Offline data fetch error:", e)
+        return jsonify({"error": "Server error"}), 500
 
     finally:
         cur.close()
