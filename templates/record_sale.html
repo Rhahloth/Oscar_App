@@ -236,7 +236,7 @@ endblock %} {% block content %}
     if (typeof saveSaleOffline === "function") {
       saveSaleOffline(data);
       alert("💾 Sale saved offline and will sync when online.");
-      window.location.href = `/batch_sales/${data.batch_no}`;
+      window.location.href = `/dashboard`;
     } else {
       alert("❌ Could not save offline. Contact admin.");
     }
