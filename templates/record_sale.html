@@ -201,16 +201,16 @@ endblock %} {% block content %}
     }
 
     if (navigator.onLine) {
-      // Online: send to server
       fetch("/submit_sale", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
       })
-        .then(res => {
-          if (!res.ok) throw new Error("Server error");
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) throw new Error("Sale failed");
           alert("✅ Sale submitted successfully.");
-          window.location.href = "/dashboard";
+          window.location.href = `/batch_sales/${data.batch_no}`;
         })
         .catch(err => {
           console.warn("⚠️ Network issue, saving offline", err);
