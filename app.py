@@ -2251,46 +2251,118 @@ def record_sale_post():
     return jsonify({"status": "success"}), 200
 
 
-@app.route("/upload_offline_sales", methods=["POST"])
+@app.route('/upload_offline_sales', methods=['POST'])
 def upload_offline_sales():
+    if 'user_id' not in session or session['role'] != 'salesperson':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    sales_data = request.get_json()
+    if not sales_data:
+        return jsonify({"error": "No sales data received"}), 400
+
+    user_id = session['user_id']
     conn = get_db()
     cur = conn.cursor()
 
-    sales_data = request.get_json()
+    try:
+        # Get user's username and business ID
+        cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
+        user_row = cur.fetchone()
+        if not user_row:
+            raise ValueError("❌ User not found.")
+        username = user_row['username']
+        business_id = user_row['business_id']
 
-    for sale in sales_data:
-        salesperson_id = sale["salesperson_id"]
-        payment_method = sale["payment_method"]
-        customer_id = sale.get("customer_id")
-        due_date = sale.get("due_date")
-        timestamp = sale.get("timestamp")
-        cart_data = json.loads(sale["cart_data"])  # FIX HERE
+        initials = ''.join(part[0] for part in username.strip().split()).upper()
+        date_str = datetime.now().strftime("%Y%m%d")
 
-        # Insert sale record (one row per product)
-        for item in cart_data:
-            product_id = item["productId"]
-            quantity = item["quantity"]
-            price = item["price"]
+        # Generate batch number
+        cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
+        count_row = cur.fetchone()
+        count = list(count_row.values())[0] + 1 if count_row else 1
+        batch_no = f"{initials}_{date_str}_{count:03d}"
 
-            cur.execute("""
-                INSERT INTO sales (salesperson_id, product_id, quantity, price, payment_method, customer_id, date)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING id
-            """, (salesperson_id, product_id, quantity, price, payment_method, customer_id, timestamp))
-            sale_id = cur.fetchone()[0]
+        for entry in sales_data:
+            items = entry.get("cart_data")
+            payment_method = entry.get("payment_method")
+            customer_id = entry.get("customer_id") or None
+            due_date = entry.get("due_date") or None
 
-            if payment_method == "Credit":
-                balance = quantity * price
+            if isinstance(items, str):
+                items = json.loads(items)
+
+            for item in items:
+                product_id = int(item["productId"])
+                quantity = int(item["quantity"])
+                price = float(item["price"])
+
+                # Confirm product belongs to this business
+                cur.execute("SELECT id FROM products WHERE id = %s AND business_id = %s", (product_id, business_id))
+                if not cur.fetchone():
+                    raise ValueError(f"❌ Product {product_id} not authorized for this business")
+
+                # Deduct from user_inventory
                 cur.execute("""
-                    INSERT INTO credit_sales (sale_id, customer_id, amount, balance, due_date, status)
-                    VALUES (%s, %s, %s, %s, %s, 'unpaid')
-                """, (sale_id, customer_id, balance, balance, due_date))
+                    UPDATE user_inventory
+                    SET quantity = quantity - %s
+                    WHERE user_id = %s AND product_id = %s
+                """, (quantity, user_id, product_id))
 
-    conn.commit()
-    cur.close()
-    conn.close()
+                amount_paid = quantity * price if payment_method == 'Cash' else 0
+                payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
 
-    return jsonify({"status": "sales synced"}), 200
+                if payment_method == 'Cash':
+                    cur.execute("""
+                        INSERT INTO sales (
+                            product_id, quantity, salesperson_id, price, payment_method,
+                            date, amount_paid, payment_status, business_id, batch_no
+                        ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
+                        RETURNING id
+                    """, (
+                        product_id, quantity, user_id, price, payment_method,
+                        amount_paid, payment_status, business_id, batch_no
+                    ))
+                else:
+                    if not customer_id:
+                        raise ValueError("❌ Credit sale missing customer.")
+                    cur.execute("""
+                        INSERT INTO sales (
+                            product_id, quantity, salesperson_id, price, payment_method,
+                            date, amount_paid, payment_status, business_id, customer_id, batch_no
+                        ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
+                        RETURNING id
+                    """, (
+                        product_id, quantity, user_id, price, payment_method,
+                        amount_paid, payment_status, business_id, int(customer_id), batch_no
+                    ))
+
+                sale_row = cur.fetchone()
+                if not sale_row:
+                    raise ValueError("❌ Could not retrieve inserted sale ID.")
+                sale_id = sale_row['id']
+
+                if payment_method == 'Credit' and customer_id:
+                    total_amount = quantity * price
+                    cur.execute("""
+                        INSERT INTO credit_sales (
+                            sale_id, customer_id, amount, balance, due_date, status
+                        ) VALUES (%s, %s, %s, %s, %s, 'unpaid')
+                    """, (
+                        sale_id, int(customer_id), total_amount, total_amount, due_date
+                    ))
+
+        conn.commit()
+        return jsonify({"status": "offline sales synced", "batch": batch_no}), 200
+
+    except Exception as e:
+        conn.rollback()
+        import traceback
+        print("❌ Offline Sale Sync Error:", traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        cur.close()
+        conn.close()
 
 @app.route("/upload_offline_expenses", methods=["POST"])
 def upload_offline_expenses():
