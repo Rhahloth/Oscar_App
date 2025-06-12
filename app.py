@@ -355,104 +355,109 @@ def submit_sale():
         customer_id = data.get('customer_id') or None
         due_date = data.get('due_date') or None
 
-    if not cart_data or not payment_method:
-        return "Missing sale data or payment method", 400
+        if not cart_data or not payment_method:
+            return "Missing sale data or payment method", 400
 
-    items = json.loads(cart_data)
-    user_id = session['user_id']
+        items = json.loads(cart_data)
+        user_id = session['user_id']
 
-    conn = get_db()
-    cur = conn.cursor()
+        conn = get_db()
+        cur = conn.cursor()
 
-    try:
-        cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
-        user_row = cur.fetchone()
-        if not user_row:
-            raise ValueError("❌ User not found.")
-        username = user_row['username']
-        business_id = user_row['business_id']
+        try:
+            # Get user info
+            cur.execute("SELECT username, business_id FROM users WHERE id = %s", (user_id,))
+            user_row = cur.fetchone()
+            if not user_row:
+                raise ValueError("❌ User not found.")
+            username = user_row['username']
+            business_id = user_row['business_id']
 
-        initials = ''.join(part[0] for part in username.strip().split()).upper()
-        date_str = datetime.now().strftime("%Y%m%d")
+            # Generate batch number
+            initials = ''.join(part[0] for part in username.strip().split()).upper()
+            date_str = datetime.now().strftime("%Y%m%d")
+            cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
+            count_row = cur.fetchone()
+            count = list(count_row.values())[0] + 1 if count_row else 1
+            batch_no = f"{initials}_{date_str}_{count:03d}"
 
-        cur.execute("SELECT COUNT(DISTINCT batch_no) FROM sales WHERE batch_no LIKE %s", (f"{initials}_{date_str}_%",))
-        count_row = cur.fetchone()
-        count = list(count_row.values())[0] + 1 if count_row else 1
+            for item in items:
+                product_id = int(item['productId'])
+                quantity = int(item['quantity'])
+                price = float(item['price'])
 
-        batch_no = f"{initials}_{date_str}_{count:03d}"
+                # Verify product belongs to business
+                cur.execute("SELECT id FROM products WHERE id = %s AND business_id = %s", (product_id, business_id))
+                if not cur.fetchone():
+                    raise ValueError("❌ Product not authorized for this business")
 
-        for item in items:
-            product_id = int(item['productId'])
-            quantity = int(item['quantity'])
-            price = float(item['price'])
-
-            # 🔐 SAFETY CHECK: Product must belong to logged-in user's business
-            cur.execute("SELECT id FROM products WHERE id = %s AND business_id = %s", (product_id, business_id))
-            if not cur.fetchone():
-                raise ValueError("❌ Product not authorized for this business")
-
-            cur.execute("""
-                UPDATE user_inventory
-                SET quantity = quantity - %s
-                WHERE user_id = %s AND product_id = %s
-            """, (quantity, user_id, product_id))
-
-            amount_paid = quantity * price if payment_method == 'Cash' else 0
-            payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
-
-            if payment_method == 'Cash':
+                # Update inventory
                 cur.execute("""
-                    INSERT INTO sales (
-                        product_id, quantity, salesperson_id, price, payment_method,
-                        date, amount_paid, payment_status, business_id, batch_no
-                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
-                    RETURNING id
-                """, (
-                    product_id, quantity, user_id, price, payment_method,
-                    amount_paid, payment_status, business_id, batch_no
-                ))
-            else:
-                if not customer_id:
-                    raise ValueError("❌ Credit sale missing customer.")
-                cur.execute("""
-                    INSERT INTO sales (
-                        product_id, quantity, salesperson_id, price, payment_method,
-                        date, amount_paid, payment_status, business_id, customer_id, batch_no
-                    ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
-                    RETURNING id
-                """, (
-                    product_id, quantity, user_id, price, payment_method,
-                    amount_paid, payment_status, business_id, int(customer_id), batch_no
-                ))
+                    UPDATE user_inventory
+                    SET quantity = quantity - %s
+                    WHERE user_id = %s AND product_id = %s
+                """, (quantity, user_id, product_id))
 
-            sale_row = cur.fetchone()
-            if not sale_row:
-                raise ValueError("❌ Failed to fetch inserted sale ID.")
-            sale_id = sale_row['id']
+                amount_paid = quantity * price if payment_method == 'Cash' else 0
+                payment_status = 'paid' if payment_method == 'Cash' else 'unpaid'
 
-            if payment_method == 'Credit' and customer_id:
-                total_amount = quantity * price
-                cur.execute("""
-                    INSERT INTO credit_sales (
-                        sale_id, customer_id, amount, balance, due_date, status
-                    ) VALUES (%s, %s, %s, %s, %s, 'unpaid')
-                """, (
-                    sale_id, int(customer_id), total_amount, total_amount, due_date
-                ))
+                # Insert sale
+                if payment_method == 'Cash':
+                    cur.execute("""
+                        INSERT INTO sales (
+                            product_id, quantity, salesperson_id, price, payment_method,
+                            date, amount_paid, payment_status, business_id, batch_no
+                        ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
+                        RETURNING id
+                    """, (
+                        product_id, quantity, user_id, price, payment_method,
+                        amount_paid, payment_status, business_id, batch_no
+                    ))
+                else:
+                    if not customer_id:
+                        raise ValueError("❌ Credit sale missing customer.")
+                    cur.execute("""
+                        INSERT INTO sales (
+                            product_id, quantity, salesperson_id, price, payment_method,
+                            date, amount_paid, payment_status, business_id, customer_id, batch_no
+                        ) VALUES (%s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s)
+                        RETURNING id
+                    """, (
+                        product_id, quantity, user_id, price, payment_method,
+                        amount_paid, payment_status, business_id, int(customer_id), batch_no
+                    ))
 
-        conn.commit()
-        return jsonify({"success": True, "batch_no": batch_no})
+                sale_row = cur.fetchone()
+                if not sale_row:
+                    raise ValueError("❌ Failed to fetch inserted sale ID.")
+                sale_id = sale_row['id']
 
+                # Handle credit
+                if payment_method == 'Credit' and customer_id:
+                    total_amount = quantity * price
+                    cur.execute("""
+                        INSERT INTO credit_sales (
+                            sale_id, customer_id, amount, balance, due_date, status
+                        ) VALUES (%s, %s, %s, %s, %s, 'unpaid')
+                    """, (
+                        sale_id, int(customer_id), total_amount, total_amount, due_date
+                    ))
+
+            conn.commit()
+            return jsonify({"success": True, "batch_no": batch_no})
+
+        except Exception as e:
+            conn.rollback()
+            import traceback
+            print("❌ Sale Submission Error:", traceback.format_exc())
+            return str(e), 400
+
+        finally:
+            cur.close()
+            conn.close()
 
     except Exception as e:
-        conn.rollback()
-        import traceback
-        print("❌ Sale Submission Error:", traceback.format_exc())
-        return str(e), 400
-
-    finally:
-        cur.close()
-        conn.close()
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/batch_sales/<batch_no>')
 def batch_sales(batch_no):
