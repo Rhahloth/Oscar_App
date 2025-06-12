@@ -1,17 +1,17 @@
-const CACHE_NAME = "rob-cache-v2";
-const OFFLINE_URL = "/static/offline.html";
-const OFFLINE_SALES_FORM_URL = "/static/offline_sales_form.html";
+const CACHE_NAME = "rob-cache-v3";
+const OFFLINE_URL = "/offline"; // Use Flask route, not static path
+const OFFLINE_SALES_FORM_URL = "/offline_sales_form"; // Also use route
 
 const urlsToCache = [
-  "/",
-  "/record_sale",
+  "/",                     // Main entry
+  "/record_sale",          // Sales form
+  "/offline",              // Offline fallback route (Flask-served)
+  "/offline_sales_form",   // Offline POS form (Flask-served)
   "/static/styles.css",
   "/static/logo.png",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
-  "/static/js/db.js",
-  OFFLINE_SALES_FORM_URL,
-  OFFLINE_URL,
+  "/static/js/db.js"
 ];
 
 self.addEventListener("install", event => {
@@ -30,12 +30,10 @@ self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => {
-            console.log("🗑️ Deleting old cache:", key);
-            return caches.delete(key);
-          })
+        keys.filter(key => key !== CACHE_NAME).map(key => {
+          console.log("🗑️ Deleting old cache:", key);
+          return caches.delete(key);
+        })
       )
     )
   );
@@ -46,31 +44,30 @@ self.addEventListener("fetch", event => {
   const { request } = event;
 
   if (request.mode === "navigate") {
-    console.log("📡 Navigating:", request.url);
+    const url = new URL(request.url);
 
-    // ✅ Explicitly serve the offline sales form from cache if it's requested
-    if (request.url.endsWith("/static/offline_sales_form.html")) {
+    if (url.pathname === OFFLINE_SALES_FORM_URL) {
+      console.log("🛒 Navigating to offline sales form");
       event.respondWith(
         caches.match(OFFLINE_SALES_FORM_URL).then(res => {
           return res || fetch(request).catch(() => caches.match(OFFLINE_URL));
         })
       );
-      return;
+    } else {
+      console.log("📡 Navigating to:", request.url);
+      event.respondWith(
+        fetch(request).catch(() => {
+          console.warn("⚠️ Fallback to offline page");
+          return caches.match(OFFLINE_URL);
+        })
+      );
     }
-
-    // ✅ Default fallback to offline.html
-    event.respondWith(
-      fetch(request).catch(() => {
-        console.warn("⚠️ Offline fallback triggered for:", request.url);
-        return caches.match(OFFLINE_URL);
-      })
-    );
   } else {
-    // For static assets
+    // Static or API requests
     event.respondWith(
       caches.match(request).then(cachedResponse => {
         if (cachedResponse) {
-          console.log("📁 Serving from cache:", request.url);
+          console.log("📁 Serving cached:", request.url);
         }
         return cachedResponse || fetch(request);
       })
