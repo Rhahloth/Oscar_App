@@ -28,6 +28,10 @@ def generate_random_password(length=4):
 def home():
     return redirect('/login')
 
+@app.route('/offline')
+def offline_page():
+    return render_template('offline.html')
+
 @app.route('/create_super_admin', methods=['GET', 'POST'])
 def create_super_admin():
     from werkzeug.security import generate_password_hash

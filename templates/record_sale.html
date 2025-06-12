@@ -238,7 +238,7 @@ endblock %} {% block content %}
     if (typeof saveSaleOffline === "function") {
       saveSaleOffline(data);
       alert("💾 Sale saved offline and will sync when online.");
-      window.location.href = `/dashboard`;
+      window.location.href = "/offline";
     } else {
       alert("❌ Could not save offline. Contact admin.");
     }
