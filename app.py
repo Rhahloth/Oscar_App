@@ -82,10 +82,21 @@ def register_owner():
         cur = conn.cursor()
 
         try:
-            # Step 1: Create the business as active
+            # Check if username already exists
+            cur.execute("SELECT id FROM users WHERE username = %s", (username,))
+            if cur.fetchone():
+                return render_template("register_owner.html", error="Account already exists. Please log in.")
+
+            # Optional: Check if business already exists
+            cur.execute("SELECT id FROM businesses WHERE name = %s AND phone = %s", (business_name, phone))
+            existing_business = cur.fetchone()
+            if existing_business:
+                return render_template("register_owner.html", error="This business is already registered. Please log in.")
+
+            # Step 1: Create the business
             cur.execute(
                 "INSERT INTO businesses (name, type, phone, is_active) VALUES (%s, %s, %s, TRUE) RETURNING id",
-                (business_name, business_type, phone)  
+                (business_name, business_type, phone)
             )
             business = cur.fetchone()
             if business is None:
@@ -1881,8 +1892,10 @@ def repayments():
             JOIN sales s ON cs.sale_id = s.id
             WHERE cs.status IN ('unpaid', 'partial') AND s.salesperson_id = %s AND cs.customer_id = %s
         """, (session['user_id'], selected_customer_id))
+
         result = cur.fetchone()
-        total_owed = result[0] if result and result[0] else 0
+        total_owed = result[0] if result and result[0] is not None else 0
+
 
     # Get recent repayments
     cur.execute("""

@@ -13,6 +13,10 @@ endblock %} {% block content %}
     Register your Business
   </h4>
 
+  {% if error %}
+  <p style="color: red">{{ error }}</p>
+  {% endif %}
+
   <form method="POST" action="/register_owner">
     <div class="form-group">
       <label>Full Name</label>
