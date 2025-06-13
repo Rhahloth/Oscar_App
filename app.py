@@ -1894,7 +1894,8 @@ def repayments():
         """, (session['user_id'], selected_customer_id))
 
         result = cur.fetchone()
-        total_owed = result[0] if result and result[0] is not None else 0
+        total_owed = result['total_balance'] if result and result['total_balance'] is not None else 0
+
 
 
     # Get recent repayments
