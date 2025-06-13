@@ -67,6 +67,7 @@
   <body>
     <div class="offline-box">
       <h2>🛒 Offline Point of Sale</h2>
+      <p><strong>Branch:</strong> <span id="branchDisplay">Loading...</span></p>
 
       <div class="section-box">
         <label for="productSearch">Search Product</label>
@@ -105,8 +106,8 @@
       </div>
 
       <div class="cart-actions">
-        <button onclick="finalizeOfflineSale('Cash')">Cash</button>
         <button onclick="finalizeOfflineSale('Credit')">Credit</button>
+        <button onclick="finalizeOfflineSale('Cash')">Cash</button>
       </div>
 
       <p id="confirmation"></p>
@@ -120,6 +121,13 @@
     </div>
 
     <script>
+      // 🏷️ Display Branch Name
+      document.addEventListener("DOMContentLoaded", () => {
+        const branchName = localStorage.getItem("branch_name");
+        const branchDisplay = document.getElementById("branchDisplay");
+        branchDisplay.textContent = branchName || "Unknown Branch";
+      });
+
       const products = JSON.parse(localStorage.getItem("products") || "[]");
       const customers = JSON.parse(localStorage.getItem("customers") || "[]");
       const cart = [];

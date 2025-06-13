@@ -96,13 +96,41 @@
           .then((data) => {
             localStorage.setItem("products", JSON.stringify(data.products));
             localStorage.setItem("customers", JSON.stringify(data.customers));
-            console.log("✅ Products and customers preloaded into localStorage");
+            localStorage.setItem("branch_name", data.branch_name);  // ✅ Store branch name
+            console.log("✅ Products, customers, and branch preloaded into localStorage");
           })
           .catch((err) => {
             console.error("❌ Failed to preload data for offline use:", err);
           });
         {% endif %}
       });
+    </script>
+
+    <!-- Inactivity Logout Script -->
+    <script>
+      let inactivityTimeout;
+
+      function logoutUser() {
+        alert("⚠️ You’ve been logged out due to inactivity.");
+        if (navigator.onLine) {
+          window.location.href = "/logout";
+        } else {
+          window.location.href = "/offline_logout";
+        }
+      }
+
+      function resetInactivityTimer() {
+        clearTimeout(inactivityTimeout);
+        inactivityTimeout = setTimeout(logoutUser, 3600000); // 1 hour
+      }
+
+      ["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(
+        (event) => {
+          window.addEventListener(event, resetInactivityTimer);
+        }
+      );
+
+      resetInactivityTimer();
     </script>
 
     <!-- Offline Sync Script (Optional) -->

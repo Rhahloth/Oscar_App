@@ -2471,8 +2471,15 @@ def offline_data():
 
 @app.route('/logout')
 def logout():
+    username = session.get('username')
     session.clear()
-    return redirect('/login')
+
+    # Optional: Flash message or logging
+    flash("You have been logged out.", "info")
+    print(f"User '{username}' has been logged out.")
+
+    return redirect(url_for('login'))  # More robust than hardcoded '/login'
+
 
 if __name__ == '__main__':
     with app.app_context():
