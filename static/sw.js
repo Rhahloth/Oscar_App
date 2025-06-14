@@ -1,18 +1,23 @@
 const CACHE_NAME = "rob-cache-v3";
-const OFFLINE_URL = "/offline"; // Use Flask route, not static path
-const OFFLINE_SALES_FORM_URL = "/offline_sales_form"; // Also use route
+const OFFLINE_URL = "/offline";
+const OFFLINE_SALES_FORM_URL = "/offline_sales_form";
 
+// Pages or routes to exclude from caching (especially auth-sensitive)
+const EXCLUDE_FROM_CACHE = ["/logout", "/login", "/register_owner"];
+
+// Core assets to cache
 const urlsToCache = [
-  "/",                     // Main entry
-  "/record_sale",          // Sales form
-  "/offline",              // Offline fallback route (Flask-served)
-  "/offline_sales_form",   // Offline POS form (Flask-served)
+  "/", // Entry point
+  "/record_sale",
+  "/offline",
+  "/offline_sales_form",
   "/static/styles.css",
   "/static/logo.png",
   "/static/icons/icon-192.png",
-  "/static/icons/icon-512.png",
+  "/static/icons/icon-512.png"
 ];
 
+// Install event - pre-cache essential files
 self.addEventListener("install", event => {
   console.log("📦 Installing service worker...");
   event.waitUntil(
@@ -24,6 +29,7 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
+// Activate event - clean up old caches
 self.addEventListener("activate", event => {
   console.log("⚙️ Activating new service worker...");
   event.waitUntil(
@@ -39,12 +45,19 @@ self.addEventListener("activate", event => {
   self.clients.claim();
 });
 
+// Fetch handler with exclusion logic
 self.addEventListener("fetch", event => {
   const { request } = event;
+  const url = new URL(request.url);
 
+  // Do not cache or intercept auth-sensitive requests
+  if (EXCLUDE_FROM_CACHE.includes(url.pathname)) {
+    console.log("🚫 Skipping cache for:", url.pathname);
+    return;
+  }
+
+  // Handle navigation requests (HTML pages)
   if (request.mode === "navigate") {
-    const url = new URL(request.url);
-
     if (url.pathname === OFFLINE_SALES_FORM_URL) {
       console.log("🛒 Navigating to offline sales form");
       event.respondWith(
@@ -62,7 +75,7 @@ self.addEventListener("fetch", event => {
       );
     }
   } else {
-    // Static or API requests
+    // Static asset or API request
     event.respondWith(
       caches.match(request).then(cachedResponse => {
         if (cachedResponse) {

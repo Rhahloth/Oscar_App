@@ -58,11 +58,12 @@
             {% if session.username and request.endpoint != 'dashboard' %}
             <a href="/dashboard"><button>Back to Dashboard</button></a>
             {% endif %} {% if session.username %}
-            <a href="/logout">
-              <button style="background-color: #d9534f; color: white">
-                Logout
-              </button>
-            </a>
+            <button
+              style="background-color: #d9534f; color: white"
+              onclick="logoutAndClearCache()"
+            >
+              Logout
+            </button>
             {% endif %}
           </div>
         </div>
@@ -96,7 +97,7 @@
           .then((data) => {
             localStorage.setItem("products", JSON.stringify(data.products));
             localStorage.setItem("customers", JSON.stringify(data.customers));
-            localStorage.setItem("branch_name", data.branch_name);  // ✅ Store branch name
+            localStorage.setItem("branch_name", data.branch_name);
             console.log("✅ Products, customers, and branch preloaded into localStorage");
           })
           .catch((err) => {
@@ -109,11 +110,10 @@
     <!-- Inactivity Logout Script -->
     <script>
       let inactivityTimeout;
-
       function logoutUser() {
         alert("⚠️ You’ve been logged out due to inactivity.");
         if (navigator.onLine) {
-          window.location.href = "/logout";
+          logoutAndClearCache();
         } else {
           window.location.href = "/offline_logout";
         }
@@ -133,7 +133,31 @@
       resetInactivityTimer();
     </script>
 
-    <!-- Offline Sync Script (Optional) -->
+    <!-- Enhanced Logout Logic -->
+    <script>
+      function logoutAndClearCache() {
+        fetch("/logout", { credentials: "same-origin" })
+          .then(() => {
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker
+                .getRegistrations()
+                .then((registrations) => {
+                  for (let reg of registrations) {
+                    reg.unregister();
+                  }
+                  window.location.href = "/login";
+                });
+            } else {
+              window.location.href = "/login";
+            }
+          })
+          .catch(() => {
+            window.location.href = "/login";
+          });
+      }
+    </script>
+
+    <!-- Offline Sync Script -->
     <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
 
     {% block scripts %}{% endblock %}
