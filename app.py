@@ -1113,10 +1113,10 @@ def manage_users():
         password_hash = generate_password_hash(password)
 
         cur.execute("""
-            INSERT INTO users (username, password, role, business_id)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO users (id, username, password, role, business_id)
+            VALUES (%s, %s, %s, %s, %s)
             RETURNING id
-        """, (username, password_hash, role, business_id))
+        """, (id, username, password_hash, role, business_id))
         new_user_id = cur.fetchone()['id']
         conn.commit()
 

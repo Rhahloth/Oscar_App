@@ -18,6 +18,7 @@ endblock %} {% block content %}
   <table class="table">
     <thead>
       <tr>
+        <th>Branch Id</th>
         <th>Branch Name</th>
         <th>Role</th>
         <th>Reset Password</th>
@@ -28,6 +29,7 @@ endblock %} {% block content %}
     <tbody>
       {% for user in users %}
       <tr>
+        <td>{{user.id}}</td>
         <td>{{ user.username }}</td>
         <td>{{ user.role }}</td>
         <td>
