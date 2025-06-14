@@ -13,6 +13,17 @@ block content %}
     Login to ROB Solutions
   </h4>
 
+  <!-- ✅ FLASH MESSAGES BLOCK -->
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div
+    class="alert alert-{{ category }}"
+    style="color: green; margin-bottom: 10px"
+  >
+    {{ message }}
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
+
   <form method="POST" action="/login">
     <div class="form-group">
       <label>Username</label>
