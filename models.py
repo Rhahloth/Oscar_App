@@ -16,30 +16,6 @@ def initialize_database():
     conn = get_db()
     cur = conn.cursor()
     
-    # # CLEAR DATABASES OF THE TABLES BELOW
-    # cur.execute("""
-    #     TRUNCATE TABLE
-    #         credit_repayments,
-    #         credit_sales,
-    #         stock_requests,
-    #         distribution_log,
-    #         user_inventory,
-    #         sales,
-    #         customers,
-    #         products,
-    #         expenses
-    #     RESTART IDENTITY CASCADE;
-    # """)
-
-    cur.execute("""
-        DELETE FROM user_inventory
-        WHERE id IN (%s);
-    """, (17,))
-
-    # Commit the changes
-    conn.commit()
-
-
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
         CREATE TABLE IF NOT EXISTS businesses (
@@ -197,6 +173,14 @@ def initialize_database():
         );
 
     ''')
+    cur.execute("""
+        UPDATE user_inventory
+        SET quantity = 0
+        WHERE user_id = %s
+        AND product_id IN (
+            SELECT id FROM products WHERE business_id = %s
+        )
+    """, (17, 2))
 
 
     conn.commit()
