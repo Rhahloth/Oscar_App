@@ -59,18 +59,20 @@ def initialize_database():
         )
     """, (1, 8))
 
-    # 2) Delete every product that belongs to businesses 1 or 8
-    cur.execute("""
-        DELETE FROM products
-        WHERE business_id IN (%s, %s)
-    """, (1, 8))
-
     cur.execute("""
         DELETE FROM user_inventory
         WHERE user_id IN (
             SELECT id FROM users WHERE business_id IN (%s, %s)
         )
     """, (1, 8))
+
+    # 2) Delete every product that belongs to businesses 1 or 8
+    cur.execute("""
+        DELETE FROM products
+        WHERE business_id IN (%s, %s)
+    """, (1, 8))
+
+
 
     # Step 2: Now delete the users
     cur.execute("""
