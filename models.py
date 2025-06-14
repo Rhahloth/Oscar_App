@@ -31,16 +31,56 @@ def initialize_database():
     #     RESTART IDENTITY CASCADE;
     # """)
 
-    # # DELETE BUSINESSES WITH THEIR IDs, delete users first 
-    # cur.execute("""
-    #     DELETE FROM users
-    #     WHERE business_id IN (%s,%s);
-    # """, (1,8))
+# Step 1: Delete all dependent data
+cur.execute("""
+    DELETE FROM credit_repayments
+    WHERE credit_id IN (
+        SELECT cs.id FROM credit_sales cs
+        JOIN sales s ON cs.sale_id = s.id
+        WHERE s.salesperson_id IN (
+            SELECT id FROM users WHERE business_id IN (%s, %s)
+        )
+    )
+""", (1, 8))
 
-    # cur.execute("""
-    #     DELETE FROM businesses
-    #     WHERE id IN (%s,%s);
-    # """, (1,8))
+cur.execute("""
+    DELETE FROM credit_sales
+    WHERE sale_id IN (
+        SELECT id FROM sales WHERE salesperson_id IN (
+            SELECT id FROM users WHERE business_id IN (%s, %s)
+        )
+    )
+""", (1, 8))
+
+cur.execute("""
+    DELETE FROM sales
+    WHERE salesperson_id IN (
+        SELECT id FROM users WHERE business_id IN (%s, %s)
+    )
+""", (1, 8))
+
+cur.execute("""
+    DELETE FROM user_inventory
+    WHERE user_id IN (
+        SELECT id FROM users WHERE business_id IN (%s, %s)
+    )
+""", (1, 8))
+
+# Step 2: Now delete the users
+cur.execute("""
+    DELETE FROM users
+    WHERE business_id IN (%s, %s)
+""", (1, 8))
+
+# Step 3: Finally, delete the businesses
+cur.execute("""
+    DELETE FROM businesses
+    WHERE id IN (%s, %s)
+""", (1, 8))
+
+# Commit the changes
+conn.commit()
+
 
     # Delete their inventory first
     cur.execute("""
