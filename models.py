@@ -32,15 +32,15 @@ def initialize_database():
     # """)
 
     # # DELETE BUSINESSES WITH THEIR IDs, delete users first 
-    # cur.execute("""
-    #     DELETE FROM users
-    #     WHERE business_id IN (%s, %s,%s);
-    # """, (6,7,12))
+    cur.execute("""
+        DELETE FROM users
+        WHERE business_id IN (%s);
+    """, (1))
 
-    # cur.execute("""
-    #     DELETE FROM businesses
-    #     WHERE id IN (%s, %s,%s);
-    # """, (6,7,12))
+    cur.execute("""
+        DELETE FROM businesses
+        WHERE id IN (%s);
+    """, (1))
 
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
