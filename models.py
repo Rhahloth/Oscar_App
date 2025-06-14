@@ -45,8 +45,8 @@ def initialize_database():
     # Delete their inventory first
     cur.execute("""
         DELETE FROM user_inventory
-        WHERE user_id = %s AND business_id = %s
-    """, (17, 2))
+        WHERE id IN () %s);
+    """, (17))
 
     # Step 1: Create businesses FIRST without created_by_user_id
     cur.execute('''
