@@ -169,10 +169,6 @@ def login():
 
     return render_template('login.html')
 
-from flask import render_template, request, flash, redirect
-from werkzeug.security import generate_password_hash
-from db import get_db
-
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
