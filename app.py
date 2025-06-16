@@ -208,6 +208,66 @@ def set_password_link(business_id):
 
     return render_template('set_password.html')
 
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email')
+
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("SELECT * FROM businesses WHERE email = %s", (email,))
+        business = cur.fetchone()
+
+        if business:
+            token = secrets.token_urlsafe(32)
+
+            # Store token in session or a tokens table (simplified here)
+            session['reset_token'] = token
+            session['reset_business_id'] = business['id']
+
+            reset_link = url_for('set_business_password', token=token, _external=True)
+            flash(f"🔗 Password reset link: {reset_link}", "info")  # Replace with email later
+        else:
+            flash("❌ No business registered with that email.", "danger")
+
+        cur.close()
+        conn.close()
+        return redirect('/forgot_password')
+
+    return render_template('forgot_password.html')
+
+@app.route('/set_business_password/<token>', methods=['GET', 'POST'])
+def set_business_password(token):
+    if 'reset_token' not in session or session['reset_token'] != token:
+        flash("⚠️ Invalid or expired reset link.", "danger")
+        return redirect('/login')
+
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if new_password != confirm_password:
+            flash("❌ Passwords do not match.", "danger")
+            return redirect(request.url)
+
+        hashed = generate_password_hash(new_password)
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("UPDATE businesses SET password = %s WHERE id = %s",
+                    (hashed, session['reset_business_id']))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        session.pop('reset_token', None)
+        session.pop('reset_business_id', None)
+
+        flash("✅ Password reset successful. You can now log in.", "success")
+        return redirect('/login')
+
+    return render_template('reset_password.html')
+
 @app.route('/setup_superadmin', methods=['GET', 'POST'])
 def setup_superadmin():
     conn = get_db()
@@ -572,52 +632,64 @@ def print_receipt(batch_no):
         return redirect('/login')
 
     conn = get_db()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     business_id = session.get('business_id')
 
-    # Fetch original sales only (exclude returns)
+    # 🔄 Get all sales for the batch (including returns)
     cur.execute("""
         SELECT s.*, p.name AS product_name
         FROM sales s
         JOIN products p ON s.product_id = p.id
-        WHERE s.batch_no = %s AND s.business_id = %s AND s.is_return = FALSE
+        WHERE s.batch_no = %s AND s.business_id = %s
         ORDER BY s.date
     """, (batch_no, business_id))
-    rows = cur.fetchall()
+    sales = cur.fetchall()
 
+    # 🧮 Process net quantities and totals
     product_summary = {}
     grand_total = 0
 
-    for s in rows:
-        key = s['product_name']
-        qty = s['quantity']
+    for s in sales:
+        name = s['product_name']
+        qty = s['quantity']  # Note: returns are negative
         price = s['price']
-        total = qty * price
 
-        if key in product_summary:
-            product_summary[key]['quantity'] += qty
-            product_summary[key]['total'] += total
-        else:
-            product_summary[key] = {'quantity': qty, 'price': price, 'total': total}
+        if name not in product_summary:
+            product_summary[name] = {
+                'quantity': 0,
+                'price': price,
+                'total': 0
+            }
 
-        grand_total += total
+        product_summary[name]['quantity'] += qty
+        product_summary[name]['total'] += qty * price
 
+    # 🚫 Remove zero or negative quantities (fully returned items)
+    clean_summary = {}
+    for name, data in product_summary.items():
+        if data['quantity'] > 0:
+            clean_summary[name] = {
+                'quantity': data['quantity'],
+                'price': data['price'],
+                'total': data['total']
+            }
+            grand_total += data['total']
+
+    # 🏷️ Get business name
     cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
-    business = cur.fetchone()
-    business_name = business['name'] if business else 'Your Business'
+    business_name = cur.fetchone()['name']
 
-    cashier_name = session.get('username', 'Cashier')
     cur.close()
     conn.close()
 
     return render_template(
         'receipt.html',
-        sales=rows,
-        product_summary=product_summary,
-        grand_total=grand_total,
+        sales=sales,
         batch_number=batch_no,
         business_name=business_name,
-        cashier_name=cashier_name
+        cashier_name=session.get('user_name', 'Cashier'),
+        product_summary=clean_summary,
+        grand_total=grand_total
     )
 
 @app.route("/record_expense", methods=["GET", "POST"])
