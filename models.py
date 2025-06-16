@@ -28,6 +28,14 @@ def initialize_database():
         );
     ''')
 
+    cur.execute('''
+        ALTER TABLE businesses
+        ADD COLUMN IF NOT EXISTS email TEXT UNIQUE,
+        ADD COLUMN IF NOT EXISTS password_hash TEXT,
+        ADD COLUMN IF NOT EXISTS reset_token TEXT,
+        ADD COLUMN IF NOT EXISTS token_expiry TIMESTAMP;
+    ''')
+
     # Step 2: Then create users
     cur.execute('''
         CREATE TABLE IF NOT EXISTS users (

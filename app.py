@@ -169,6 +169,45 @@ def login():
 
     return render_template('login.html')
 
+@app.route('/set_password/<int:business_id>', methods=['GET', 'POST'])
+def set_password_link(business_id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    # ✅ 1. Check if business exists and password not already set
+    cur.execute("SELECT email, password_hash FROM businesses WHERE id = %s", (business_id,))
+    business = cur.fetchone()
+
+    if not business:
+        return "Business not found.", 404
+
+    if business['password_hash']:
+        return "This business has already set a password.", 403
+
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        confirm = request.form['confirm_password']
+
+        if password != confirm:
+            flash("Passwords do not match.", "danger")
+            return render_template('set_password.html')
+
+        hashed = generate_password_hash(password)
+
+        # ✅ 2. Save email and hashed password
+        cur.execute("""
+            UPDATE businesses
+            SET email = %s, password_hash = %s
+            WHERE id = %s
+        """, (email, hashed, business_id))
+        conn.commit()
+
+        flash("Credentials set successfully. You can now log in.", "success")
+        return redirect('/login')
+
+    return render_template('set_password.html')
+
 @app.route('/setup_superadmin', methods=['GET', 'POST'])
 def setup_superadmin():
     conn = get_db()
@@ -492,7 +531,7 @@ def batch_sales(batch_no):
     cur = conn.cursor()
     business_id = session.get('business_id')
 
-    # Fetch sales with related product and customer info
+    # Fetch sales with product and customer info
     cur.execute("""
         SELECT s.*, 
                p.name AS product_name,
@@ -508,7 +547,6 @@ def batch_sales(batch_no):
 
     sales = []
     for s in rows:
-        # For each sale, calculate how much has been returned (exclude self-return lines)
         if not s['is_return']:
             cur.execute("""
                 SELECT COALESCE(SUM(quantity), 0) AS returned_quantity
@@ -517,16 +555,29 @@ def batch_sales(batch_no):
             """, (s['id'],))
             returned = cur.fetchone()['returned_quantity']
         else:
-            returned = s['quantity']  # return rows just show own quantity
+            returned = s['quantity']
 
         s['returned_quantity'] = returned
         sales.append(s)
 
+    # ✅ Fetch business name
+    cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
+    business_name = cur.fetchone()
+    business_name = business_name['name'] if business_name else "Your Business"
+
     cur.close()
     conn.close()
 
-    return render_template('batch_sales.html', sales=sales, batch_number=batch_no)
+    # ✅ Get cashier name from session
+    cashier_name = session.get('user_name', 'Cashier')
 
+    return render_template(
+        'batch_sales.html',
+        sales=sales,
+        batch_number=batch_no,
+        cashier_name=cashier_name,
+        business_name=business_name
+    )
 
 @app.route("/record_expense", methods=["GET", "POST"])
 def record_expense():

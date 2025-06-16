@@ -1,83 +1,85 @@
-{% extends "layout.html" %} {% block title %}Batch Sales - ROB Solutions{%
-endblock %} {% block content %}
-<div class="form-group action-buttons">
-  <div>
-    <h2>
-      Sales for Batch:
+{% extends "layout.html" %} {% block title %}Print Receipt - {{ business_name
+}}{% endblock %} {% block content %}
+<style>
+  @media print {
+    button,
+    a[href],
+    .no-print {
+      display: none !important;
+    }
+    body {
+      font-family: monospace;
+      font-size: 12px;
+    }
+  }
+</style>
+
+<div
+  class="receipt-container"
+  style="max-width: 600px; margin: auto; font-family: monospace"
+>
+  <h2 style="text-align: center">{{ business_name }}</h2>
+  <p style="text-align: center">Sales Summary Receipt</p>
+
+  <div style="margin-bottom: 10px">
+    <p>
+      <strong>Batch Number:</strong>
       <span style="color: green">{{ batch_number }}</span>
-    </h2>
+    </p>
+    <p>
+      <strong>Date:</strong> {{ sales[0].date.strftime('%Y-%m-%d') if sales else
+      '' }}
+    </p>
+    <p><strong>Sold by:</strong> {{ cashier_name }}</p>
   </div>
-  <div>
-    <a href="/record_sale"><button>POS</button></a>
-  </div>
-</div>
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%}
-<div class="flash-messages">
-  {% for category, message in messages %}
-  <div class="alert alert-{{ category }}">{{ message }}</div>
-  {% endfor %}
-</div>
-{% endif %} {% endwith %}
-<div>
-  {% if sales %}
-  <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Product</th>
-          <th>Qty</th>
-          <th>Price</th>
-          <th>Amount Paid</th>
-          <th>Payment Method</th>
-          <th>Customer</th>
-          <th>Date</th>
-          <th>Return</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s in sales %}
-        <tr {% if s.is_return %}style="color: red;" {% endif %}>
-          <td>{{ loop.index }}</td>
-          <td>{{ s.product_name }}</td>
-          <td>{{ s.quantity }}</td>
-          <td>{{ s.price }}</td>
-          <td>{{ s.amount_paid }}</td>
-          <td>{{ s.payment_method }}</td>
-          <td>{{ s.customer_name or '-' }}</td>
-          <td>{{ s.date.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td>
-            {% if not s.is_return and s.returned_quantity < s.quantity %}
-            <form
-              action="/return_product"
-              method="POST"
-              style="display: flex; gap: 5px"
-            >
-              <input type="hidden" name="sale_id" value="{{ s.id }}" />
-              <input
-                type="number"
-                name="return_quantity"
-                min="1"
-                max="{{ s.quantity - s.returned_quantity }}"
-                placeholder="Qty"
-                required
-                style="width: 60px"
-              />
-              <button type="submit" style="background-color: orange">
-                Return
-              </button>
-            </form>
-            {% elif s.returned_quantity >= s.quantity %} ✅ Fully Returned {%
-            else %} Returned {% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+
+  <hr />
+
+  {% if sales %} {% set product_summary = {} %} {% set grand_total = 0 %} {#
+  Group and summarize products #} {% for s in sales %} {% set key =
+  s.product_name %} {% if key in product_summary %} {% set _ =
+  product_summary.update({ key: { 'quantity': product_summary[key]['quantity'] +
+  s.quantity, 'price': s.price, 'total': product_summary[key]['total'] +
+  (s.quantity * s.price) } }) %} {% else %} {% set _ = product_summary.update({
+  key: { 'quantity': s.quantity, 'price': s.price, 'total': s.quantity * s.price
+  } }) %} {% endif %} {% endfor %} {% for p in product_summary.values() %} {%
+  set grand_total = grand_total + p.total %} {% endfor %}
+
+  <table style="width: 100%; border-collapse: collapse">
+    <thead>
+      <tr>
+        <th style="text-align: left">Item</th>
+        <th style="text-align: right">Qty</th>
+        <th style="text-align: right">Price</th>
+        <th style="text-align: right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for product, data in product_summary.items() %}
+      <tr>
+        <td>{{ product }}</td>
+        <td style="text-align: right">{{ data.quantity }}</td>
+        <td style="text-align: right">{{ '{:,.0f}'.format(data.price) }}</td>
+        <td style="text-align: right">{{ '{:,.0f}'.format(data.total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <hr />
+  <p><strong>Grand Total:</strong> {{ '{:,.0f}'.format(grand_total) }} UGX</p>
   {% else %}
-  <p>No sales found for this batch.</p>
+  <p>No sales in this batch.</p>
   {% endif %}
+
+  <hr />
+  <p style="text-align: center">Thank you for your business!</p>
+
+  <div class="no-print" style="text-align: center; margin-top: 20px">
+    <button onclick="window.print()" style="padding: 8px 16px">🖨️ Print</button>
+    <a href="/record_sale"
+      ><button style="padding: 8px 16px">⬅ Back to POS</button></a
+    >
+  </div>
 </div>
 {% endblock %}
