@@ -1,7 +1,9 @@
 {% extends "layout.html" %} {% block title %}Verify OTP - ROB Solutions{%
 endblock %} {% block content %}
 <div class="login-card">
-  <h4 style="text-align: center; margin-bottom: 20px">Enter OTP</h4>
+  <h4 style="text-align: center; margin-bottom: 20px">
+    Verify OTP & Set New Password
+  </h4>
 
   {% with messages = get_flashed_messages(with_categories=true) %} {% if
   messages %} {% for category, message in messages %}
@@ -12,10 +14,21 @@ endblock %} {% block content %}
 
   <form method="POST">
     <div class="form-group">
-      <label>Enter OTP sent to your phone</label>
+      <label>OTP sent to your phone</label>
       <input type="text" name="otp" required />
     </div>
-    <button type="submit" class="button-primary">Verify</button>
+
+    <div class="form-group">
+      <label>New Password</label>
+      <input type="password" name="new_password" required />
+    </div>
+
+    <div class="form-group">
+      <label>Confirm Password</label>
+      <input type="password" name="confirm_password" required />
+    </div>
+
+    <button type="submit" class="button-primary">Reset Password</button>
   </form>
 </div>
 {% endblock %}
