@@ -87,24 +87,26 @@
 <div class="card">
   <h3>📜 Recent Repayments</h3>
   {% if repayments %}
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Customer</th>
-        <th>Amount</th>
-        <th>Paid On</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for r in repayments %}
-      <tr>
-        <td><strong>{{ r.customer_name }}</strong></td>
-        <td>{{ "{:,.0f}".format(r.amount) }}</td>
-        <td>{{ r.paid_on }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Amount</th>
+          <th>Paid On</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in repayments %}
+        <tr>
+          <td><strong>{{ r.customer_name }}</strong></td>
+          <td>{{ "{:,.0f}".format(r.amount) }}</td>
+          <td>{{ r.paid_on }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+</div>
   {% else %}
     <p>No repayments found yet.</p>
   {% endif %}
