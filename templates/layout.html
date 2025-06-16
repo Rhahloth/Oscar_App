@@ -32,7 +32,7 @@
   </head>
 
   <body
-    class="{% if request.endpoint in ['login', 'register_owner'] %}login-body{% endif %}"
+    class="{% if request.endpoint in ['login', 'register_owner', 'forgot_password', 'set_business_password', 'set_password_link'] %}login-body{% endif %}"
   >
     {% if request.endpoint not in ['login', 'register_owner'] %}
     <!-- Navbar -->
@@ -73,7 +73,7 @@
 
     <!-- Main Content -->
     <div
-      class="{% if request.endpoint in ['login', 'register_owner'] %}login-wrapper{% else %}container{% endif %}"
+      class="{% if request.endpoint in ['login', 'register_owner', 'forgot_password', 'set_business_password', 'set_password_link'] %}login-wrapper{% else %}container{% endif %}"
       style="margin-top: 120px"
     >
       {% block content %}{% endblock %}

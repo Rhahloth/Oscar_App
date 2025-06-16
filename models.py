@@ -28,13 +28,16 @@ def initialize_database():
         );
     ''')
 
-    cur.execute('''
-        ALTER TABLE businesses
-        ADD COLUMN IF NOT EXISTS email TEXT UNIQUE,
-        ADD COLUMN IF NOT EXISTS password_hash TEXT,
-        ADD COLUMN IF NOT EXISTS reset_token TEXT,
-        ADD COLUMN IF NOT EXISTS token_expiry TIMESTAMP;
-    ''')
+    # Step 2: Safely add new columns one by one
+    cur.execute('ALTER TABLE businesses ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;')
+    cur.execute('ALTER TABLE businesses ADD COLUMN IF NOT EXISTS password_hash TEXT;')
+    cur.execute('ALTER TABLE businesses ADD COLUMN IF NOT EXISTS reset_token TEXT;')
+    cur.execute('ALTER TABLE businesses ADD COLUMN IF NOT EXISTS token_expiry TIMESTAMP;')
+
+    # ✅ Step 3: Add OTP columns for phone-based reset
+    cur.execute('ALTER TABLE businesses ADD COLUMN IF NOT EXISTS otp_code TEXT;')
+    cur.execute('ALTER TABLE businesses ADD COLUMN IF NOT EXISTS otp_expiry TIMESTAMP;')
+
 
     # Step 2: Then create users
     cur.execute('''

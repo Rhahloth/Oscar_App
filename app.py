@@ -9,7 +9,7 @@ from models import initialize_database
 initialize_database()
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 import random
 import string
@@ -169,77 +169,101 @@ def login():
 
     return render_template('login.html')
 
-@app.route('/set_password/<int:business_id>', methods=['GET', 'POST'])
-def set_password_link(business_id):
-    conn = get_db()
-    cur = conn.cursor()
+from flask import render_template, request, flash, redirect
+from werkzeug.security import generate_password_hash
+from db import get_db
 
-    # ✅ 1. Check if business exists and password not already set
-    cur.execute("SELECT email, password_hash FROM businesses WHERE id = %s", (business_id,))
-    business = cur.fetchone()
-
-    if not business:
-        return "Business not found.", 404
-
-    if business['password_hash']:
-        return "This business has already set a password.", 403
-
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        confirm = request.form['confirm_password']
-
-        if password != confirm:
-            flash("Passwords do not match.", "danger")
-            return render_template('set_password.html')
-
-        hashed = generate_password_hash(password)
-
-        # ✅ 2. Save email and hashed password
-        cur.execute("""
-            UPDATE businesses
-            SET email = %s, password_hash = %s
-            WHERE id = %s
-        """, (email, hashed, business_id))
-        conn.commit()
-
-        flash("Credentials set successfully. You can now log in.", "success")
-        return redirect('/login')
-
-    return render_template('set_password.html')
 
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form.get('email')
+        phone = request.form.get('phone')
 
         conn = get_db()
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute("SELECT * FROM businesses WHERE email = %s", (email,))
+        cur.execute("SELECT id FROM businesses WHERE phone = %s", (phone,))
         business = cur.fetchone()
 
-        if business:
-            token = secrets.token_urlsafe(32)
+        if not business:
+            flash("❌ No business registered with that phone number.", "danger")
+            return redirect('/forgot_password')
 
-            # Store token in session or a tokens table (simplified here)
-            session['reset_token'] = token
-            session['reset_business_id'] = business['id']
+        # ✅ Generate and store OTP
+        otp = str(random.randint(100000, 999999))
+        expiry = datetime.utcnow() + timedelta(minutes=5)
 
-            reset_link = url_for('set_business_password', token=token, _external=True)
-            flash(f"🔗 Password reset link: {reset_link}", "info")  # Replace with email later
-        else:
-            flash("❌ No business registered with that email.", "danger")
+        cur.execute("""
+            UPDATE businesses
+            SET reset_token = %s, token_expiry = %s
+            WHERE id = %s
+        """, (otp, expiry, business['id']))
+        conn.commit()
 
+        session['reset_business_id'] = business['id']
         cur.close()
         conn.close()
-        return redirect('/forgot_password')
+
+        # For now, show OTP on screen (replace with SMS integration)
+        flash(f"✅ OTP sent to {phone}: {otp}", "success")
+        return redirect('/verify_otp')
 
     return render_template('forgot_password.html')
 
-@app.route('/set_business_password/<token>', methods=['GET', 'POST'])
-def set_business_password(token):
-    if 'reset_token' not in session or session['reset_token'] != token:
-        flash("⚠️ Invalid or expired reset link.", "danger")
+@app.route('/verify_otp', methods=['GET', 'POST'])
+def verify_otp():
+    if 'reset_business_id' not in session:
+        return redirect('/forgot_password')
+
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        conn = get_db()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("SELECT reset_token, token_expiry FROM businesses WHERE id = %s", 
+                    (session['reset_business_id'],))
+        business = cur.fetchone()
+
+        if not business:
+            flash("Business not found.", "danger")
+            return redirect('/forgot_password')
+
+        if datetime.utcnow() > business['token_expiry']:
+            flash("OTP expired. Try again.", "danger")
+            return redirect('/forgot_password')
+
+        if business['reset_token'] != entered_otp:
+            flash("Incorrect OTP.", "danger")
+            return redirect('/verify_otp')
+
+        if new_password != confirm_password:
+            flash("Passwords do not match.", "danger")
+            return redirect('/verify_otp')
+
+        hashed = generate_password_hash(new_password)
+
+        cur.execute("""
+            UPDATE businesses
+            SET password_hash = %s, reset_token = NULL, token_expiry = NULL
+            WHERE id = %s
+        """, (hashed, session['reset_business_id']))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        session.pop('reset_business_id', None)
+        flash("✅ Password reset successful.", "success")
+        return redirect('/login')
+
+    return render_template('verify_otp.html')
+
+
+@app.route('/set_business_password', methods=['GET', 'POST'])
+def set_business_password():
+    business_id = session.get('otp_business_id')
+    if not business_id:
+        flash("⚠️ Session expired or invalid access.", "danger")
         return redirect('/login')
 
     if request.method == 'POST':
@@ -254,16 +278,14 @@ def set_business_password(token):
 
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("UPDATE businesses SET password = %s WHERE id = %s",
-                    (hashed, session['reset_business_id']))
+        cur.execute("UPDATE businesses SET password_hash = %s WHERE id = %s", (hashed, business_id))
         conn.commit()
         cur.close()
         conn.close()
 
-        session.pop('reset_token', None)
-        session.pop('reset_business_id', None)
+        session.pop('otp_business_id', None)
 
-        flash("✅ Password reset successful. You can now log in.", "success")
+        flash("✅ Password set successfully. You can now log in.", "success")
         return redirect('/login')
 
     return render_template('reset_password.html')
