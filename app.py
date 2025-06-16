@@ -531,7 +531,7 @@ def batch_sales(batch_no):
     cur = conn.cursor()
     business_id = session.get('business_id')
 
-    # Fetch sales with product and customer info
+    # Fetch sales with related product and customer info
     cur.execute("""
         SELECT s.*, 
                p.name AS product_name,
@@ -547,6 +547,7 @@ def batch_sales(batch_no):
 
     sales = []
     for s in rows:
+        # For each sale, calculate how much has been returned (exclude self-return lines)
         if not s['is_return']:
             cur.execute("""
                 SELECT COALESCE(SUM(quantity), 0) AS returned_quantity
@@ -555,28 +556,68 @@ def batch_sales(batch_no):
             """, (s['id'],))
             returned = cur.fetchone()['returned_quantity']
         else:
-            returned = s['quantity']
+            returned = s['quantity']  # return rows just show own quantity
 
         s['returned_quantity'] = returned
         sales.append(s)
 
-    # ✅ Fetch business name
-    cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
-    business_name = cur.fetchone()
-    business_name = business_name['name'] if business_name else "Your Business"
-
     cur.close()
     conn.close()
 
-    # ✅ Get cashier name from session
-    cashier_name = session.get('user_name', 'Cashier')
+    return render_template('batch_sales.html', sales=sales, batch_number=batch_no)
+
+@app.route('/print_receipt/<batch_no>')
+def print_receipt(batch_no):
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    conn = get_db()
+    cur = conn.cursor()
+    business_id = session.get('business_id')
+
+    # Fetch original sales only (exclude returns)
+    cur.execute("""
+        SELECT s.*, p.name AS product_name
+        FROM sales s
+        JOIN products p ON s.product_id = p.id
+        WHERE s.batch_no = %s AND s.business_id = %s AND s.is_return = FALSE
+        ORDER BY s.date
+    """, (batch_no, business_id))
+    rows = cur.fetchall()
+
+    product_summary = {}
+    grand_total = 0
+
+    for s in rows:
+        key = s['product_name']
+        qty = s['quantity']
+        price = s['price']
+        total = qty * price
+
+        if key in product_summary:
+            product_summary[key]['quantity'] += qty
+            product_summary[key]['total'] += total
+        else:
+            product_summary[key] = {'quantity': qty, 'price': price, 'total': total}
+
+        grand_total += total
+
+    cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
+    business = cur.fetchone()
+    business_name = business['name'] if business else 'Your Business'
+
+    cashier_name = session.get('username', 'Cashier')
+    cur.close()
+    conn.close()
 
     return render_template(
-        'batch_sales.html',
-        sales=sales,
+        'receipt.html',
+        sales=rows,
+        product_summary=product_summary,
+        grand_total=grand_total,
         batch_number=batch_no,
-        cashier_name=cashier_name,
-        business_name=business_name
+        business_name=business_name,
+        cashier_name=cashier_name
     )
 
 @app.route("/record_expense", methods=["GET", "POST"])
