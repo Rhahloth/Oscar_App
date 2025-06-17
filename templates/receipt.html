@@ -8,18 +8,29 @@
     a {
       display: none !important;
     }
+    html,
     body {
+      margin: 0;
+      padding: 0;
       font-family: monospace;
-      font-size: 12px;
+      font-size: 11px;
+    }
+    .receipt-container {
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+      page-break-after: avoid;
     }
   }
+
   .receipt-container {
     max-width: 300px;
     margin: auto;
     font-family: monospace;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.4;
   }
+
   .center {
     text-align: center;
   }
@@ -31,14 +42,41 @@
   }
   .line {
     border-top: 1px dashed #000;
-    margin: 8px 0;
+    margin: 6px 0;
   }
+
   table {
     width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
   }
-  td,
-  th {
+
+  th,
+  td {
     padding: 2px 0;
+    word-break: break-word;
+    font-size: 11px;
+  }
+
+  th.item-col,
+  td.item-col {
+    width: 40%;
+    text-align: left;
+  }
+  th.qty-col,
+  td.qty-col {
+    width: 15%;
+    text-align: left;
+  }
+  th.price-col,
+  td.price-col {
+    width: 20%;
+    text-align: right;
+  }
+  th.total-col,
+  td.total-col {
+    width: 25%;
+    text-align: right;
   }
 </style>
 
@@ -51,6 +89,10 @@
     <strong>Date:</strong> {{ sales[0].date.strftime('%Y-%m-%d') if sales else
     '' }}
   </div>
+  <div>
+    <strong>Time:</strong> {{ sales[0].date.strftime('%H:%M') if sales else ''
+    }}
+  </div>
   <div><strong>Branch:</strong> {{ branch_name }}</div>
 
   <div class="line"></div>
@@ -59,19 +101,19 @@
   <table>
     <thead>
       <tr>
-        <th>Item</th>
-        <th class="right">Qty</th>
-        <th class="right">Price</th>
-        <th class="right">Total</th>
+        <th class="item-col">Item</th>
+        <th class="qty-col">Qty</th>
+        <th class="price-col">Price</th>
+        <th class="total-col">Total</th>
       </tr>
     </thead>
     <tbody>
       {% for product, data in product_summary.items() %}
       <tr>
-        <td>{{ product[:10] }}</td>
-        <td class="right">{{ data.quantity }}</td>
-        <td class="right">{{ '{:,.0f}'.format(data.price) }}</td>
-        <td class="right">{{ '{:,.0f}'.format(data.total) }}</td>
+        <td class="item-col">{{ product[:10] }}</td>
+        <td class="qty-col">{{ data.quantity }}</td>
+        <td class="price-col">{{ '{:,.0f}'.format(data.price) }}</td>
+        <td class="total-col">{{ '{:,.0f}'.format(data.total) }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -84,9 +126,12 @@
   {% endif %}
 
   <div class="line"></div>
-  <div class="center">Thank you for your business!</div>
 
-  <div class="no-print center" style="margin-top: 20px">
+  <div class="center">Thank you for your business!</div>
+  <div class="center">For inquiries, call:</div>
+  <div class="center">0781133613 / 0786280191</div>
+
+  <div class="no-print center" style="margin-top: 15px">
     <button onclick="window.print()">🖨️ Print Receipt</button>
     <a href="/record_sale"><button>⬅ Back to POS</button></a>
   </div>
