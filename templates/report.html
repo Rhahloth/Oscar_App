@@ -14,18 +14,6 @@
     <fieldset>
       <legend>Filter Sales Report</legend>
       <div class="filter-row">
-        <div class="filter-item">
-          <label>Quick Date</label>
-          <select name="quick_range" onchange="this.form.submit()">
-            <option value="">-- Select Range --</option>
-            <option value="today" {% if quick_range == 'today' %}selected{% endif %}>Today</option>
-            <option value="yesterday" {% if quick_range == 'yesterday' %}selected{% endif %}>Yesterday</option>
-            <option value="this_week" {% if quick_range == 'this_week' %}selected{% endif %}>This Week</option>
-            <option value="last_week" {% if quick_range == 'last_week' %}selected{% endif %}>Last Week</option>
-            <option value="this_month" {% if quick_range == 'this_month' %}selected{% endif %}>This Month</option>
-            <option value="last_month" {% if quick_range == 'last_month' %}selected{% endif %}>Last Month</option>
-          </select>
-        </div>
 
         <div class="filter-item">
           <label>Start Date</label>
@@ -55,6 +43,19 @@
         </div>
         <div class="filter-item" style="align-self: flex-end">
           <button type="submit">Apply Filter</button>
+        </div>
+
+        <div class="filter-item">
+          <label>Quick Date</label>
+          <select name="quick_range" onchange="this.form.submit()">
+            <option value="">-- Select Range --</option>
+            <option value="today" {% if quick_range == 'today' %}selected{% endif %}>Today</option>
+            <option value="yesterday" {% if quick_range == 'yesterday' %}selected{% endif %}>Yesterday</option>
+            <option value="this_week" {% if quick_range == 'this_week' %}selected{% endif %}>This Week</option>
+            <option value="last_week" {% if quick_range == 'last_week' %}selected{% endif %}>Last Week</option>
+            <option value="this_month" {% if quick_range == 'this_month' %}selected{% endif %}>This Month</option>
+            <option value="last_month" {% if quick_range == 'last_month' %}selected{% endif %}>Last Month</option>
+          </select>
         </div>
       </div>
     </fieldset>
