@@ -150,7 +150,7 @@
         <tbody>
           {% for product, data in product_summary.items() %}
           <tr>
-            <td class="item-col">{{ product[:10] }}</td>
+            <td class="item-col">{{ product }}</td>
             <td class="qty-col">{{ data.quantity }}</td>
             <td class="price-col">{{ '{:,.0f}'.format(data.price) }}</td>
             <td class="total-col">{{ '{:,.0f}'.format(data.total) }}</td>
