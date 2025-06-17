@@ -651,9 +651,11 @@ def print_receipt(batch_no):
 
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    user_id = session['user_id']
     business_id = session.get('business_id')
 
-    # 🔄 Get all sales for the batch (including returns)
+    # 🔄 Get all sales for the batch
     cur.execute("""
         SELECT s.*, p.name AS product_name
         FROM sales s
@@ -663,39 +665,35 @@ def print_receipt(batch_no):
     """, (batch_no, business_id))
     sales = cur.fetchall()
 
-    # 🧮 Process net quantities and totals
+    # 🧮 Summarize products
     product_summary = {}
     grand_total = 0
-
     for s in sales:
         name = s['product_name']
-        qty = s['quantity']  # Note: returns are negative
+        qty = s['quantity']
         price = s['price']
-
         if name not in product_summary:
-            product_summary[name] = {
-                'quantity': 0,
-                'price': price,
-                'total': 0
-            }
-
+            product_summary[name] = {'quantity': 0, 'price': price, 'total': 0}
         product_summary[name]['quantity'] += qty
         product_summary[name]['total'] += qty * price
 
-    # 🚫 Remove zero or negative quantities (fully returned items)
+    # 🚫 Remove zero/negative totals
     clean_summary = {}
     for name, data in product_summary.items():
         if data['quantity'] > 0:
-            clean_summary[name] = {
-                'quantity': data['quantity'],
-                'price': data['price'],
-                'total': data['total']
-            }
+            clean_summary[name] = data
             grand_total += data['total']
 
-    # 🏷️ Get business name
+    # 🏷️ Business name
     cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
     business_name = cur.fetchone()['name']
+
+    # 🏬 Branch name
+    cur.execute("SELECT branch_id FROM users WHERE id = %s", (user_id,))
+    branch_id = cur.fetchone()['branch_id']
+    cur.execute("SELECT name FROM branches WHERE id = %s", (branch_id,))
+    branch_row = cur.fetchone()
+    branch_name = branch_row['name'] if branch_row else "Unknown"
 
     cur.close()
     conn.close()
@@ -705,7 +703,7 @@ def print_receipt(batch_no):
         sales=sales,
         batch_number=batch_no,
         business_name=business_name,
-        cashier_name=session.get('user_name', 'Cashier'),
+        branch_name=branch_name,
         product_summary=clean_summary,
         grand_total=grand_total
     )
