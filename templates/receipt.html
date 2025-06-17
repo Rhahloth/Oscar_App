@@ -1,5 +1,6 @@
 {% extends "layout.html" %} {% block title %}Print Receipt - {{ business_name
 }}{% endblock %} {% block content %}
+
 <style>
   @media print {
     .no-print,
@@ -13,77 +14,83 @@
     }
   }
   .receipt-container {
-    max-width: 600px;
+    max-width: 300px; /* Approximate 58mm paper width */
     margin: auto;
     font-family: monospace;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .center {
+    text-align: center;
+  }
+  .right {
+    text-align: right;
+  }
+  .bold {
+    font-weight: bold;
+  }
+  .line {
+    border-top: 1px dashed #000;
+    margin: 8px 0;
   }
   table {
     width: 100%;
-    border-collapse: collapse;
   }
-  th,
-  td {
-    padding: 4px 6px;
-  }
+  td,
   th {
-    text-align: left;
-    border-bottom: 1px solid #ddd;
-  }
-  td {
-    text-align: right;
-  }
-  td:first-child {
-    text-align: left;
+    padding: 2px 0;
   }
 </style>
 
 <div class="receipt-container">
-  <h2 style="text-align: center">{{ business_name }}</h2>
-  <p style="text-align: center">Sales Receipt</p>
+  <div class="center bold">{{ business_name }}</div>
+  <div class="center">SALES RECEIPT</div>
 
-  <p><strong>Batch Number:</strong> {{ batch_number }}</p>
-  <p>
+  <div><strong>Batch:</strong> {{ batch_number }}</div>
+  <div>
     <strong>Date:</strong> {{ sales[0].date.strftime('%Y-%m-%d') if sales else
     '' }}
-  </p>
-  <p><strong>Sold by:</strong> {{ cashier_name }}</p>
+  </div>
+  <div><strong>Cashier:</strong> {{ cashier_name }}</div>
 
-  <hr />
+  <div class="line"></div>
 
   {% if product_summary %}
   <table>
     <thead>
       <tr>
         <th>Item</th>
-        <th>Qty</th>
-        <th>Price</th>
-        <th>Total</th>
+        <th class="right">Qty</th>
+        <th class="right">Price</th>
+        <th class="right">Total</th>
       </tr>
     </thead>
     <tbody>
       {% for product, data in product_summary.items() %}
       <tr>
-        <td>{{ product }}</td>
-        <td>{{ data.quantity }}</td>
-        <td>{{ '{:,.0f}'.format(data.price) }}</td>
-        <td>{{ '{:,.0f}'.format(data.total) }}</td>
+        <td>{{ product[:10] }}</td>
+        <!-- Trim long product names -->
+        <td class="right">{{ data.quantity }}</td>
+        <td class="right">{{ '{:,.0f}'.format(data.price) }}</td>
+        <td class="right">{{ '{:,.0f}'.format(data.total) }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  <hr />
-  <p><strong>Grand Total:</strong> {{ '{:,.0f}'.format(grand_total) }} UGX</p>
+  <div class="line"></div>
+  <div class="bold right">TOTAL: {{ '{:,.0f}'.format(grand_total) }} UGX</div>
   {% else %}
   <p>No sales found in this batch.</p>
   {% endif %}
 
-  <hr />
-  <p style="text-align: center">Thank you for your business!</p>
+  <div class="line"></div>
+  <div class="center">Thank you for your business!</div>
 
-  <div class="no-print" style="text-align: center; margin-top: 20px">
+  <div class="no-print center" style="margin-top: 20px">
     <button onclick="window.print()">🖨️ Print Receipt</button>
     <a href="/record_sale"><button>⬅ Back to POS</button></a>
   </div>
 </div>
+
 {% endblock %}
