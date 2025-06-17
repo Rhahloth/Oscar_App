@@ -655,7 +655,7 @@ def print_receipt(batch_no):
     user_id = session['user_id']
     business_id = session.get('business_id')
 
-    # 🔄 Get all sales for the batch
+    # 🔄 Get all sales for the batch (including returns)
     cur.execute("""
         SELECT s.*, p.name AS product_name
         FROM sales s
@@ -677,23 +677,25 @@ def print_receipt(batch_no):
         product_summary[name]['quantity'] += qty
         product_summary[name]['total'] += qty * price
 
-    # 🚫 Remove zero/negative totals
+    # 🚫 Remove fully returned items
     clean_summary = {}
     for name, data in product_summary.items():
         if data['quantity'] > 0:
             clean_summary[name] = data
             grand_total += data['total']
 
-    # 🏷️ Business name
+    # 🏷️ Get business name
     cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
     business_name = cur.fetchone()['name']
 
-    # 🏬 Branch name
-    cur.execute("SELECT branch_id FROM users WHERE id = %s", (user_id,))
-    branch_id = cur.fetchone()['branch_id']
-    cur.execute("SELECT name FROM branches WHERE id = %s", (branch_id,))
-    branch_row = cur.fetchone()
-    branch_name = branch_row['name'] if branch_row else "Unknown"
+    # 👤 Use salesperson username as branch name
+    if sales:
+        salesperson_id = sales[0]['salesperson_id']
+        cur.execute("SELECT username FROM users WHERE id = %s", (salesperson_id,))
+        branch_row = cur.fetchone()
+        branch_name = branch_row['username'] if branch_row else "Unknown"
+    else:
+        branch_name = "Unknown"
 
     cur.close()
     conn.close()
@@ -707,6 +709,7 @@ def print_receipt(batch_no):
         product_summary=clean_summary,
         grand_total=grand_total
     )
+
 
 @app.route("/record_expense", methods=["GET", "POST"])
 def record_expense():

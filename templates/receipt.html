@@ -14,7 +14,7 @@
     }
   }
   .receipt-container {
-    max-width: 300px; /* Approximate 58mm paper width */
+    max-width: 300px;
     margin: auto;
     font-family: monospace;
     font-size: 12px;
@@ -69,7 +69,6 @@
       {% for product, data in product_summary.items() %}
       <tr>
         <td>{{ product[:10] }}</td>
-        <!-- Trim long product names -->
         <td class="right">{{ data.quantity }}</td>
         <td class="right">{{ '{:,.0f}'.format(data.price) }}</td>
         <td class="right">{{ '{:,.0f}'.format(data.total) }}</td>
