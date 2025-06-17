@@ -3,7 +3,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from models import (
     get_user, get_sales, get_products, add_sale, get_user_inventory,
     add_salesperson_stock_bulk, approve_request, reject_request, get_pending_requests_for_user,
-    initialize_salesperson_inventory, get_db, get_customers_for_business, generate_batch_number
+    initialize_salesperson_inventory, get_db, get_customers_for_business, generate_batch_number, get_date_range
 )
 from models import initialize_database
 initialize_database()
@@ -1591,30 +1591,31 @@ def report():
     conn = get_db()
     cur = conn.cursor()
 
-    # Get list of salespeople for dropdown
     cur.execute("SELECT username FROM users WHERE business_id = %s AND role != 'owner'", (business_id,))
     salespeople = [r['username'] for r in cur.fetchall()]
 
-    # Pagination setup
     page = int(request.args.get('page', 1))
     per_page = 10
     offset = (page - 1) * per_page
     current_page = page
     total_pages = 1
 
-    # Filters from POST or GET to persist state
     if request.method == 'POST':
-        start_date = request.form.get('start_date')
-        end_date = request.form.get('end_date')
+        quick_range = request.form.get('quick_range')
+        if quick_range:
+            start_date, end_date = get_date_range(quick_range)
+        else:
+            start_date = request.form.get('start_date')
+            end_date = request.form.get('end_date')
         salesperson = request.form.get('salesperson')
         payment_method = request.form.get('payment_method')
     else:
+        quick_range = None
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         salesperson = request.args.get('salesperson')
         payment_method = request.args.get('payment_method')
 
-    # Base report query
     report_query = '''
         SELECT u.username AS salesperson,
                s.payment_method,
@@ -1647,7 +1648,6 @@ def report():
     cur.execute(report_query, report_params)
     report_data = cur.fetchall()
 
-    # Total expenses
     expense_query = '''
         SELECT SUM(e.amount) AS total_expense
         FROM expenses e
@@ -1669,7 +1669,6 @@ def report():
     expense_result = cur.fetchone()
     total_expenses = int(expense_result['total_expense']) if expense_result and expense_result['total_expense'] else 0
 
-    # Summary query
     summary_query = '''
         SELECT COUNT(*) AS total_transactions,
                SUM(s.quantity) AS total_quantity,
@@ -1707,7 +1706,6 @@ def report():
 
     net_balance = summary['total_revenue'] - summary['total_cost_price']
 
-    # Top salesperson
     top_query = '''
         SELECT u.username AS top_salesperson,
                SUM(s.quantity * s.price) AS total
@@ -1734,7 +1732,6 @@ def report():
     cur.execute(top_query, top_params)
     top_salesperson = cur.fetchone()
 
-    # Count distribution logs for pagination
     cur.execute('''
         SELECT COUNT(*) FROM distribution_log dl
         JOIN products p ON dl.product_id = p.id
@@ -1743,7 +1740,6 @@ def report():
     total_logs = cur.fetchone()['count']
     total_pages = ceil(total_logs / per_page)
 
-    # Distribution log with pagination
     cur.execute('''
         SELECT dl.timestamp, dl.quantity, dl.status,
                p.name AS product_name,
@@ -1778,7 +1774,8 @@ def report():
         start_date=start_date,
         end_date=end_date,
         salesperson=salesperson,
-        payment_method=payment_method
+        payment_method=payment_method,
+        quick_range=quick_range
     )
 
 @app.route('/export_report', methods=['POST'])

@@ -2,7 +2,8 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import date, timedelta
+from dateutil.relativedelta import relativedelta
 
 
 load_dotenv()
@@ -11,6 +12,30 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db():
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+
+def get_date_range(quick_range):
+    today = date.today()
+    if quick_range == 'today':
+        return today.isoformat(), today.isoformat()
+    elif quick_range == 'yesterday':
+        y = today - timedelta(days=1)
+        return y.isoformat(), y.isoformat()
+    elif quick_range == 'this_week':
+        start = today - timedelta(days=today.weekday())
+        return start.isoformat(), today.isoformat()
+    elif quick_range == 'last_week':
+        end = today - timedelta(days=today.weekday() + 1)
+        start = end - timedelta(days=6)
+        return start.isoformat(), end.isoformat()
+    elif quick_range == 'this_month':
+        start = today.replace(day=1)
+        return start.isoformat(), today.isoformat()
+    elif quick_range == 'last_month':
+        last_day_prev_month = today.replace(day=1) - timedelta(days=1)
+        start = last_day_prev_month.replace(day=1)
+        return start.isoformat(), last_day_prev_month.isoformat()
+    return None, None
+
 
 def initialize_database():
     conn = get_db()
