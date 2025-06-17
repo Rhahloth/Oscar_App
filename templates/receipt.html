@@ -3,23 +3,18 @@
 
 <style>
   @media print {
-    .no-print,
-    button,
-    a {
-      display: none !important;
+    body * {
+      visibility: hidden;
     }
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: monospace;
-      font-size: 11px;
+    .receipt-container,
+    .receipt-container * {
+      visibility: visible;
     }
     .receipt-container {
+      position: absolute;
+      left: 0;
+      top: 0;
       width: 100%;
-      max-width: 300px;
-      margin: 0 auto;
-      page-break-after: avoid;
     }
   }
 
