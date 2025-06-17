@@ -1,135 +1,159 @@
-{% extends "layout.html" %} {% block title %}Print Receipt - {{ business_name
-}}{% endblock %} {% block content %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Print Receipt - {{ business_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      @media print {
+        body * {
+          visibility: hidden;
+        }
+        .receipt-container,
+        .receipt-container * {
+          visibility: visible;
+        }
+        .receipt-container {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+        }
+      }
 
-<style>
-  @media print {
-    body * {
-      visibility: hidden;
-    }
-    .receipt-container,
-    .receipt-container * {
-      visibility: visible;
-    }
-    .receipt-container {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-    }
-  }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: monospace;
+        font-size: 11px;
+      }
 
-  .receipt-container {
-    max-width: 300px;
-    margin: auto;
-    font-family: monospace;
-    font-size: 11px;
-    line-height: 1.4;
-  }
+      .receipt-container {
+        max-width: 300px;
+        margin: auto;
+        font-family: monospace;
+        font-size: 11px;
+        line-height: 1.4;
+      }
 
-  .center {
-    text-align: center;
-  }
-  .right {
-    text-align: right;
-  }
-  .bold {
-    font-weight: bold;
-  }
-  .line {
-    border-top: 1px dashed #000;
-    margin: 6px 0;
-  }
+      .center {
+        text-align: center;
+      }
+      .right {
+        text-align: right;
+      }
+      .bold {
+        font-weight: bold;
+      }
+      .line {
+        border-top: 1px dashed #000;
+        margin: 6px 0;
+      }
 
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-  }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
 
-  th,
-  td {
-    padding: 2px 0;
-    word-break: break-word;
-    font-size: 11px;
-  }
+      th,
+      td {
+        padding: 2px 0;
+        word-break: break-word;
+        font-size: 11px;
+      }
 
-  th.item-col,
-  td.item-col {
-    width: 40%;
-    text-align: left;
-  }
-  th.qty-col,
-  td.qty-col {
-    width: 15%;
-    text-align: left;
-  }
-  th.price-col,
-  td.price-col {
-    width: 20%;
-    text-align: right;
-  }
-  th.total-col,
-  td.total-col {
-    width: 25%;
-    text-align: right;
-  }
-</style>
+      th.item-col,
+      td.item-col {
+        width: 40%;
+        text-align: left;
+      }
+      th.qty-col,
+      td.qty-col {
+        width: 15%;
+        text-align: left;
+      }
+      th.price-col,
+      td.price-col {
+        width: 20%;
+        text-align: right;
+      }
+      th.total-col,
+      td.total-col {
+        width: 25%;
+        text-align: right;
+      }
 
-<div class="receipt-container">
-  <div class="center bold">{{ business_name }}</div>
-  <div class="center">SALES RECEIPT</div>
+      .no-print {
+        margin-top: 15px;
+        text-align: center;
+      }
 
-  <div><strong>Batch:</strong> {{ batch_number }}</div>
-  <div>
-    <strong>Date:</strong> {{ sales[0].date.strftime('%Y-%m-%d') if sales else
-    '' }}
-  </div>
-  <div>
-    <strong>Time:</strong> {{ sales[0].date.strftime('%H:%M') if sales else ''
-    }}
-  </div>
-  <div><strong>Branch:</strong> {{ branch_name }}</div>
+      .no-print button {
+        padding: 6px 12px;
+        font-size: 12px;
+        margin: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="receipt-container">
+      <div class="center bold">{{ business_name }}</div>
+      <div class="center">SALES RECEIPT</div>
 
-  <div class="line"></div>
+      <div><strong>Batch:</strong> {{ batch_number }}</div>
+      <div>
+        <strong>Date:</strong> {{ sales[0].date.strftime('%Y-%m-%d') if sales
+        else '' }}
+      </div>
+      <div>
+        <strong>Time:</strong> {{ sales[0].date.strftime('%H:%M') if sales else
+        '' }}
+      </div>
+      <div><strong>Branch:</strong> {{ branch_name }}</div>
 
-  {% if product_summary %}
-  <table>
-    <thead>
-      <tr>
-        <th class="item-col">Item</th>
-        <th class="qty-col">Qty</th>
-        <th class="price-col">Price</th>
-        <th class="total-col">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for product, data in product_summary.items() %}
-      <tr>
-        <td class="item-col">{{ product[:10] }}</td>
-        <td class="qty-col">{{ data.quantity }}</td>
-        <td class="price-col">{{ '{:,.0f}'.format(data.price) }}</td>
-        <td class="total-col">{{ '{:,.0f}'.format(data.total) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      <div class="line"></div>
 
-  <div class="line"></div>
-  <div class="bold right">TOTAL: {{ '{:,.0f}'.format(grand_total) }} UGX</div>
-  {% else %}
-  <p>No sales found in this batch.</p>
-  {% endif %}
+      {% if product_summary %}
+      <table>
+        <thead>
+          <tr>
+            <th class="item-col">Item</th>
+            <th class="qty-col">Qty</th>
+            <th class="price-col">Price</th>
+            <th class="total-col">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product, data in product_summary.items() %}
+          <tr>
+            <td class="item-col">{{ product[:10] }}</td>
+            <td class="qty-col">{{ data.quantity }}</td>
+            <td class="price-col">{{ '{:,.0f}'.format(data.price) }}</td>
+            <td class="total-col">{{ '{:,.0f}'.format(data.total) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
 
-  <div class="line"></div>
+      <div class="line"></div>
+      <div class="bold right">
+        TOTAL: {{ '{:,.0f}'.format(grand_total) }} UGX
+      </div>
+      {% else %}
+      <p>No sales found in this batch.</p>
+      {% endif %}
 
-  <div class="center">Thank you for your business!</div>
-  <div class="center">For inquiries, call:</div>
-  <div class="center">0781133613 / 0786280191</div>
+      <div class="line"></div>
 
-  <div class="no-print center" style="margin-top: 15px">
-    <button onclick="window.print()">🖨️ Print Receipt</button>
-    <a href="/record_sale"><button>⬅ Back to POS</button></a>
-  </div>
-</div>
+      <div class="center">Thank you for your business!</div>
+      <div class="center">For inquiries, call:</div>
+      <div class="center">0781133613 / 0786280191</div>
 
-{% endblock %}
+      <div class="no-print">
+        <button onclick="window.print()">🖨️ Print Receipt</button>
+        <a href="/record_sale"><button>⬅ Back to POS</button></a>
+      </div>
+    </div>
+  </body>
+</html>
