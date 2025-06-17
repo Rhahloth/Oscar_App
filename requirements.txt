@@ -2,3 +2,4 @@ Flask==2.3.2
 psycopg2-binary
 python-dotenv
 gunicorn
+python-dateutil
