@@ -1759,6 +1759,62 @@ def report():
     for log in distribution_log:
         if log['timestamp']:
             log['timestamp'] = log['timestamp'].replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo("Africa/Kampala"))
+    
+        # Top 5 selling products
+    top_product_query = '''
+        SELECT p.name AS product_name, SUM(s.quantity) AS total_qty_sold
+        FROM sales s
+        JOIN products p ON s.product_id = p.id
+        JOIN users u ON s.salesperson_id = u.id
+        WHERE p.business_id = %s
+    '''
+    top_product_params = [business_id]
+
+    if start_date:
+        top_product_query += ' AND date(s.date) >= date(%s)'
+        top_product_params.append(start_date)
+    if end_date:
+        top_product_query += ' AND date(s.date) <= date(%s)'
+        top_product_params.append(end_date)
+    if salesperson:
+        top_product_query += ' AND u.username = %s'
+        top_product_params.append(salesperson)
+
+    top_product_query += '''
+        GROUP BY p.name
+        ORDER BY total_qty_sold DESC
+        LIMIT 5
+    '''
+    cur.execute(top_product_query, top_product_params)
+    top_products = cur.fetchall()
+
+    # Bottom 5 selling products
+    low_product_query = '''
+        SELECT p.name AS product_name, SUM(s.quantity) AS total_qty_sold
+        FROM sales s
+        JOIN products p ON s.product_id = p.id
+        JOIN users u ON s.salesperson_id = u.id
+        WHERE p.business_id = %s
+    '''
+    low_product_params = [business_id]
+
+    if start_date:
+        low_product_query += ' AND date(s.date) >= date(%s)'
+        low_product_params.append(start_date)
+    if end_date:
+        low_product_query += ' AND date(s.date) <= date(%s)'
+        low_product_params.append(end_date)
+    if salesperson:
+        low_product_query += ' AND u.username = %s'
+        low_product_params.append(salesperson)
+
+    low_product_query += '''
+        GROUP BY p.name
+        ORDER BY total_qty_sold ASC
+        LIMIT 5
+    '''
+    cur.execute(low_product_query, low_product_params)
+    low_products = cur.fetchall()
 
     return render_template(
         'report.html',
@@ -1775,6 +1831,8 @@ def report():
         end_date=end_date,
         salesperson=salesperson,
         payment_method=payment_method,
+        top_products=top_products,
+        low_products=low_products,
         quick_range=quick_range
     )
 
