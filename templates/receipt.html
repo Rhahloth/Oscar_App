@@ -4,35 +4,22 @@
     <meta charset="UTF-8" />
     <title>Print Receipt - {{ business_name }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <style>
-      @media print {
-        body * {
-          visibility: hidden;
-        }
-        .receipt-container,
-        .receipt-container * {
-          visibility: visible;
-        }
-        .receipt-container {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-        }
-      }
 
+    <style>
+      /* Base styles */
       body {
         margin: 0;
         padding: 0;
         font-family: monospace;
         font-size: 11px;
+        background: #fff;
       }
 
       .receipt-container {
+        width: 58mm;
         max-width: 300px;
-        margin: auto;
-        font-family: monospace;
-        font-size: 11px;
+        margin: 0 auto;
+        padding: 0;
         line-height: 1.4;
       }
 
@@ -60,7 +47,6 @@
       td {
         padding: 2px 0;
         word-break: break-word;
-        font-size: 11px;
       }
 
       th.item-col,
@@ -85,7 +71,7 @@
       }
 
       .no-print {
-        margin-top: 15px;
+        margin-top: 12px;
         text-align: center;
       }
 
@@ -94,8 +80,45 @@
         font-size: 12px;
         margin: 4px;
       }
+
+      /* Print optimization */
+      @media print {
+        html,
+        body {
+          margin: 0;
+          padding: 0;
+          height: auto;
+          background: #fff;
+        }
+
+        @page {
+          size: auto;
+          margin: 0mm;
+        }
+
+        body * {
+          visibility: hidden;
+        }
+
+        .receipt-container,
+        .receipt-container * {
+          visibility: visible;
+        }
+
+        .receipt-container {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 58mm;
+        }
+
+        .no-print {
+          display: none !important;
+        }
+      }
     </style>
   </head>
+
   <body>
     <div class="receipt-container">
       <div class="center bold">{{ business_name }}</div>
