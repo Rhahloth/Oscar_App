@@ -138,34 +138,49 @@
   let currentPage = 1;
 
   function paginateTable() {
-    const rows = Array.from(document.querySelectorAll("#ownerInventoryTable tbody tr"));
+    const table = document.getElementById("ownerInventoryTable");
+    if (!table) return;
+
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
     const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+    // Hide all rows
     rows.forEach(row => row.style.display = "none");
 
+    // Display current page rows
     const start = (currentPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     rows.slice(start, end).forEach(row => row.style.display = "");
 
+    // Build pagination controls
     const controls = document.getElementById("pagination-controls");
     controls.innerHTML = "";
 
+    if (totalPages <= 1) return; // Don't show pagination for a single page
+
+    // Previous Button
     const prevBtn = document.createElement("button");
     prevBtn.textContent = "Previous";
     prevBtn.disabled = currentPage === 1;
-    prevBtn.className = currentPage === 1 ? "disabled" : "";
     prevBtn.onclick = () => {
       currentPage--;
       paginateTable();
     };
     controls.appendChild(prevBtn);
 
-    for (let i = 1; i <= totalPages; i++) {
+    // Page Number Buttons (limit display to 5 pages)
+    const maxPages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
+    let endPage = Math.min(totalPages, startPage + maxPages - 1);
+
+    if (endPage - startPage < maxPages - 1) {
+      startPage = Math.max(1, endPage - maxPages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
       const pageBtn = document.createElement("button");
       pageBtn.textContent = i;
-      if (i === currentPage) {
-        pageBtn.disabled = true;
-        pageBtn.className = "disabled";
-      }
+      pageBtn.disabled = i === currentPage;
       pageBtn.onclick = () => {
         currentPage = i;
         paginateTable();
@@ -173,10 +188,10 @@
       controls.appendChild(pageBtn);
     }
 
+    // Next Button
     const nextBtn = document.createElement("button");
     nextBtn.textContent = "Next";
     nextBtn.disabled = currentPage === totalPages;
-    nextBtn.className = currentPage === totalPages ? "disabled" : "";
     nextBtn.onclick = () => {
       currentPage++;
       paginateTable();
@@ -184,8 +199,6 @@
     controls.appendChild(nextBtn);
   }
 
-  window.onload = () => {
-    paginateTable();
-  };
+  window.onload = paginateTable;
 </script>
 {% endblock %}

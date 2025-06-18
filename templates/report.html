@@ -200,19 +200,25 @@
     const controls = document.getElementById("distribution-pagination-controls");
     controls.innerHTML = "";
 
-    const createButton = (text, page, disabled) => {
-      const btn = document.createElement("button");
-      btn.textContent = text;
-      btn.disabled = disabled;
-      btn.onclick = () => { currentPage = page; paginateDistributionTable(); };
-      controls.appendChild(btn);
-    };
+    // Only show pagination if there's more than 1 page
+    if (totalPages > 1) {
+      const createButton = (text, page, disabled) => {
+        const btn = document.createElement("button");
+        btn.textContent = text;
+        btn.disabled = disabled;
+        btn.onclick = () => {
+          currentPage = page;
+          paginateDistributionTable();
+        };
+        controls.appendChild(btn);
+      };
 
-    createButton("First", 1, currentPage === 1);
-    createButton("« Prev", currentPage - 1, currentPage === 1);
-    controls.appendChild(document.createTextNode(` Page ${currentPage} of ${totalPages} `));
-    createButton("Next »", currentPage + 1, currentPage === totalPages);
-    createButton("Last", totalPages, currentPage === totalPages);
+      createButton("First", 1, currentPage === 1);
+      createButton("« Prev", currentPage - 1, currentPage === 1);
+      controls.appendChild(document.createTextNode(` Page ${currentPage} of ${totalPages} `));
+      createButton("Next »", currentPage + 1, currentPage === totalPages);
+      createButton("Last", totalPages, currentPage === totalPages);
+    }
   }
 
   window.onload = paginateDistributionTable;
