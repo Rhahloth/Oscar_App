@@ -1059,6 +1059,12 @@ def products():
                            selected_category=selected_category,
                            selected_product=selected_product)
 
+@app.route('/add_products')
+def add_products():
+    if 'user_id' not in session or session['role'] != 'owner':
+        return redirect('/login')
+    return render_template('add_products.html')  # This will hold the form only
+
 #SUM OF ALL SALESPERSON STOCKS
 @app.route('/owner_inventory')
 def owner_inventory():
