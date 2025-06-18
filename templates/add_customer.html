@@ -65,7 +65,7 @@ ROB Solutions{% endblock %} {% block content %}
             <td>{{ c.name }}</td>
             <td>{{ c.phone or '—' }}</td>
             <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-            <td>
+            <td style="text-align: center">
               <form method="POST" style="display: inline">
                 <input type="hidden" name="action" value="toggle_status" />
                 <input type="hidden" name="customer_id" value="{{ c.id }}" />
