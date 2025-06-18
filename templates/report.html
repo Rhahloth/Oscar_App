@@ -1,18 +1,18 @@
 {% extends "layout.html" %}
-{% block title %}Report Dashboard - ROB Solutions{% endblock %}
+{% block title %}📈 Report Dashboard - ROB Solutions{% endblock %}
 
 {% block content %}
-  <h2 style="text-align: center; margin-top: 20px;">📊 Sales Report Dashboard</h2>
+  <h2 style="text-align: center; color: #034078; margin-top: 20px;">📊 Sales Report Dashboard</h2>
 
   <!-- Quick Access -->
   <div class="form-group action-buttons" style="justify-content: center;">
-    <a href="/view_expenses"><button>💰 VIEW EXPENSES</button></a>
+    <a href="/view_expenses"><button style="background-color: #ff6f61;">💰 VIEW EXPENSES</button></a>
   </div>
 
   <!-- Filters -->
   <form method="POST" class="report-filters">
     <fieldset>
-      <legend>Filter Sales Report</legend>
+      <legend style="color: #034078;">🔍 Filter Sales Report</legend>
       <div class="filter-row">
 
         <div class="filter-item">
@@ -60,7 +60,6 @@
     </fieldset>
   </form>
 
-  <!-- Filter Indicator -->
   {% if request.form.salesperson %}
   <div style="margin: 10px 0; text-align: center; font-size: 22px; font-weight: bold;">
     📍 REPORT FOR <span style="color: #034078;">{{ request.form.salesperson }}</span>
@@ -69,20 +68,20 @@
 
   <!-- Summary Cards -->
   <div class="summary-container">
-    <div class="summary-card"><h4>Total Quantity Sold</h4><p>{{ summary.total_quantity or 0 }}</p></div>
-    <div class="summary-card"><h4>Total Revenue (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p></div>
-    <div class="summary-card"><h4>Total Cost Price (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_cost_price or 0) }}</p></div>
-    <div class="summary-card"><h4>Total Expenses (UGX)</h4><p>UGX {{ "{:,.0f}".format(total_expenses or 0) }}</p></div>
-    <div class="summary-card"><h4>Net Profit (UGX)</h4><p>UGX {{ "{:,.0f}".format(net_balance or 0) }}</p></div>
-    <div class="summary-card"><h4>Top Salesperson</h4><p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p></div>
+    <div class="summary-card" style="border-top: 4px solid #28a745;"><h4>Total Quantity Sold</h4><p>{{ summary.total_quantity or 0 }}</p></div>
+    <div class="summary-card" style="border-top: 4px solid #007bff;"><h4>Total Revenue (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_revenue or 0) }}</p></div>
+    <div class="summary-card" style="border-top: 4px solid #6f42c1;"><h4>Total Cost Price (UGX)</h4><p>UGX {{ "{:,.0f}".format(summary.total_cost_price or 0) }}</p></div>
+    <div class="summary-card" style="border-top: 4px solid #fd7e14;"><h4>Total Expenses (UGX)</h4><p>UGX {{ "{:,.0f}".format(total_expenses or 0) }}</p></div>
+    <div class="summary-card" style="border-top: 4px solid #20c997;"><h4>Net Profit (UGX)</h4><p>UGX {{ "{:,.0f}".format(net_balance or 0) }}</p></div>
+    <div class="summary-card" style="border-top: 4px solid #17a2b8;"><h4>Top Salesperson</h4><p>{{ top_salesperson.top_salesperson if top_salesperson else 'N/A' }}</p></div>
   </div>
 
   <!-- Sales Summary Table -->
-  <h3>Sales Performance Summary</h3>
+  <h3 style="color: #034078;">📋 Sales Performance Summary</h3>
   <div class="table-responsive">
     <table class="table">
       <thead>
-        <tr>
+        <tr style="background-color: #034078; color: white;">
           <th>Salesperson</th>
           <th>Payment Type</th>
           <th>Sales Count</th>
@@ -110,62 +109,48 @@
 
   <!-- Flex Row: Top Products | Chart | Low Products -->
   <div class="flex-row">
-
-    <!-- 🔥 Top Selling Products -->
     <div class="flex-left-narrow">
       <h3>🔥 Top Selling Products</h3>
       <div class="table-responsive">
         <table class="table">
-          <thead>
-            <tr><th>Product</th><th>Qty Sold</th></tr>
-          </thead>
+          <thead><tr><th>Product</th><th>Qty Sold</th></tr></thead>
           <tbody>
-            {% for p in top_products %}
-            <tr><td>{{ p.product_name }}</td><td>{{ p.total_qty_sold or 0 }}</td></tr>
-            {% endfor %}
+            {% for p in top_products %}<tr><td>{{ p.product_name }}</td><td>{{ p.total_qty_sold or 0 }}</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
     </div>
-
-    <!-- 📊 Chart -->
     <div class="flex-right-wide">
       <h3 style="text-align: center;">📊 Revenue by Salesperson</h3>
-      <canvas id="salesChart" style="max-height: 300px; width: 100%;"></canvas>
+      <canvas id="salesChart" style="width: 100%; height: auto; max-height: 300px;"></canvas>
     </div>
-
-    <!-- 📉 Low Selling Products -->
     <div class="flex-left-narrow">
       <h3>📉 Low Selling Products</h3>
       <div class="table-responsive">
         <table class="table">
-          <thead>
-            <tr><th>Product</th><th>Qty Sold</th></tr>
-          </thead>
+          <thead><tr><th>Product</th><th>Qty Sold</th></tr></thead>
           <tbody>
-            {% for p in low_products %}
-            <tr><td>{{ p.product_name }}</td><td>{{ p.total_qty_sold or 0 }}</td></tr>
-            {% endfor %}
+            {% for p in low_products %}<tr><td>{{ p.product_name }}</td><td>{{ p.total_qty_sold or 0 }}</td></tr>{% endfor %}
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- Export to CSV -->
-  <form action="/export_report" method="POST" style="margin-top: 15px; text-align: center;">
+  <!-- Export -->
+  <form action="/export_report" method="POST" style="margin-top: 25px; text-align: center;">
     <input type="hidden" name="start_date" value="{{ request.form.start_date }}">
     <input type="hidden" name="end_date" value="{{ request.form.end_date }}">
     <input type="hidden" name="salesperson" value="{{ request.form.salesperson }}">
-    <button type="submit">Export to CSV</button>
+    <button style="background-color: #0d6efd;">📥 Export to CSV</button>
   </form>
 
   <!-- Distribution Log -->
-  <h3 style="margin-top: 40px;">Stock Distribution Log</h3>
+  <h3 style="margin-top: 40px; color: #034078;">🚚 Stock Distribution Log</h3>
   <div class="table-responsive">
     <table class="table" id="distributionLogTable">
       <thead>
-        <tr>
+        <tr style="background-color: #6c757d; color: white;">
           <th>Time</th>
           <th>Product</th>
           <th>From (Salesperson)</th>
@@ -190,8 +175,7 @@
       </tbody>
     </table>
   </div>
-
-  <div id="distribution-pagination-controls" style="text-align: center; margin-top: 20px;"></div>
+  <div id="distribution-pagination-controls" style="text-align: center; margin-top: 20px; gap: 5px;"></div>
 {% endblock %}
 
 {% block scripts %}

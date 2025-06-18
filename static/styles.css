@@ -276,19 +276,38 @@ button:hover {
     flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 30px;
+    gap: 40px;
+    /* increased spacing */
     margin-top: 40px;
 }
 
+.flex-left-narrow,
+.flex-right-wide {
+    background: #fff;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Shrink tables slightly to allow room for chart */
 .flex-left-narrow {
     flex: 1;
     min-width: 260px;
-    max-width: 30%;
+    max-width: 25%;
 }
 
 .flex-right-wide {
-    flex: 1.5;
+    flex: 2;
     min-width: 320px;
+    max-width: 50%;
+}
+
+@media (max-width: 992px) {
+
+    .flex-left-narrow,
+    .flex-right-wide {
+        max-width: 100%;
+    }
 }
 
 /* PAGINATION CONTROLS */
