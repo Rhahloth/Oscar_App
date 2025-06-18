@@ -34,7 +34,7 @@ endblock %} {% block styles %}
     <button>👀 VIEW BRANCH INVENTORY</button>
   </a>
   <a href="/add_products">
-    <button style="background-color: #28a745; color: white">
+    <button style="background-color: #034078; color: white">
       ➕ ADD PRODUCTS
     </button>
   </a>
@@ -44,19 +44,23 @@ endblock %} {% block styles %}
   style="
     margin-top: 30px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
   "
 >
   <h3 style="color: brown">Available Products</h3>
-  <a href="/export_products" class="btn">Download CSV</a>
 </div>
 
 <fieldset>
   <legend>Filter Products</legend>
   <div
     class="filter-row"
-    style="display: flex; gap: 10px; align-items: flex-end"
+    style="
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      align-items: flex-end;
+    "
   >
     <div>
       <label>Category</label>
@@ -78,6 +82,22 @@ endblock %} {% block styles %}
     </div>
   </div>
 </fieldset>
+<div style="display: flex; justify-content: center; margin: 20px 0">
+  <a href="/export_products">
+    <button
+      style="
+        background-color: #034078;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      "
+    >
+      ⬇️ Download CSV
+    </button>
+  </a>
+</div>
 
 <div class="table-responsive">
   <table class="table" id="productTable">
