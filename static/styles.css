@@ -640,7 +640,7 @@ button:hover,
     padding: 6px 12px;
     font-size: 14px;
     border: none;
-    background-color: #eee;
+    background-color: #034078;
     border-radius: 4px;
     cursor: pointer;
 }
@@ -822,6 +822,6 @@ button:hover,
     height: 6px;
     border: none;
     border-radius: 3px;
-    margin: 30px 0;
-    background: linear-gradient(to right, #ff6f61, #ffdd57, #28a745, #007bff, #6f42c1);
+    margin: 0 5px;
+    background: linear-gradient(to right, #034078, #ff6f61, #007bff, #28a745, #6f42c1);
 }
