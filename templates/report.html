@@ -195,7 +195,6 @@
     const rows = Array.from(table.querySelectorAll("tbody tr"));
     const totalPages = Math.ceil(rows.length / rowsPerPage);
 
-    // Show current page rows only
     function showPage(page) {
       currentPage = page;
       rows.forEach((row, i) => {
@@ -204,36 +203,33 @@
       updateControls();
     }
 
-    // Build control buttons dynamically
     function updateControls() {
       container.innerHTML = "";
 
-      const createBtn = (text, page, disabled = false) => {
+      const createButton = (label, page, disabled) => {
         const btn = document.createElement("button");
-        btn.textContent = text;
+        btn.textContent = label;
         btn.disabled = disabled;
-        btn.style.margin = "0 5px";
         btn.onclick = () => showPage(page);
         container.appendChild(btn);
       };
 
-      createBtn("First", 1, currentPage === 1);
-      createBtn("« Prev", currentPage - 1, currentPage === 1);
+      createButton("First", 1, currentPage === 1);
+      createButton("« Prev", currentPage - 1, currentPage === 1);
 
       const info = document.createElement("span");
-      info.textContent = ` Page ${currentPage} of ${totalPages} `;
-      info.style.margin = "0 8px";
+      info.textContent = `Page ${currentPage} of ${totalPages}`;
       container.appendChild(info);
 
-      createBtn("Next »", currentPage + 1, currentPage === totalPages);
-      createBtn("Last", totalPages, currentPage === totalPages);
+      createButton("Next »", currentPage + 1, currentPage === totalPages);
+      createButton("Last", totalPages, currentPage === totalPages);
     }
 
-    // Start on page 1
     showPage(currentPage);
   }
 
   window.onload = renderPagination;
 </script>
 {% endblock %}
+
 
