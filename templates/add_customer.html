@@ -54,9 +54,9 @@ ROB Solutions{% endblock %} {% block content %}
         <thead>
           <tr>
             <th>Name</th>
-            <th>Phone</th>
-            <th>Created</th>
-            <th>Action</th>
+            <th style="text-align: center">Phone</th>
+            <th style="text-align: center">Created</th>
+            <th style="text-align: right">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +82,16 @@ ROB Solutions{% endblock %} {% block content %}
         </tbody>
       </table>
     </div>
-    <div class="pagination-controls" id="customer-pagination-controls"></div>
+    <div
+      class="pagination-controls"
+      id="customer-pagination-controls"
+      style="
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        gap: 10px;
+      "
+    ></div>
     {% else %}
     <p>No customers yet.</p>
     {% endif %}
@@ -112,9 +121,13 @@ ROB Solutions{% endblock %} {% block content %}
               <a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a>
             </td>
             <td>{{ row.customer_name }}</td>
-            <td>{{ "{:,.0f}".format(row.amount) }}</td>
-            <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
-            <td>
+            <td style="text-align: right">
+              {{ "{:,.0f}".format(row.amount) }}
+            </td>
+            <td style="text-align: right">
+              {{ "{:,.0f}".format(row.balance or 0) }}
+            </td>
+            <td style="text-align: right">
               {% if row.balance == 0 %}
               <span class="status paid">✅ Paid</span>
               {% elif row.balance < row.amount %}
