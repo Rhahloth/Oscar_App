@@ -24,6 +24,7 @@ endblock %} {% block content %}
 </form>
 {% endif %}
 
+<hr class="gradient-divider" />
 <div class="form-group action-buttons">
   <a href="/products">
     <button>📦 MANAGE PRODUCTS</button>
@@ -39,6 +40,7 @@ endblock %} {% block content %}
   </a>
 </div>
 
+<hr class="gradient-divider" />
 <h5>Recent Transactions</h5>
 <div class="table-responsive">
   <table class="table">
@@ -87,6 +89,7 @@ endblock %} {% block content %}
     </button>
   </a>
 </div>
+<hr class="gradient-divider" />
 
 {% with messages = get_flashed_messages() %} {% if messages %}
 <div class="flash-messages">
