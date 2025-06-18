@@ -55,7 +55,7 @@ body {
 }
 
 .container {
-    max-width: 90%;
+    max-width: 100%;
     margin: 140px auto 0px auto;
     padding: 20px 40px 50px 40px;
     background: #fff;
@@ -124,7 +124,7 @@ button:hover {
 }
 
 .navbar-inner {
-    max-width: 90%;
+    max-width: 100%;
     width: 100%;
     margin: 0 auto;
     background-color: #034078;
