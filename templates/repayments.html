@@ -3,6 +3,7 @@
 
 {% block content %}
 <h2>💳 Credit Repayments</h2>
+<hr class="gradient-divider">
 
 <div class="flex">
   <!-- Filter Card -->
@@ -24,6 +25,7 @@
   <!-- Repayment Form Card -->
   <div class="card">
     <h3>💰 Submit a Repayment</h3>
+    <hr class="gradient-divider">
     <form id="repaymentForm">
       <input type="hidden" name="customer_id" id="customer_id_input" value="{{ selected_customer_id }}">
       <label for="credit_id">Credit Sale</label>
@@ -43,11 +45,11 @@
     </form>
   </div>
 </div>
-<hr class="gradient-divider">
 
 <!-- Customer Credit Summary -->
 <div class="card">
   <h3>🧾 Customer Credit Summary</h3>
+  <hr class="gradient-divider">
   {% if credit_summary %}
   <div class="table-responsive">
     <table class="table">
@@ -83,11 +85,12 @@
     <p>No credit data available.</p>
   {% endif %}
 </div>
-<hr class="gradient-divider">
+
 
 <!-- Repayment History -->
 <div class="card">
   <h3>📜 Recent Repayments</h3>
+  <hr class="gradient-divider">
   {% if repayments %}
   <div class="table-responsive">
     <table class="table">
