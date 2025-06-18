@@ -556,6 +556,7 @@ button:hover {
 }
 
 /* ADD CUSTOMER AND ADD BRANCH STYLES */
+/* Container wrapper for the entire page */
 .page-wrapper {
     display: flex;
     flex-direction: column;
@@ -563,6 +564,7 @@ button:hover {
     padding: 20px;
 }
 
+/* Section card styling */
 .section {
     background: #f9f9f9;
     border-radius: 12px;
@@ -570,18 +572,85 @@ button:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+/* Flex row layout: used for forms with multiple inputs */
 .flex-row {
     display: flex;
-    gap: 30px;
     flex-wrap: wrap;
+    gap: 20px;
     justify-content: space-between;
 }
 
+/* Flex column item */
 .flex-box {
     flex: 1;
-    min-width: 320px;
+    min-width: 280px;
 }
 
+/* Table styling */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.table th,
+.table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Button styles */
+button,
+.btn {
+    background-color: #3478f6;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover,
+.btn:hover {
+    background-color: #245ec9;
+}
+
+/* Button warning for deactivate */
+.btn-warning {
+    background-color: #e74c3c;
+}
+
+.btn-warning:hover {
+    background-color: #c0392b;
+}
+
+/* Pagination styles */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pagination-controls button {
+    padding: 6px 12px;
+    font-size: 14px;
+    border: none;
+    background-color: #eee;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Status indicators */
 .status.paid {
     color: green;
     font-weight: bold;
@@ -595,20 +664,6 @@ button:hover {
 .status.unpaid {
     color: red;
     font-weight: bold;
-}
-
-.pagination-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-top: 20px;
-    font-size: 15px;
-}
-
-.pagination-controls button {
-    padding: 4px 10px;
-    cursor: pointer;
 }
 
 /* Mobile phones (up to 600px) */

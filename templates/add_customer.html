@@ -16,32 +16,33 @@ ROB Solutions{% endblock %} {% block content %}
     </ul>
     {% endif %} {% endwith %}
 
-    <div class="flex-row">
-      <div class="flex-box">
-        <form method="POST">
-          <input type="hidden" name="action" value="add_customer" />
-          <label><strong>Customer Name:</strong></label
-          ><br />
-          <input
-            type="text"
-            name="name"
-            required
-            style="width: 100%"
-          /><br /><br />
+    <form method="POST">
+      <input type="hidden" name="action" value="add_customer" />
 
-          <label><strong>Phone Number:</strong></label
-          ><br />
+      <div class="flex-row">
+        <!-- Column 1: Customer Name -->
+        <div class="flex-box">
+          <label><strong>Customer Name:</strong></label>
+          <input type="text" name="name" required style="width: 100%" />
+        </div>
+
+        <!-- Column 2: Phone Number -->
+        <div class="flex-box">
+          <label><strong>Phone Number:</strong></label>
           <input
             type="text"
             name="phone"
             placeholder="Optional"
             style="width: 100%"
-          /><br /><br />
+          />
+        </div>
 
-          <button type="submit">➕ Add Customer</button>
-        </form>
+        <!-- Column 3: Submit Button -->
+        <div class="flex-box" style="display: flex; align-items: flex-end">
+          <button type="submit" style="width: 100%">➕ Add Customer</button>
+        </div>
       </div>
-    </div>
+    </form>
   </div>
 
   <!-- ✅ Row 2: Customer Table -->
@@ -127,7 +128,16 @@ ROB Solutions{% endblock %} {% block content %}
         </tbody>
       </table>
     </div>
-    <div class="pagination-controls" id="credit-pagination-controls"></div>
+    <div
+      class="pagination-controls"
+      id="credit-pagination-controls"
+      style="
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+        gap: 10px;
+      "
+    ></div>
     {% else %}
     <p>No credit summary available.</p>
     {% endif %}

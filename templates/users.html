@@ -1,72 +1,86 @@
 {% extends "layout.html" %} {% block title %}ROB Solutions - Manage Branches{%
 endblock %} {% block content %}
-<h4>Add a Branch</h4>
 <div class="page-wrapper">
+  <!-- Add New Branch Section -->
   <div class="section">
     <h3>🏢 Add New Branch</h3>
     <form method="POST">
-      <div class="form-group" style="margin-bottom: 16px">
-        <label>Username</label>
-        <input type="text" name="username" required />
+      <div class="flex-row">
+        <!-- Username -->
+        <div class="flex-box">
+          <label>Username</label>
+          <input type="text" name="username" required style="width: 100%" />
+        </div>
+
+        <!-- Password -->
+        <div class="flex-box">
+          <label>Password</label>
+          <input type="password" name="password" required style="width: 100%" />
+        </div>
+
+        <!-- Submit -->
+        <div class="flex-box" style="display: flex; align-items: flex-end">
+          <button type="submit" style="width: 100%">➕ Add Branch</button>
+        </div>
       </div>
-      <div class="form-group" style="margin-bottom: 16px">
-        <label>Password</label>
-        <input type="password" name="password" required />
-      </div>
-      <button type="submit">➕ Add Branch</button>
     </form>
   </div>
-</div>
 
-<h5>Existing Branches</h5>
-<div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Branch Id</th>
-        <th>Branch Name</th>
-        <th>Role</th>
-        <th>Reset Password</th>
-        <th>Deactivate User</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user in users %}
-      <tr>
-        <td>{{user.id}}</td>
-        <td>{{ user.username }}</td>
-        <td>{{ user.role }}</td>
-        <td>
-          <form
-            method="POST"
-            action="/reset_password"
-            onsubmit="return confirm('Reset password for {{ user.username }}?');"
-          >
-            <input type="hidden" name="user_id" value="{{ user.id }}" />
-            <button type="submit">Reset</button>
-          </form>
-        </td>
-        <td>
-          <form
-            method="POST"
-            action="/delete_user"
-            onsubmit="return confirm('Are you sure you want to deactivate this user?');"
-          >
-            <input type="hidden" name="user_id" value="{{ user.id }}" />
-            <button type="submit" class="btn btn-warning">🚫 Deactivate</button>
-          </form>
-        </td>
-        <td>
-          {% if user.is_active %}
-          <span class="status paid">Active</span>
-          {% else %}
-          <span class="status unpaid">Deactivated</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <!-- Existing Branches Table -->
+  <div class="section">
+    <h4>📋 Existing Branches</h4>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Branch Id</th>
+            <th>Branch Name</th>
+            <th>Role</th>
+            <th>Reset Password</th>
+            <th>Deactivate User</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.role }}</td>
+            <td>
+              <form
+                method="POST"
+                action="/reset_password"
+                onsubmit="return confirm('Reset password for {{ user.username }}?');"
+              >
+                <input type="hidden" name="user_id" value="{{ user.id }}" />
+                <button type="submit">Reset</button>
+              </form>
+            </td>
+            <td>
+              <form
+                method="POST"
+                action="/delete_user"
+                onsubmit="return confirm('Are you sure you want to deactivate this user?');"
+              >
+                <input type="hidden" name="user_id" value="{{ user.id }}" />
+                <button type="submit" class="btn btn-warning">
+                  🚫 Deactivate
+                </button>
+              </form>
+            </td>
+            <td>
+              {% if user.is_active %}
+              <span class="status paid">Active</span>
+              {% else %}
+              <span class="status unpaid">Deactivated</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 {% endblock %}
