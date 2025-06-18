@@ -1,47 +1,55 @@
 {% extends "layout.html" %} {% block title %}Manage Customers & Credit Summary -
 ROB Solutions{% endblock %} {% block content %}
-<h2>👥 Manage Customers</h2>
 
-{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
-%}
-<ul>
-  {% for category, message in messages %}
-  <li style="color: {{ 'green' if category == 'success' else 'red' }}">
-    {{ message }}
-  </li>
-  {% endfor %}
-</ul>
-{% endif %} {% endwith %}
+<div class="page-wrapper">
+  <!-- ✅ Row 1: Add Customer Form -->
+  <div class="section">
+    <h2>👥 Add New Customer</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <ul>
+      {% for category, message in messages %}
+      <li style="color: {{ 'green' if category == 'success' else 'red' }}">
+        {{ message }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %} {% endwith %}
 
-<div class="flex-container">
-  <!-- Left: Add New Customer -->
-  <div class="flex-child">
-    <h4>➕ Add New Customer</h4>
-    <form method="POST">
-      <input type="hidden" name="action" value="add_customer" />
-      <label><strong>Customer Name:</strong></label
-      ><br />
-      <input type="text" name="name" required style="width: 100%" /><br /><br />
+    <div class="flex-row">
+      <div class="flex-box">
+        <form method="POST">
+          <input type="hidden" name="action" value="add_customer" />
+          <label><strong>Customer Name:</strong></label
+          ><br />
+          <input
+            type="text"
+            name="name"
+            required
+            style="width: 100%"
+          /><br /><br />
 
-      <label><strong>Phone Number:</strong></label
-      ><br />
-      <input
-        type="text"
-        name="phone"
-        placeholder="Optional"
-        style="width: 100%"
-      /><br /><br />
+          <label><strong>Phone Number:</strong></label
+          ><br />
+          <input
+            type="text"
+            name="phone"
+            placeholder="Optional"
+            style="width: 100%"
+          /><br /><br />
 
-      <button type="submit">➕ Add Customer</button>
-    </form>
+          <button type="submit">➕ Add Customer</button>
+        </form>
+      </div>
+    </div>
   </div>
 
-  <!-- Right: Active Customers -->
-  <div class="flex-child">
-    <h4>📋 Active Customers</h4>
+  <!-- ✅ Row 2: Customer Table -->
+  <div class="section">
+    <h2>📋 Active Customers</h2>
     {% if customers %}
     <div class="table-responsive">
-      <table class="table">
+      <table class="table" id="customerTable">
         <thead>
           <tr>
             <th>Name</th>
@@ -73,67 +81,81 @@ ROB Solutions{% endblock %} {% block content %}
         </tbody>
       </table>
     </div>
+    <div class="pagination-controls" id="customer-pagination-controls"></div>
     {% else %}
     <p>No customers yet.</p>
     {% endif %}
   </div>
-</div>
 
-<hr />
-
-<!-- ✅ Credit Summary -->
-<h4>💳 Credit Summary by Batch</h4>
-{% if credit_summary %}
-<div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Batch No</th>
-        <th>Customer</th>
-        <th>Total Credit (UGX)</th>
-        <th>Balance (UGX)</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for row in credit_summary %}
-      <tr>
-        <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
-        <td>
-          <a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a>
-        </td>
-        <td>{{ row.customer_name }}</td>
-        <td>{{ "{:,.0f}".format(row.amount) }}</td>
-        <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
-        <td>
-          {% if row.balance == 0 %}
-          <span class="status paid">✅ Paid</span>
-          {% elif row.balance < row.amount %}
-          <span class="status partial">🟡 Partial</span>
-          {% else %}
-          <span class="status unpaid">❌ Unpaid</span>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <!-- ✅ Row 3: Credit Summary Table -->
+  <div class="section">
+    <h2>💳 Credit Summary by Batch</h2>
+    {% if credit_summary %}
+    <div class="table-responsive">
+      <table class="table" id="creditTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Batch No</th>
+            <th>Customer</th>
+            <th>Total Credit (UGX)</th>
+            <th>Balance (UGX)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in credit_summary %}
+          <tr>
+            <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <a href="/batch_sales/{{ row.batch_no }}">{{ row.batch_no }}</a>
+            </td>
+            <td>{{ row.customer_name }}</td>
+            <td>{{ "{:,.0f}".format(row.amount) }}</td>
+            <td>{{ "{:,.0f}".format(row.balance or 0) }}</td>
+            <td>
+              {% if row.balance == 0 %}
+              <span class="status paid">✅ Paid</span>
+              {% elif row.balance < row.amount %}
+              <span class="status partial">🟡 Partial</span>
+              {% else %}
+              <span class="status unpaid">❌ Unpaid</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination-controls" id="credit-pagination-controls"></div>
+    {% else %}
+    <p>No credit summary available.</p>
+    {% endif %}
+  </div>
 </div>
-{% else %}
-<p>No credit summary available.</p>
-{% endif %}
 
 <style>
-  .flex-container {
+  .page-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 20px;
+  }
+  .section {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+  .flex-row {
     display: flex;
     gap: 30px;
     flex-wrap: wrap;
-    margin-top: 20px;
+    justify-content: space-between;
   }
-  .flex-child {
+  .flex-box {
     flex: 1;
-    min-width: 300px;
+    min-width: 320px;
   }
   .status.paid {
     color: green;
@@ -147,5 +169,61 @@ ROB Solutions{% endblock %} {% block content %}
     color: red;
     font-weight: bold;
   }
+  .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+    font-size: 15px;
+  }
+  .pagination-controls button {
+    padding: 4px 10px;
+    cursor: pointer;
+  }
 </style>
+
+<script>
+  function paginate(tableId, controlId, rowsPerPage = 10) {
+    const table = document.getElementById(tableId);
+    const tbody = table.querySelector("tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+    let currentPage = 1;
+
+    function showPage(page) {
+      rows.forEach((row, i) => {
+        row.style.display =
+          i >= (page - 1) * rowsPerPage && i < page * rowsPerPage ? "" : "none";
+      });
+
+      const controls = document.getElementById(controlId);
+      controls.innerHTML = "";
+
+      const prev = document.createElement("button");
+      prev.textContent = "⟨ Prev";
+      prev.disabled = page === 1;
+      prev.onclick = () => showPage(currentPage - 1);
+
+      const info = document.createElement("span");
+      info.textContent = `${page} of ${totalPages}`;
+
+      const next = document.createElement("button");
+      next.textContent = "Next ⟩";
+      next.disabled = page === totalPages;
+      next.onclick = () => showPage(currentPage + 1);
+
+      controls.append(prev, info, next);
+      currentPage = page;
+    }
+
+    showPage(currentPage);
+  }
+
+  window.onload = function () {
+    paginate("customerTable", "customer-pagination-controls", 10);
+    paginate("creditTable", "credit-pagination-controls", 10);
+  };
+</script>
+
 {% endblock %}
