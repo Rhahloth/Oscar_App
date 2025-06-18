@@ -822,6 +822,6 @@ button:hover,
     height: 6px;
     border: none;
     border-radius: 3px;
-    margin: 10px 10px;
+    margin: 6px 6px;
     background: linear-gradient(to right, #034078, #ff6f61, #007bff, #28a745, #6f42c1);
 }
