@@ -63,9 +63,11 @@ ROB Solutions{% endblock %} {% block content %}
           {% for c in customers %}
           <tr>
             <td>{{ c.name }}</td>
-            <td>{{ c.phone or '—' }}</td>
-            <td>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td style="text-align: center">{{ c.phone or '—' }}</td>
             <td style="text-align: center">
+              {{ c.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </td>
+            <td style="text-align: right">
               <form method="POST" style="display: inline">
                 <input type="hidden" name="action" value="toggle_status" />
                 <input type="hidden" name="customer_id" value="{{ c.id }}" />
@@ -108,9 +110,9 @@ ROB Solutions{% endblock %} {% block content %}
             <th>Date</th>
             <th>Batch No</th>
             <th>Customer</th>
-            <th>Total Credit (UGX)</th>
-            <th>Balance (UGX)</th>
-            <th>Status</th>
+            <th style="text-align: right">Total Credit (UGX)</th>
+            <th style="text-align: right">Balance (UGX)</th>
+            <th style="text-align: right">Status</th>
           </tr>
         </thead>
         <tbody>
