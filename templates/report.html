@@ -184,34 +184,56 @@
 
 {% block scripts %}
 <script>
-  const totalPages = {{ total_pages }};
-  let currentPage = {{ current_page }};
+  const rowsPerPage = 10;
+  let currentPage = 1;
 
   function renderPagination() {
+    const table = document.getElementById("distributionLogTable");
     const container = document.getElementById("distribution-pagination-controls");
-    container.innerHTML = "";
+    if (!table || !container) return;
 
-    if (totalPages <= 1) return;
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
 
-    const addButton = (label, page, disabled = false) => {
-      const btn = document.createElement("a");
-      btn.textContent = label;
-      btn.href = `?page=${page}`;
-      btn.style.margin = "0 5px";
-      btn.className = disabled ? "disabled" : "";
-      btn.style.pointerEvents = disabled ? "none" : "auto";
-      container.appendChild(btn);
-    };
+    // Show current page rows only
+    function showPage(page) {
+      currentPage = page;
+      rows.forEach((row, i) => {
+        row.style.display = (i >= (page - 1) * rowsPerPage && i < page * rowsPerPage) ? "" : "none";
+      });
+      updateControls();
+    }
 
-    addButton("First", 1, currentPage === 1);
-    addButton("« Prev", currentPage - 1, currentPage === 1);
-    const info = document.createElement("span");
-    info.textContent = ` Page ${currentPage} of ${totalPages} `;
-    container.appendChild(info);
-    addButton("Next »", currentPage + 1, currentPage === totalPages);
-    addButton("Last", totalPages, currentPage === totalPages);
+    // Build control buttons dynamically
+    function updateControls() {
+      container.innerHTML = "";
+
+      const createBtn = (text, page, disabled = false) => {
+        const btn = document.createElement("button");
+        btn.textContent = text;
+        btn.disabled = disabled;
+        btn.style.margin = "0 5px";
+        btn.onclick = () => showPage(page);
+        container.appendChild(btn);
+      };
+
+      createBtn("First", 1, currentPage === 1);
+      createBtn("« Prev", currentPage - 1, currentPage === 1);
+
+      const info = document.createElement("span");
+      info.textContent = ` Page ${currentPage} of ${totalPages} `;
+      info.style.margin = "0 8px";
+      container.appendChild(info);
+
+      createBtn("Next »", currentPage + 1, currentPage === totalPages);
+      createBtn("Last", totalPages, currentPage === totalPages);
+    }
+
+    // Start on page 1
+    showPage(currentPage);
   }
 
   window.onload = renderPagination;
 </script>
 {% endblock %}
+
