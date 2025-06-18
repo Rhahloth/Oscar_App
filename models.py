@@ -209,15 +209,6 @@ def initialize_database():
         );
 
     ''')
-    cur.execute("""
-        UPDATE user_inventory
-        SET quantity = 0
-        WHERE user_id = %s
-        AND product_id IN (
-            SELECT id FROM products WHERE business_id = %s
-        )
-    """, (17, 2))
-
 
     conn.commit()
     cur.close()
