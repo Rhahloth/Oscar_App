@@ -184,47 +184,34 @@
 
 {% block scripts %}
 <script>
-  function paginate(tableId, controlId, rowsPerPage = 10) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
+  const totalPages = {{ total_pages }};
+  let currentPage = {{ current_page }};
 
-    const tbody = table.querySelector("tbody");
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const totalPages = Math.ceil(rows.length / rowsPerPage);
-    let currentPage = 1;
+  function renderPagination() {
+    const container = document.getElementById("distribution-pagination-controls");
+    container.innerHTML = "";
 
-    function showPage(page) {
-      // Show only the rows for the current page
-      rows.forEach((row, i) => {
-        row.style.display = (i >= (page - 1) * rowsPerPage && i < page * rowsPerPage) ? "" : "none";
-      });
+    if (totalPages <= 1) return;
 
-      const controls = document.getElementById(controlId);
-      controls.innerHTML = "";
+    const addButton = (label, page, disabled = false) => {
+      const btn = document.createElement("a");
+      btn.textContent = label;
+      btn.href = `?page=${page}`;
+      btn.style.margin = "0 5px";
+      btn.className = disabled ? "disabled" : "";
+      btn.style.pointerEvents = disabled ? "none" : "auto";
+      container.appendChild(btn);
+    };
 
-      const prev = document.createElement("button");
-      prev.textContent = "⟨ Prev";
-      prev.disabled = page === 1;
-      prev.onclick = () => showPage(currentPage - 1);
-
-      const info = document.createElement("span");
-      info.textContent = ` ${page} of ${totalPages} `;
-      info.style.margin = "0 10px";
-
-      const next = document.createElement("button");
-      next.textContent = "Next ⟩";
-      next.disabled = page === totalPages;
-      next.onclick = () => showPage(currentPage + 1);
-
-      controls.append(prev, info, next);
-      currentPage = page;
-    }
-
-    showPage(currentPage);
+    addButton("First", 1, currentPage === 1);
+    addButton("« Prev", currentPage - 1, currentPage === 1);
+    const info = document.createElement("span");
+    info.textContent = ` Page ${currentPage} of ${totalPages} `;
+    container.appendChild(info);
+    addButton("Next »", currentPage + 1, currentPage === totalPages);
+    addButton("Last", totalPages, currentPage === totalPages);
   }
 
-  window.onload = function () {
-    paginate("distributionLogTable", "distribution-pagination-controls", 10);
-  };
+  window.onload = renderPagination;
 </script>
 {% endblock %}
