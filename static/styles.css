@@ -208,6 +208,8 @@ button:hover {
 
 /* FILTER SECTION */
 .report-filters {
+    justify-content: center;
+    display: flex;
     background: #f9f9f9;
     padding: 20px;
     margin-bottom: 25px;
@@ -216,7 +218,6 @@ button:hover {
 }
 
 .filter-row {
-    justify-content: center;
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
@@ -299,36 +300,31 @@ button:hover {
     color: #034078;
 }
 
-/* FLEX ROW (CHART + TABLES) */
+.gradient-divider {
+    height: 6px;
+    border: none;
+    border-radius: 3px;
+    margin: 30px 0;
+    background: linear-gradient(to right, #ff6f61, #ffdd57, #28a745, #007bff, #6f42c1);
+}
+
 .flex-row {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: center;
     align-items: flex-start;
     gap: 40px;
-    /* increased spacing */
     margin-top: 40px;
 }
 
-.flex-left-narrow,
-.flex-right-wide {
+.flex-left-narrow {
     background: #fff;
-    padding: 10px;
+    padding: 16px;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Shrink tables slightly to allow room for chart */
-.flex-left-narrow {
     flex: 1;
-    min-width: 260px;
-    max-width: 25%;
-}
-
-.flex-right-wide {
-    flex: 2;
-    min-width: 320px;
-    max-width: 50%;
+    min-width: 280px;
+    max-width: 400px;
 }
 
 @media (max-width: 992px) {

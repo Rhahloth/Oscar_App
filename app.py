@@ -1783,7 +1783,7 @@ def report():
     top_product_query += '''
         GROUP BY p.name
         ORDER BY total_qty_sold DESC
-        LIMIT 10
+        LIMIT 5
     '''
     cur.execute(top_product_query, top_product_params)
     top_products = cur.fetchall()
@@ -1811,7 +1811,7 @@ def report():
     low_product_query += '''
         GROUP BY p.name
         ORDER BY total_qty_sold ASC
-        LIMIT 10
+        LIMIT 5
     '''
     cur.execute(low_product_query, low_product_params)
     low_products = cur.fetchall()
