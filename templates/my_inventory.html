@@ -11,7 +11,7 @@
   </div>
 </div>
 
-<h4>My Current Inventory</h4>
+<h3>My Current Inventory</h3>
 
 <form method="GET" action="/my_inventory" class="report-filters">
   <fieldset>
@@ -38,6 +38,7 @@
     </div>
   </fieldset>
 </form>
+<hr class="gradient-divider">
 
 <div class="summary-container">
   <div class="summary-card">
@@ -49,6 +50,7 @@
     <p>UGX {{ "{:,.0f}".format(total_worth or 0) }}</p>
   </div>
 </div>
+<hr class="gradient-divider">
 
 {% if inventory %}
 <div class="table-responsive">
@@ -77,6 +79,7 @@
     </tbody>
   </table>
 </div>
+<hr class="gradient-divider">
 
 <!-- Updated Pagination Style -->
 <div style="text-align: center; margin-top: 20px;" id="pagination-controls"></div>
