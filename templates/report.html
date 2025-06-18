@@ -107,7 +107,15 @@
     </table>
   </div>
 
-  <!-- Flex Row: Top Products | Chart | Low Products -->
+  <!-- Export -->
+  <form action="/export_report" method="POST" style="margin-top: 25px; text-align: center;">
+    <input type="hidden" name="start_date" value="{{ request.form.start_date }}">
+    <input type="hidden" name="end_date" value="{{ request.form.end_date }}">
+    <input type="hidden" name="salesperson" value="{{ request.form.salesperson }}">
+    <button style="background-color: #0d6efd;">📥 Export to CSV</button>
+  </form>
+
+  <!-- Flex Row: Top Products | Low Products -->
   <div class="flex-row">
     <div class="flex-left-narrow">
       <h3>🔥 Top Selling Products</h3>
@@ -119,10 +127,6 @@
           </tbody>
         </table>
       </div>
-    </div>
-    <div class="flex-right-wide">
-      <h3 style="text-align: center;">📊 Revenue by Salesperson</h3>
-      <canvas id="salesChart" style="width: 100%; height: auto; max-height: 300px;"></canvas>
     </div>
     <div class="flex-left-narrow">
       <h3>📉 Low Selling Products</h3>
@@ -136,14 +140,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Export -->
-  <form action="/export_report" method="POST" style="margin-top: 25px; text-align: center;">
-    <input type="hidden" name="start_date" value="{{ request.form.start_date }}">
-    <input type="hidden" name="end_date" value="{{ request.form.end_date }}">
-    <input type="hidden" name="salesperson" value="{{ request.form.salesperson }}">
-    <button style="background-color: #0d6efd;">📥 Export to CSV</button>
-  </form>
 
   <!-- Distribution Log -->
   <h3 style="margin-top: 40px; color: #034078;">🚚 Stock Distribution Log</h3>
@@ -179,38 +175,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  const rawData = {{ report | tojson }};
-  const revenueBySalesperson = {};
-  rawData.forEach(row => {
-    const sp = row.salesperson;
-    const revenue = row.total_selling_price || 0;
-    if (!revenueBySalesperson[sp]) revenueBySalesperson[sp] = 0;
-    revenueBySalesperson[sp] += revenue;
-  });
-
-  const labels = Object.keys(revenueBySalesperson);
-  const values = Object.values(revenueBySalesperson);
-
-  new Chart(document.getElementById('salesChart'), {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Total Revenue by Salesperson (UGX)',
-        data: values,
-        backgroundColor: '#034078'
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: { y: { beginAtZero: true } }
-    }
-  });
-</script>
-
 <script>
   const rowsPerPage = 10;
   let currentPage = 1;

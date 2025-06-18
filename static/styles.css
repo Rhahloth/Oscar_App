@@ -215,12 +215,12 @@ button:hover {
     border-radius: 8px;
 }
 
-.flex-row {
+.filter-row {
+    justify-content: center;
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 30px;
-    margin-top: 40px;
+    gap: 20px;
+    align-items: flex-end;
 }
 
 .flex-left-narrow,
