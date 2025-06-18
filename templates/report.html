@@ -149,59 +149,69 @@
   <!-- Distribution Log -->
   
   <h3 style="margin-top: 40px; color: #034078;">🚚 Stock Distribution Log</h3>
-<hr class="gradient-divider">
-<div class="table-responsive">
-  <table class="table" id="distributionLogTable">
-    <thead>
-      <tr style="background-color: #6c757d; color: white;">
-        <th>Time</th>
-        <th>Product</th>
-        <th>From (Salesperson)</th>
-        <th>To (Salesperson)</th>
-        <th>Quantity</th>
-        <th>Status</th>
-        <th>Total Value (UGX)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for dist in distribution_log %}
-      <tr>
-        <td>{{ dist.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
-        <td>{{ dist.product_name }}</td>
-        <td>{{ dist.from_salesperson }}</td>
-        <td>{{ dist.to_salesperson }}</td>
-        <td>{{ dist.quantity }}</td>
-        <td>{{ dist.status }}</td>
-        <td>{{ "{:,.0f}".format(dist.value_ugx or 0) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  <hr class="gradient-divider">
+  <div class="table-responsive">
+    <table class="table" id="distributionLogTable">
+      <thead>
+        <tr style="background-color: #6c757d; color: white;">
+          <th>Time</th>
+          <th>Product</th>
+          <th>From (Salesperson)</th>
+          <th>To (Salesperson)</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Total Value (UGX)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dist in distribution_log %}
+        <tr>
+          <td>{{ dist.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ dist.product_name }}</td>
+          <td>{{ dist.from_salesperson }}</td>
+          <td>{{ dist.to_salesperson }}</td>
+          <td>{{ dist.quantity }}</td>
+          <td>{{ dist.status }}</td>
+          <td>{{ "{:,.0f}".format(dist.value_ugx or 0) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div id="distribution-pagination-controls" style="display: flex; justify-content: center; margin-top: 20px; gap: 10px;"></div>
+  <hr class="gradient-divider">
+{% endblock %}
 
-<!-- Server-side Pagination Controls -->
-<div class="pagination-controls" style="display: flex; justify-content: center; margin-top: 20px; gap: 10px;">
-  {% set query_params = request.args.to_dict() %}
-  {% set query_params.pop('page', None) %}
-  {% set base_url = request.path + '?' + '&'.join(f"{key}={value}" for key, value in query_params.items()) %}
+{% block scripts %}
+<script>
+  const totalPages = {{ total_pages }};
+  let currentPage = {{ current_page }};
 
-  <a href="{{ base_url }}&page=1">
-    <button {% if current_page == 1 %}disabled{% endif %}>First</button>
-  </a>
-  <a href="{{ base_url }}&page={{ current_page - 1 }}">
-    <button {% if current_page == 1 %}disabled{% endif %}>« Prev</button>
-  </a>
+  function renderPagination() {
+    const container = document.getElementById("distribution-pagination-controls");
+    container.innerHTML = "";
 
-  <span style="align-self: center; font-weight: bold;">Page {{ current_page }} of {{ total_pages }}</span>
+    if (totalPages <= 1) return;
 
-  <a href="{{ base_url }}&page={{ current_page + 1 }}">
-    <button {% if current_page == total_pages %}disabled{% endif %}>Next »</button>
-  </a>
-  <a href="{{ base_url }}&page={{ total_pages }}">
-    <button {% if current_page == total_pages %}disabled{% endif %}>Last</button>
-  </a>
-</div>
-<hr class="gradient-divider">
+    const addButton = (label, page, disabled = false) => {
+      const btn = document.createElement("a");
+      btn.textContent = label;
+      btn.href = `?page=${page}`;
+      btn.style.margin = "0 5px";
+      btn.className = disabled ? "disabled" : "";
+      btn.style.pointerEvents = disabled ? "none" : "auto";
+      container.appendChild(btn);
+    };
 
+    addButton("First", 1, currentPage === 1);
+    addButton("« Prev", currentPage - 1, currentPage === 1);
+    const info = document.createElement("span");
+    info.textContent = ` Page ${currentPage} of ${totalPages} `;
+    container.appendChild(info);
+    addButton("Next »", currentPage + 1, currentPage === totalPages);
+    addButton("Last", totalPages, currentPage === totalPages);
+  }
 
-
+  window.onload = renderPagination;
+</script>
+{% endblock %}
