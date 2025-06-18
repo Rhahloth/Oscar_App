@@ -2,7 +2,7 @@
 {% block title %}Report Dashboard - ROB Solutions{% endblock %}
 
 {% block content %}
-  <h2>📊 Sales Report Dashboard</h2>
+  <h2 style="text-align: center; margin-top: 20px;">📊 Sales Report Dashboard</h2>
 
   <!-- Quick Access -->
   <div class="form-group action-buttons" style="justify-content: center;">
@@ -23,7 +23,7 @@
           <label>End Date</label>
           <input type="date" name="end_date" value="{{ request.form.end_date or '' }}">
         </div>
-        
+
         <div class="filter-item">
           <label>Salesperson</label>
           <select name="salesperson">
@@ -41,10 +41,6 @@
             <option value="Credit" {% if request.form.payment_method == 'Credit' %}selected{% endif %}>Credit</option>
           </select>
         </div>
-        <div class="filter-item" style="align-self: flex-end">
-          <button type="submit">Apply Filter</button>
-        </div>
-
         <div class="filter-item">
           <label>Quick Date</label>
           <select name="quick_range" onchange="this.form.submit()">
@@ -56,6 +52,9 @@
             <option value="this_month" {% if quick_range == 'this_month' %}selected{% endif %}>This Month</option>
             <option value="last_month" {% if quick_range == 'last_month' %}selected{% endif %}>Last Month</option>
           </select>
+        </div>
+        <div class="filter-item">
+          <button type="submit">Apply Filter</button>
         </div>
       </div>
     </fieldset>
@@ -109,66 +108,52 @@
     </table>
   </div>
 
-<!-- Flex Row: Top Products | Chart | Low Products -->
-<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 20px; margin-top: 30px;">
+  <!-- Flex Row: Top Products | Chart | Low Products -->
+  <div class="flex-row">
 
-  <!-- 🔥 Top Selling Products -->
-  <div style="flex: 1; min-width: 280px;">
-    <h3>🔥 Top Selling Products</h3>
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Qty Sold</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in top_products %}
-          <tr>
-            <td>{{ p.product_name }}</td>
-            <td>{{ p.total_qty_sold or 0 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <!-- 🔥 Top Selling Products -->
+    <div class="flex-left-narrow">
+      <h3>🔥 Top Selling Products</h3>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr><th>Product</th><th>Qty Sold</th></tr>
+          </thead>
+          <tbody>
+            {% for p in top_products %}
+            <tr><td>{{ p.product_name }}</td><td>{{ p.total_qty_sold or 0 }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 📊 Chart -->
+    <div class="flex-right-wide">
+      <h3 style="text-align: center;">📊 Revenue by Salesperson</h3>
+      <canvas id="salesChart" style="max-height: 300px; width: 100%;"></canvas>
+    </div>
+
+    <!-- 📉 Low Selling Products -->
+    <div class="flex-left-narrow">
+      <h3>📉 Low Selling Products</h3>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr><th>Product</th><th>Qty Sold</th></tr>
+          </thead>
+          <tbody>
+            {% for p in low_products %}
+            <tr><td>{{ p.product_name }}</td><td>{{ p.total_qty_sold or 0 }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-
-  <!-- 📊 Chart (Centered Panel) -->
-  <div style="flex: 1.2; min-width: 300px;">
-    <h3 style="text-align: center;">📊 Revenue by Salesperson</h3>
-    <canvas id="salesChart" style="max-height: 300px; width: 100%;"></canvas>
-  </div>
-
-  <!-- 📉 Low Selling Products -->
-  <div style="flex: 1; min-width: 280px;">
-    <h3>📉 Low Selling Products</h3>
-    <div class="table-responsive">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Qty Sold</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in low_products %}
-          <tr>
-            <td>{{ p.product_name }}</td>
-            <td>{{ p.total_qty_sold or 0 }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-</div>
-
 
   <!-- Export to CSV -->
-  <form action="/export_report" method="POST" style="margin-top: 15px;">
+  <form action="/export_report" method="POST" style="margin-top: 15px; text-align: center;">
     <input type="hidden" name="start_date" value="{{ request.form.start_date }}">
     <input type="hidden" name="end_date" value="{{ request.form.end_date }}">
     <input type="hidden" name="salesperson" value="{{ request.form.salesperson }}">
@@ -206,7 +191,6 @@
     </table>
   </div>
 
-  <!-- Distribution Log Pagination -->
   <div id="distribution-pagination-controls" style="text-align: center; margin-top: 20px;"></div>
 {% endblock %}
 
@@ -260,37 +244,21 @@
     const controls = document.getElementById("distribution-pagination-controls");
     controls.innerHTML = "";
 
-    const first = document.createElement("button");
-    first.textContent = "First";
-    first.disabled = currentPage === 1;
-    first.onclick = () => { currentPage = 1; paginateDistributionTable(); };
-    controls.appendChild(first);
+    const createButton = (text, page, disabled) => {
+      const btn = document.createElement("button");
+      btn.textContent = text;
+      btn.disabled = disabled;
+      btn.onclick = () => { currentPage = page; paginateDistributionTable(); };
+      controls.appendChild(btn);
+    };
 
-    const prev = document.createElement("button");
-    prev.textContent = "« Prev";
-    prev.disabled = currentPage === 1;
-    prev.onclick = () => { currentPage--; paginateDistributionTable(); };
-    controls.appendChild(prev);
-
-    const info = document.createElement("span");
-    info.innerHTML = ` Page ${currentPage} of ${totalPages} `;
-    controls.appendChild(info);
-
-    const next = document.createElement("button");
-    next.textContent = "Next »";
-    next.disabled = currentPage === totalPages;
-    next.onclick = () => { currentPage++; paginateDistributionTable(); };
-    controls.appendChild(next);
-
-    const last = document.createElement("button");
-    last.textContent = "Last";
-    last.disabled = currentPage === totalPages;
-    last.onclick = () => { currentPage = totalPages; paginateDistributionTable(); };
-    controls.appendChild(last);
+    createButton("First", 1, currentPage === 1);
+    createButton("« Prev", currentPage - 1, currentPage === 1);
+    controls.appendChild(document.createTextNode(` Page ${currentPage} of ${totalPages} `));
+    createButton("Next »", currentPage + 1, currentPage === totalPages);
+    createButton("Last", totalPages, currentPage === totalPages);
   }
 
-  window.onload = () => {
-    paginateDistributionTable();
-  };
+  window.onload = paginateDistributionTable;
 </script>
 {% endblock %}
