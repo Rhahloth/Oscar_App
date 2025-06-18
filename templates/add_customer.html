@@ -134,55 +134,6 @@ ROB Solutions{% endblock %} {% block content %}
   </div>
 </div>
 
-<style>
-  .page-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    padding: 20px;
-  }
-  .section {
-    background: #f9f9f9;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
-  .flex-row {
-    display: flex;
-    gap: 30px;
-    flex-wrap: wrap;
-    justify-content: space-between;
-  }
-  .flex-box {
-    flex: 1;
-    min-width: 320px;
-  }
-  .status.paid {
-    color: green;
-    font-weight: bold;
-  }
-  .status.partial {
-    color: orange;
-    font-weight: bold;
-  }
-  .status.unpaid {
-    color: red;
-    font-weight: bold;
-  }
-  .pagination-controls {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-top: 20px;
-    font-size: 15px;
-  }
-  .pagination-controls button {
-    padding: 4px 10px;
-    cursor: pointer;
-  }
-</style>
-
 <script>
   function paginate(tableId, controlId, rowsPerPage = 10) {
     const table = document.getElementById(tableId);
