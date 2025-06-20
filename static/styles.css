@@ -862,6 +862,27 @@ body {
     }
 }
 
+/* Add customer style */
+@media (max-width: 600px) {
+    .flex-row {
+        flex-direction: column;
+    }
+
+    .flex-box {
+        width: 100%;
+    }
+
+    .page-wrapper {
+        padding: 0 12px;
+    }
+
+    .table-responsive .table {
+        display: block;
+        min-width: 600px;
+        overflow-x: auto;
+    } }
+
+
 /* ✅ DARK MODE RULES */
 body.dark-mode {
     background-color: #121212;
