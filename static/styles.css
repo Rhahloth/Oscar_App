@@ -409,12 +409,13 @@ button:hover {
     flex: 1;
     min-width: 200px;
     padding: 20px;
+    background: #f9f9f9;
     border: 1px solid #ccc;
     border-radius: 10px;
+    background: linear-gradient(to bottom, #ffffff, #f9f9f9);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
     transition: transform 0.2s ease;
     text-align: center;
-    background: linear-gradient(to bottom, #ffffff, #f9f9f9);
 }
 
 .summary-card h4 {
