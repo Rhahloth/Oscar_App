@@ -825,3 +825,36 @@ button:hover,
     margin: 6px 6px;
     background: linear-gradient(to right, #034078, #ff6f61, #007bff, #28a745, #6f42c1);
 }
+
+body.dark-mode {
+    background-color: #121212;
+    color: #f5f5f5;
+}
+
+.dark-mode .navbar,
+.dark-mode .navbar-inner,
+.dark-mode .container,
+.dark-mode .card,
+.dark-mode .section {
+    background-color: #1e1e1e;
+    color: #f5f5f5;
+    border-color: #444;
+}
+
+.dark-mode button {
+    background-color: #2d2d2d;
+    color: #fff;
+    border: 1px solid #555;
+}
+
+.dark-mode a {
+    color: #90caf9;
+}
+
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select {
+    background-color: #2a2a2a;
+    color: #f5f5f5;
+    border: 1px solid #666;
+}

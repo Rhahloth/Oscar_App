@@ -64,6 +64,9 @@
             >
               Logout
             </button>
+
+            <!-- 🌓 Dark Mode Toggle -->
+            <button onclick="toggleDarkMode()">🌓 Toggle Dark Mode</button>
             {% endif %}
           </div>
         </div>
@@ -82,7 +85,6 @@
     <!-- Service Worker & Offline Preload -->
     <script>
       document.addEventListener("DOMContentLoaded", () => {
-        // ✅ Register Service Worker
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
             .register("/sw.js")
@@ -90,7 +92,6 @@
             .catch((err) => console.error("❌ Service Worker failed", err));
         }
 
-        // ✅ Preload offline data if salesperson
         {% if session.role == 'salesperson' %}
         fetch("/offline_data")
           .then((res) => res.json())
@@ -98,16 +99,16 @@
             localStorage.setItem("products", JSON.stringify(data.products));
             localStorage.setItem("customers", JSON.stringify(data.customers));
             localStorage.setItem("branch_name", data.branch_name);
-            console.log("✅ Products, customers, and branch preloaded into localStorage");
+            console.log("✅ Offline data loaded");
           })
           .catch((err) => {
-            console.error("❌ Failed to preload data for offline use:", err);
+            console.error("❌ Offline data preload failed:", err);
           });
         {% endif %}
       });
     </script>
 
-    <!-- Inactivity Logout Script -->
+    <!-- Inactivity Logout -->
     <script>
       let inactivityTimeout;
       function logoutUser() {
@@ -133,7 +134,7 @@
       resetInactivityTimer();
     </script>
 
-    <!-- Enhanced Logout Logic -->
+    <!-- Logout & Cache Clear -->
     <script>
       function logoutAndClearCache() {
         fetch("/logout", { credentials: "same-origin" })
@@ -157,7 +158,24 @@
       }
     </script>
 
-    <!-- Offline Sync Script -->
+    <!-- Dark Mode Script -->
+    <script>
+      function toggleDarkMode() {
+        document.body.classList.toggle("dark-mode");
+        const mode = document.body.classList.contains("dark-mode")
+          ? "dark"
+          : "light";
+        localStorage.setItem("theme", mode);
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        if (localStorage.getItem("theme") === "dark") {
+          document.body.classList.add("dark-mode");
+        }
+      });
+    </script>
+
+    <!-- Offline Sync -->
     <script src="{{ url_for('static', filename='js/sync.js') }}"></script>
 
     {% block scripts %}{% endblock %}
