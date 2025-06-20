@@ -1070,7 +1070,7 @@ body:not(.dark-mode) .dark-toggle-btn:hover {
 /* ────────────────────────────────
    Theme variables for cards
 ──────────────────────────────── */
-:root {
+/* :root {
     --card-bg: linear-gradient(to bottom, #ffffff, #f2f2f2);
     --card-color: #333;
     --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -1088,4 +1088,4 @@ body.dark-mode {
     box-shadow: var(--card-shadow);
     border-radius: 12px;
     padding: 16px;
-}
+} */
