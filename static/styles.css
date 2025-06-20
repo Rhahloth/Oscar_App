@@ -872,7 +872,7 @@ body {
         width: 100%;
     }
 
-    .page-wrapper {
+    .section {
         padding: 0 8px;
     }
 
@@ -880,7 +880,8 @@ body {
         display: block;
         min-width: 600px;
         overflow-x: auto;
-    } }
+    }
+}
 
 
 /* ✅ DARK MODE RULES */
@@ -989,17 +990,14 @@ body.dark-mode .dark-toggle-btn:hover {
     background-color: #555;
 }
 
-/* Add customer dark mode */
-body.dark-mode .page-wrapper {
-    background-color: #121212;
-    color: #f0f0f0;
-}
 
+/* Add customer dark mode */
 body.dark-mode .section {
     background-color: #1e1e1e;
     padding: 16px;
     border-radius: 8px;
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    color: #f0f0f0;
 }
 
 /* Optional: dark mode for table borders */
