@@ -686,6 +686,38 @@ body {
 /* ✅ Mobile phones (up to 600px) */
 /* Mobile phones (up to 600px) */
 @media (max-width: 600px) {
+
+    html,
+    body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+
+    .container {
+        width: 100%;
+        margin: 220px 0 20px 0;
+        padding: 0 12px;
+        box-sizing: border-box;
+        text-align: center;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+        padding-bottom: 12px;
+    }
+
+    .table-responsive .table {
+        min-width: 600px;
+        display: block;
+        width: 100%;   }
+
+
     .navbar-inner {
         flex-direction: column;
         padding: 15px 20px;
@@ -699,12 +731,6 @@ body {
         justify-content: space-between;
         align-items: center;
         gap: 10px;
-    }
-
-    .container {
-        margin: 250px auto 50px auto;
-        padding: 20px;
-        text-align: center;
     }
 
     .filter-row {
