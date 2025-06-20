@@ -245,6 +245,7 @@ button:hover {
 .filter-item {
     display: flex;
     flex-direction: column;
+    color: #034078;
 }
 
 .filter-item label {
