@@ -409,13 +409,12 @@ button:hover {
     flex: 1;
     min-width: 200px;
     padding: 20px;
-    background: #f9f9f9;
     border: 1px solid #ccc;
     border-radius: 10px;
-    background: linear-gradient(to bottom, #ffffff, #f9f9f9);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
     transition: transform 0.2s ease;
     text-align: center;
+    background: linear-gradient(to bottom, #ffffff, #f9f9f9);
 }
 
 .summary-card h4 {
@@ -436,7 +435,6 @@ button:hover {
 
 /* REPAYMENT CARD */
 .card {
-    background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     padding: 20px;
@@ -566,7 +564,6 @@ button:hover {
 
 /* Section card styling */
 .section {
-    background: #f9f9f9;
     border-radius: 12px;
     padding: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -1004,4 +1001,24 @@ body.dark-mode .section {
 body.dark-mode .table th,
 body.dark-mode .table td {
     border-bottom: 1px solid #444;
+}
+
+:root {
+    --card-bg: linear-gradient(to bottom, #ffffff, #f2f2f2);
+    --card-color: #333;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode {
+    --card-bg: linear-gradient(to bottom, #1f1f1f, #2a2a2a);
+    --card-color: #f0f0f0;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.summary-card {
+    background: var(--card-bg);
+    color: var(--card-color);
+    box-shadow: var(--card-shadow);
+    border-radius: 12px;
+    padding: 16px;
 }
