@@ -826,33 +826,86 @@ button:hover,
     background: linear-gradient(to right, #034078, #ff6f61, #007bff, #28a745, #6f42c1);
 }
 
-/* DARK MODE RULES */
+/* ✅ DARK MODE RULES */
 body.dark-mode {
     background-color: #121212;
     color: #ffffff;
 }
 
-.dark-mode .navbar,
-.dark-mode .navbar-inner,
-.dark-mode .container {
+/* 🔹 Navbar */
+body.dark-mode .navbar,
+body.dark-mode .navbar-inner {
     background-color: #1e1e1e;
     color: #ffffff;
+    border-bottom: 1px solid #333;
 }
 
-.dark-mode button {
-    background-color: #333;
-    color: #fff;
+/* 🔹 Container */
+body.dark-mode .container {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
+
+/* 🔹 Summary Cards */
+body.dark-mode .summary-card {
+    background-color: #2b2b2b;
+    color: #f5f5f5;
+    border: 1px solid #444;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+body.dark-mode .summary-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+/* 🔹 Report Filters */
+body.dark-mode .report-filters input,
+body.dark-mode .report-filters select,
+body.dark-mode .report-filters button {
+    background-color: #2a2a2a;
+    color: #ffffff;
     border: 1px solid #555;
 }
 
-.dark-mode input,
-.dark-mode select,
-.dark-mode textarea {
-    background-color: #2a2a2a;
-    color: #ffffff;
-    border: 1px solid #444;
+body.dark-mode .report-filters label {
+    color: #dddddd;
 }
 
+/* 🔹 Tables */
+body.dark-mode table {
+    background-color: #1c1c1c;
+    color: #ffffff;
+    border-color: #444;
+}
+
+body.dark-mode table th {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border-bottom: 1px solid #555;
+}
+
+body.dark-mode table td {
+    background-color: #1e1e1e;
+    border-top: 1px solid #333;
+}
+
+/* 🔹 Buttons */
+body.dark-mode button {
+    background-color: #333;
+    color: #ffffff;
+    border: 1px solid #555;
+}
+
+body.dark-mode button:hover {
+    background-color: #444;
+}
+
+/* 🔹 Dark Mode Toggle Button */
 .dark-toggle-btn {
     background-color: #f0f0f0;
     border: none;
