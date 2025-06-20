@@ -666,73 +666,80 @@ button:hover,
     font-weight: bold;
 }
 
-/* Mobile phones (up to 600px) */
+.gradient-divider {
+    height: 6px;
+    border: none;
+    border-radius: 3px;
+    margin: 6px 6px;
+    background: linear-gradient(to right, #034078, #ff6f61, #007bff, #28a745, #6f42c1);
+}
+
+/* 🔁 Global reset for edge-to-edge layout */
+html,
+body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ✅ Mobile phones (up to 600px) */
 @media (max-width: 600px) {
-    .navbar-inner {
-        flex-direction: column;
-        padding: 15px 20px;
-
-    }
-
-    .navbar-left,
-    .navbar-right {
-        max-width: 100%;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-    }
-
     .container {
-        margin: 250px auto 50px auto;
-        padding: 20px;
-        text-align: center;
+        margin: 120px auto 20px auto;
+        padding: 0 12px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
-    .filter-row {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .action-buttons {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .summary-container {
-        flex-direction: column;
-        align-items: center;
-    }
-
+    .filter-row,
+    .action-buttons,
+    .summary-container,
     .cart-actions {
         flex-direction: column;
-        gap: 10px;
+        align-items: stretch;
+        gap: 12px;
     }
 
+    .filter-item,
+    .summary-card {
+        width: 100%;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive .table {
+        min-width: 600px;
+        display: block;
+    }
+
+    .table th,
+    .table td {
+        font-size: 14px;
+        padding: 6px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .login-card,
     .flex .card {
-        max-width: 90%;
-    }
-
-    .login-card {
         padding: 20px;
-        max-width: 90%;
+        max-width: 100%;
     }
 }
 
-/* Tablets (601px - 992px) */
+/* ✅ Tablets (601px - 992px) */
 @media (min-width: 601px) and (max-width: 992px) {
-
-    .navbar-left,
-    .navbar-right {
-        flex-direction: row;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-
     .container {
-        margin: 250px auto 60px auto;
-        padding: 30px;
-        text-align: center;
+        margin: 120px auto 30px auto;
+        padding: 0 20px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .filter-row {
@@ -753,6 +760,7 @@ button:hover,
     }
 }
 
+/* ✅ Table scroll for all small screens */
 @media (max-width: 768px) {
     .table-responsive {
         width: 100%;
@@ -770,60 +778,6 @@ button:hover,
         font-size: 14px;
         padding: 6px;
     }
-}
-
-/* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
-@media (max-width: 768px) {
-
-    /* ❌ Hide only the logo and brand */
-    .navbar-left {
-        display: none;
-    }
-
-    /* ✅ Show center and right sections */
-    .navbar-center,
-    .navbar-right {
-        display: flex;
-        align-items: center;
-    }
-
-    /* ✅ Align content responsively */
-    .navbar {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        width: 100%;
-    }
-
-    .navbar-inner {
-        padding: 15px 20px;
-    }
-
-    .navbar-center {
-        flex: 1;
-        justify-content: flex-start;
-        font-size: 14px;
-        font-weight: bold;
-    }
-
-    .navbar-right {
-        justify-content: flex-end;
-        gap: 10px;
-        flex-shrink: 0;
-    }
-
-    .navbar a button {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-}
-
-.gradient-divider {
-    height: 6px;
-    border: none;
-    border-radius: 3px;
-    margin: 6px 6px;
-    background: linear-gradient(to right, #034078, #ff6f61, #007bff, #28a745, #6f42c1);
 }
 
 /* ✅ DARK MODE RULES */
