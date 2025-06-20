@@ -1,7 +1,8 @@
 {% extends "layout.html" %} {% block title %}Owner Dashboard - ROB Solutions{%
-endblock %} {% block content %}
+endblock %} {% block content %} {% set first_name = session.username.split('
+')[0] %}
+<strong>Welcome, {{ first_name }}</strong>
 
-<strong>Welcome, {{ session.username }}</strong>
 {% if session.role in ['owner', 'salesperson'] and session.branch_count == 1 %}
 <form
   method="POST"
@@ -39,7 +40,7 @@ endblock %} {% block content %}
   </a>
 </div>
 
-<h5>Recent Transactions</h5>
+<h4>Recent Transactions</h4>
 <hr class="gradient-divider" />
 <div class="table-responsive">
   <table class="table">
