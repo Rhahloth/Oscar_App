@@ -684,62 +684,73 @@ body {
 }
 
 /* ✅ Mobile phones (up to 600px) */
+/* Mobile phones (up to 600px) */
 @media (max-width: 600px) {
-    .container {
-        margin: 120px auto 20px auto;
-        padding: 0 12px;
-        width: 100%;
-        box-sizing: border-box;
+    .navbar-inner {
+        flex-direction: column;
+        padding: 15px 20px;
+
     }
 
-    .filter-row,
-    .action-buttons,
-    .summary-container,
+    .navbar-left,
+    .navbar-right {
+        max-width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .container {
+        margin: 250px auto 50px auto;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .filter-row {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .summary-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
     .cart-actions {
         flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
+        gap: 10px;
     }
 
-    .filter-item,
-    .summary-card {
-        width: 100%;
-    }
-
-    .table-responsive {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .table-responsive .table {
-        min-width: 600px;
-        display: block;
-    }
-
-    .table th,
-    .table td {
-        font-size: 14px;
-        padding: 6px;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-    }
-
-    .login-card,
     .flex .card {
+        max-width: 90%;
+    }
+
+    .login-card {
         padding: 20px;
-        max-width: 100%;
+        max-width: 90%;
     }
 }
 
-/* ✅ Tablets (601px - 992px) */
+/* Tablets (601px - 992px) */
 @media (min-width: 601px) and (max-width: 992px) {
+
+    .navbar-left,
+    .navbar-right {
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
     .container {
-        margin: 120px auto 30px auto;
-        padding: 0 20px;
-        width: 100%;
-        box-sizing: border-box;
+        margin: 250px auto 60px auto;
+        padding: 30px;
+        text-align: center;
     }
 
     .filter-row {
@@ -760,7 +771,6 @@ body {
     }
 }
 
-/* ✅ Table scroll for all small screens */
 @media (max-width: 768px) {
     .table-responsive {
         width: 100%;
@@ -777,6 +787,52 @@ body {
     .table td {
         font-size: 14px;
         padding: 6px;
+    }
+}
+
+/* ONLY DISPLAY BACK TO DASHBOARD AND LOGOUT IN PHONES */
+@media (max-width: 768px) {
+
+    /* ❌ Hide only the logo and brand */
+    .navbar-left {
+        display: none;
+    }
+
+    /* ✅ Show center and right sections */
+    .navbar-center,
+    .navbar-right {
+        display: flex;
+        align-items: center;
+    }
+
+    /* ✅ Align content responsively */
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .navbar-inner {
+        padding: 15px 20px;
+    }
+
+    .navbar-center {
+        flex: 1;
+        justify-content: flex-start;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .navbar-right {
+        justify-content: flex-end;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .navbar a button {
+        padding: 8px 12px;
+        font-size: 14px;
     }
 }
 
