@@ -880,32 +880,102 @@ body {
     }
 }
 
+/* ────────────────────────────────
+   Avatar + Dropdown Menu
+──────────────────────────────── */
+.user-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
 
-/* ✅ DARK MODE RULES */
+.user-avatar {
+    background-color: #034078;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    user-select: none;
+    text-align: center;
+}
+
+.user-menu {
+    display: none;
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background-color: #fff;
+    color: #333;
+    min-width: 160px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    padding: 10px;
+}
+
+.user-menu button,
+.user-menu a {
+    background: none;
+    border: none;
+    display: block;
+    width: 100%;
+    padding: 8px;
+    text-align: left;
+    color: #333;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.user-menu button:hover,
+.user-menu a:hover {
+    background-color: #f0f0f0;
+}
+
+/* ────────────────────────────────
+   Dark-mode overrides
+──────────────────────────────── */
 html.dark-mode,
 body.dark-mode {
     background-color: #121212;
-    color: #ffffff;
+    color: #fff;
 }
 
-/* 🔹 Navbar */
+/* Avatar dropdown (dark) */
+body.dark-mode .user-menu {
+    background-color: #2a2a2a;
+    color: #f0f0f0;
+}
+
+body.dark-mode .user-menu button,
+body.dark-mode .user-menu a {
+    color: inherit;
+}
+
+body.dark-mode .user-menu button:hover,
+body.dark-mode .user-menu a:hover {
+    background-color: #3a3a3a;
+}
+
+/* Navbar */
 body.dark-mode .navbar,
 body.dark-mode .navbar-inner {
     background-color: #1e1e1e;
-    color: #ffffff;
+    color: #fff;
     border-bottom: 1px solid #333;
 }
 
-/* 🔹 Container */
-body.dark-mode .container {
+/* Containers & Sections */
+body.dark-mode .container,
+body.dark-mode .section {
     background-color: #1e1e1e;
-    color: #ffffff;
+    color: #fff;
     border-radius: 10px;
     padding: 20px;
     box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
 }
 
-/* 🔹 Summary Cards */
+/* Summary cards */
 body.dark-mode .summary-card {
     background-color: #2b2b2b;
     color: #f5f5f5;
@@ -919,30 +989,34 @@ body.dark-mode .summary-card:hover {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
 }
 
-/* 🔹 Report Filters */
+/* Report filters */
 body.dark-mode .report-filters input,
 body.dark-mode .report-filters select,
 body.dark-mode .report-filters button {
     background-color: #2a2a2a;
-    color: #ffffff;
+    color: #fff;
     border: 1px solid #555;
 }
 
 body.dark-mode .report-filters label {
-    color: #dddddd;
+    color: #ddd;
 }
 
-/* 🔹 Tables */
+/* Tables */
 body.dark-mode table {
     background-color: #1c1c1c;
-    color: #ffffff;
+    color: #fff;
     border-color: #444;
+}
+
+body.dark-mode table th,
+body.dark-mode table td {
+    border-bottom: 1px solid #555;
+    /* (merged duplicate) */
 }
 
 body.dark-mode table th {
     background-color: #2a2a2a;
-    color: #ffffff;
-    border-bottom: 1px solid #555;
 }
 
 body.dark-mode table td {
@@ -950,59 +1024,35 @@ body.dark-mode table td {
     border-top: 1px solid #333;
 }
 
-/* 🔹 Buttons */
-body.dark-mode button {
+/* Buttons (generic + toggle) */
+body.dark-mode button,
+.dark-toggle-btn {
     background-color: #333;
-    color: #ffffff;
+    color: #fff;
     border: 1px solid #555;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
+button.dark-toggle-btn {
+    border-radius: 50%;
+    font-size: 18px;
+    padding: 8px 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.dark-toggle-btn:hover,
 body.dark-mode button:hover {
     background-color: #444;
 }
 
-/* 🔹 Dark Mode Toggle Button */
-.dark-toggle-btn {
-    background-color: #f0f0f0;
-    border: none;
-    border-radius: 50%;
-    font-size: 18px;
-    padding: 8px 10px;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.3s, transform 0.2s;
-}
-
-.dark-toggle-btn:hover {
+body:not(.dark-mode) .dark-toggle-btn:hover {
     background-color: #ddd;
     transform: scale(1.1);
 }
 
-body.dark-mode .dark-toggle-btn {
-    background-color: #333;
-    color: #fff;
-}
-
-body.dark-mode .dark-toggle-btn:hover {
-    background-color: #555;
-}
-
-
-/* Add customer dark mode */
-body.dark-mode .section {
-    background-color: #1e1e1e;
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
-    color: #f0f0f0;
-}
-
-/* Optional: dark mode for table borders */
-body.dark-mode .table th,
-body.dark-mode .table td {
-    border-bottom: 1px solid #444;
-}
-
+/* ────────────────────────────────
+   Theme variables for cards
+──────────────────────────────── */
 :root {
     --card-bg: linear-gradient(to bottom, #ffffff, #f2f2f2);
     --card-color: #333;

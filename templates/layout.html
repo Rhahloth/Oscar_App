@@ -39,6 +39,7 @@
     <div class="navbar-wrapper">
       <div class="navbar-inner">
         <div class="navbar">
+          <!-- Left: Logo -->
           <div class="navbar-left">
             <img
               src="{{ url_for('static', filename='logo.png') }}"
@@ -48,32 +49,39 @@
             <strong>ROB Solutions</strong>
           </div>
 
+          <!-- Centre: Username -->
           <div class="navbar-center">
             {% if session.username %}
             <span>{{ session.username }}</span>
             {% endif %}
           </div>
 
+          <!-- Right: Avatar & dropdown -->
           <div class="navbar-right">
-            {% if session.username and request.endpoint != 'dashboard' %}
-            <a href="/dashboard"><button>Back to Dashboard</button></a>
-            {% endif %} {% if session.username %}
-            <button
-              style="background-color: #d9534f; color: white"
-              onclick="logoutAndClearCache()"
-            >
-              Logout
-            </button>
+            {% if session.username %}
+            <div class="user-avatar-wrapper">
+              <!-- Avatar icon (could be replaced with user image) -->
+              <div
+                class="user-avatar"
+                onclick="toggleUserMenu()"
+                title="Account"
+              >
+                👤
+              </div>
 
-            <!-- 🌓 Dark Mode Toggle -->
-            <button
-              class="dark-toggle-btn"
-              onclick="toggleDarkMode()"
-              title="Toggle Dark Mode"
-            >
-              🌓
-            </button>
-
+              <!-- Dropdown menu -->
+              <div class="user-menu" id="userMenu">
+                {% if request.endpoint != 'dashboard' %}
+                <a href="/dashboard">🏠 Back to Dashboard</a>
+                {% endif %}
+                <button type="button" onclick="toggleDarkMode()">
+                  🌓 Toggle Dark Mode
+                </button>
+                <button type="button" onclick="logoutAndClearCache()">
+                  🚪 Logout
+                </button>
+              </div>
+            </div>
             {% endif %}
           </div>
         </div>
@@ -92,6 +100,7 @@
     <!-- Service Worker & Offline Preload -->
     <script>
       document.addEventListener("DOMContentLoaded", () => {
+        // Register service worker
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker
             .register("/sw.js")
@@ -99,6 +108,7 @@
             .catch((err) => console.error("❌ Service Worker failed", err));
         }
 
+        // Preload offline data for salespersons
         {% if session.role == 'salesperson' %}
         fetch("/offline_data")
           .then((res) => res.json())
@@ -108,9 +118,7 @@
             localStorage.setItem("branch_name", data.branch_name);
             console.log("✅ Offline data loaded");
           })
-          .catch((err) => {
-            console.error("❌ Offline data preload failed:", err);
-          });
+          .catch((err) => console.error("❌ Offline data preload failed:", err));
         {% endif %}
       });
     </script>
@@ -126,18 +134,15 @@
           window.location.href = "/login";
         }
       }
-
       function resetInactivityTimer() {
         clearTimeout(inactivityTimeout);
         inactivityTimeout = setTimeout(logoutUser, 3600000); // 1 hour
       }
-
       ["click", "mousemove", "keydown", "scroll", "touchstart"].forEach(
         (event) => {
           window.addEventListener(event, resetInactivityTimer);
         }
       );
-
       resetInactivityTimer();
     </script>
 
@@ -150,23 +155,20 @@
               navigator.serviceWorker
                 .getRegistrations()
                 .then((registrations) => {
-                  for (let reg of registrations) {
-                    reg.unregister();
-                  }
+                  for (let reg of registrations) reg.unregister();
                   window.location.href = "/login";
                 });
             } else {
               window.location.href = "/login";
             }
           })
-          .catch(() => {
-            window.location.href = "/login";
-          });
+          .catch(() => (window.location.href = "/login"));
       }
     </script>
 
-    <!-- Dark Mode Script -->
+    <!-- Dark Mode & Avatar Menu -->
     <script>
+      // Toggle dark mode and save preference
       function toggleDarkMode() {
         document.body.classList.toggle("dark-mode");
         const mode = document.body.classList.contains("dark-mode")
@@ -174,10 +176,31 @@
           : "light";
         localStorage.setItem("theme", mode);
       }
-
       window.addEventListener("DOMContentLoaded", () => {
         if (localStorage.getItem("theme") === "dark") {
           document.body.classList.add("dark-mode");
+        }
+      });
+
+      // Avatar dropdown controls
+      function toggleUserMenu() {
+        const menu = document.getElementById("userMenu");
+        if (menu) {
+          menu.style.display =
+            menu.style.display === "block" ? "none" : "block";
+        }
+      }
+      // Close the menu when clicking outside
+      window.addEventListener("click", (e) => {
+        const avatar = document.querySelector(".user-avatar");
+        const menu = document.getElementById("userMenu");
+        if (
+          menu &&
+          avatar &&
+          !avatar.contains(e.target) &&
+          !menu.contains(e.target)
+        ) {
+          menu.style.display = "none";
         }
       });
     </script>
