@@ -684,9 +684,11 @@ def print_receipt(batch_no):
             clean_summary[name] = data
             grand_total += data['total']
 
-    # 🏷️ Get business name
-    cur.execute("SELECT name FROM businesses WHERE id = %s", (business_id,))
-    business_name = cur.fetchone()['name']
+    # 🏷️ Get business name and phone
+    cur.execute("SELECT name, phone FROM businesses WHERE id = %s", (business_id,))
+    business_row = cur.fetchone()
+    business_name = business_row['name']
+    business_phone = business_row['phone']
 
     # 👤 Use salesperson username as branch name
     if sales:
@@ -705,6 +707,7 @@ def print_receipt(batch_no):
         sales=sales,
         batch_number=batch_no,
         business_name=business_name,
+        business_phone=business_phone,
         branch_name=branch_name,
         product_summary=clean_summary,
         grand_total=grand_total

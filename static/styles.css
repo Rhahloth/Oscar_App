@@ -826,35 +826,54 @@ button:hover,
     background: linear-gradient(to right, #034078, #ff6f61, #007bff, #28a745, #6f42c1);
 }
 
+/* DARK MODE RULES */
 body.dark-mode {
     background-color: #121212;
-    color: #f5f5f5;
+    color: #ffffff;
 }
 
 .dark-mode .navbar,
 .dark-mode .navbar-inner,
-.dark-mode .container,
-.dark-mode .card,
-.dark-mode .section {
+.dark-mode .container {
     background-color: #1e1e1e;
-    color: #f5f5f5;
-    border-color: #444;
+    color: #ffffff;
 }
 
 .dark-mode button {
-    background-color: #2d2d2d;
+    background-color: #333;
     color: #fff;
     border: 1px solid #555;
 }
 
-.dark-mode a {
-    color: #90caf9;
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+    background-color: #2a2a2a;
+    color: #ffffff;
+    border: 1px solid #444;
 }
 
-.dark-mode input,
-.dark-mode textarea,
-.dark-mode select {
-    background-color: #2a2a2a;
-    color: #f5f5f5;
-    border: 1px solid #666;
+.dark-toggle-btn {
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 50%;
+    font-size: 18px;
+    padding: 8px 10px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.dark-toggle-btn:hover {
+    background-color: #ddd;
+    transform: scale(1.1);
+}
+
+body.dark-mode .dark-toggle-btn {
+    background-color: #333;
+    color: #fff;
+}
+
+body.dark-mode .dark-toggle-btn:hover {
+    background-color: #555;
 }

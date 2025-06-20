@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
-      /* Base styles */
       body {
         margin: 0;
         padding: 0;
@@ -19,19 +18,21 @@
         width: 58mm;
         max-width: 300px;
         margin: 0 auto;
-        padding: 0;
         line-height: 1.4;
       }
 
       .center {
         text-align: center;
       }
+
       .right {
         text-align: right;
       }
+
       .bold {
         font-weight: bold;
       }
+
       .line {
         border-top: 1px dashed #000;
         margin: 6px 0;
@@ -53,30 +54,25 @@
       td.item-col {
         width: 40%;
         text-align: left;
+        white-space: normal;
       }
+
       th.qty-col,
       td.qty-col {
         width: 15%;
         text-align: center;
       }
+
       th.price-col,
       td.price-col {
         width: 20%;
         text-align: right;
       }
+
       th.total-col,
       td.total-col {
         width: 25%;
         text-align: right;
-      }
-
-      th.price-col,
-      td.price-col,
-      th.total-col,
-      td.total-col {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: clip;
       }
 
       .no-print {
@@ -90,25 +86,11 @@
         margin: 4px;
       }
 
-      /* 🟢 General style for product name wrapping */
-      td.item-col {
-        width: 40%;
-        text-align: left;
-        white-space: normal;
-        word-wrap: break-word;
-      }
-
-      td {
-        line-height: 1.2;
-      }
-
-      /* Print optimization */
       @media print {
         html,
         body {
           margin: 5px;
           padding: 5px;
-          height: auto;
           background: #fff;
         }
 
@@ -189,16 +171,16 @@
       {% endif %}
 
       <div class="line"></div>
-
       <div class="center">Thank you for choosing us!</div>
       <div class="center">For inquiries, call:</div>
-      <div class="center">0781133613 / 0786280191</div>
+      <div class="center">{{ business_phone }}</div>
 
       <div class="no-print">
         <button onclick="window.print()">🖨️ Print Receipt</button>
         <a href="/record_sale"><button>⬅ Back to POS</button></a>
       </div>
     </div>
+
     <script>
       window.onload = function () {
         window.print();
